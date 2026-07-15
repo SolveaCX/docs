@@ -27,6 +27,22 @@ export OPENAI_BASE_URL="https://router.flatkey.ai/v1"
 export OPENAI_API_KEY="sk-fk-your-flatkey-key"
 ```
 
+## Configure with CC Switch
+
+[CC Switch](https://ccswitch.io) is a third-party desktop configuration manager for coding assistants. You can also download it from the [official GitHub repository](https://github.com/farion1231/cc-switch).
+
+1. Open CC Switch and select **Codex**.
+2. Add a **Custom Provider** named `Flatkey`.
+3. Set **Base URL** to `https://router.flatkey.ai/v1`.
+4. Select the **OpenAI Responses** protocol.
+5. Enter your Flatkey API key (`sk-fk-...`) and choose a supported GPT model from the [Model Directory](/reference/model-list).
+6. Activate the provider, fully quit Codex CLI, and start it again.
+7. Run a small command, then confirm the request in [Usage Logs](https://console.flatkey.ai/usage-logs/common).
+
+<Note>
+  Use **Custom Provider** if your CC Switch version does not include a Flatkey preset. Flatkey supports the Responses route directly, so you do not need CC Switch Local Routing for this setup.
+</Note>
+
 ## Running Codex CLI
 
 Once the environment variables are set, use Codex normally:
@@ -56,7 +72,7 @@ Any GPT model available in the [Model Directory](/reference/model-list) works wi
 
 ## Verifying the setup
 
-After running a Codex command, check your [Usage dashboard](https://console.flatkey.ai) — you should see the request logged with the model and token counts. If the request appears but used your old balance, confirm the `OPENAI_BASE_URL` is set in the current shell session.
+After running a Codex command, check [Usage Logs](https://console.flatkey.ai/usage-logs/common) — you should see the request logged with the model and token counts. If no request appears, confirm the active provider and `OPENAI_BASE_URL` in the current shell session.
 
 <Tip>
   Use the $200 top-up tier for the best effective rate on sustained Codex usage — the stacked bonus brings costs to as low as 50% of official GPT pricing.

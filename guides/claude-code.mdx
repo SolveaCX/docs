@@ -31,6 +31,21 @@ export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
   Set `ANTHROPIC_BASE_URL` to `https://router.flatkey.ai` — without a trailing `/v1`. The Claude Code CLI appends the correct path automatically.
 </Warning>
 
+## Configure with CC Switch
+
+[CC Switch](https://ccswitch.io) is a third-party desktop configuration manager for coding assistants. You can also download it from the [official GitHub repository](https://github.com/farion1231/cc-switch).
+
+1. Open CC Switch and select **Claude Code**.
+2. Add a **Custom Provider** named `Flatkey`.
+3. Set the base URL to `https://router.flatkey.ai` without a trailing `/v1`.
+4. Enter your Flatkey API key (`sk-fk-...`) and activate the provider.
+5. Fully quit and reopen Claude Code so it reloads the provider settings.
+6. Send a small request, then confirm it in **Usage Logs** in the [Flatkey Console](https://console.flatkey.ai/usage-logs/common).
+
+<Note>
+  If your CC Switch version does not include a Flatkey preset, use **Custom Provider**. CC Switch is not a Flatkey product.
+</Note>
+
 ## Running Claude Code
 
 Use Claude Code exactly as you normally would:
@@ -49,7 +64,7 @@ All requests are routed to Flatkey and billed from your prepaid balance at disco
 
 ## Verifying the setup
 
-Run a simple request and then check the **Usage** section of your [Flatkey console](https://console.flatkey.ai). You should see the Claude request logged with its model ID, token counts, and cost.
+Run a simple request and then check **Usage Logs** in your [Flatkey Console](https://console.flatkey.ai/usage-logs/common). You should see the Claude request logged with its model ID, token counts, and cost.
 
 ## Savings estimate
 

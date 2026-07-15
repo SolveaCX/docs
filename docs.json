@@ -35,6 +35,7 @@
               "guides/openai-sdk",
               "guides/anthropic-sdk",
               "guides/codex-cli",
+              "guides/codex-desktop",
               "guides/claude-code",
               "guides/image-generation"
             ]
