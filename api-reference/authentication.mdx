@@ -1,0 +1,68 @@
+---
+title: "Flatkey API Authentication: Bearer Tokens and API Keys"
+sidebarTitle: "Authentication"
+description: "Authenticate Flatkey API requests by passing your API key as a Bearer token in the Authorization header. Learn key formats, errors, and best practices."
+---
+
+Every request to the Flatkey API must include a valid API key in the `Authorization` header as a Bearer token. You create and manage keys in the [Flatkey console](https://console.flatkey.ai/keys).
+
+## Header format
+
+```http
+Authorization: Bearer sk-fk-your-api-key
+```
+
+Flatkey API keys begin with `sk-fk-`. Keys are case-sensitive and must be passed exactly as generated.
+
+## Example request
+
+```bash
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+## Creating an API key
+
+1. Sign in to [console.flatkey.ai](https://console.flatkey.ai)
+2. Click **Keys** in the left sidebar
+3. Click **Create Key** and enter a name
+4. Copy the key — it is shown **only once**
+
+If you lose a key, you must create a new one. Old keys remain active until explicitly revoked.
+
+## Authentication errors
+
+| HTTP status | Condition | Resolution |
+|---|---|---|
+| `401 Unauthorized` | Key is missing from the request | Add `Authorization: Bearer sk-fk-...` header |
+| `401 Unauthorized` | Key is invalid or revoked | Generate a new key in the console |
+| `401 Unauthorized` | Balance is $0.00 | Top up at [console.flatkey.ai](https://console.flatkey.ai) |
+| `403 Forbidden` | Key lacks model access | Check key permissions in the console |
+
+### Error response format
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided.",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## Security best practices
+
+- Store keys in environment variables, not in source code
+- Use one key per deployment environment
+- Revoke keys immediately if compromised
+- Rotate keys periodically for production workloads
+
+<Warning>
+  Never include API keys in client-side JavaScript, mobile app bundles, or public repositories. Keys can be misused to drain your balance.
+</Warning>

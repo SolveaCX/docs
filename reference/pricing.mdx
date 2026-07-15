@@ -1,0 +1,79 @@
+---
+title: "Flatkey Pricing: Token Costs and Top-Up Bonuses"
+sidebarTitle: "Pricing"
+description: "Flatkey charges per token at 60–90% of official model pricing. Top up your balance to earn bonus credits and reduce effective costs to as low as 50% off."
+---
+
+Flatkey charges per token at 60–90% of official model list pricing. On top of the per-model discount, every balance top-up earns bonus credit — stack the $200 top-up bonus with model discounts and effective costs drop to as low as 50% of official pricing. There are no subscriptions, no monthly fees, and no per-seat charges.
+
+## Top-up plans
+
+<CardGroup cols={2}>
+  <Card title="$10 Top-Up" icon="coins">
+    **Pay $10 → Get $13**
+
+    +$3 bonus credit (23% effective saving). Good for testing and exploration.
+  </Card>
+  <Card title="$20 Top-Up" icon="coins">
+    **Pay $20 → Get $28**
+
+    +$8 bonus credit (40% effective saving). Good for dev workloads.
+  </Card>
+  <Card title="$200 Top-Up" icon="star">
+    **Pay $200 → Get $300**
+
+    +$100 bonus credit (50% effective saving). Best value for production use.
+  </Card>
+  <Card title="Enterprise" icon="building">
+    **Custom pricing**
+
+    Invoice billing, custom routing discounts, procurement support. [Contact sales](mailto:support@flatkey.ai).
+  </Card>
+</CardGroup>
+
+## How discounts stack
+
+Flatkey pricing works in two layers:
+
+1. **Model discount**: Every model is listed at 60–90% of the official vendor price.
+2. **Top-up bonus**: Every $200 top-up gives you $100 extra — effectively reducing costs by another 33%.
+
+Combined, the effective cost per token can be as low as **50% of official pricing**.
+
+### Example: gpt-4o-mini
+
+| Price source | $/1M input tokens |
+|---|---|
+| OpenAI official | $0.150 |
+| Flatkey list (40% discount) | $0.090 |
+| Flatkey after $200 bonus (50% off official) | $0.060 |
+
+## Pricing FAQ
+
+<Accordion title="Is there a monthly subscription?">
+  No. Flatkey self-serve plans are all prepaid top-ups. You pay only for what you use. There are no recurring charges.
+</Accordion>
+
+<Accordion title="Does bonus credit expire?">
+  No. Bonus credit and paid credit both remain in your balance indefinitely. There is no expiry date.
+</Accordion>
+
+<Accordion title="Can I use bonus credit for all models?">
+  Yes. Bonus credit spends exactly like paid credit. It can be used for any model on any endpoint — chat, embeddings, image generation, etc.
+</Accordion>
+
+<Accordion title="How is cost calculated for each request?">
+  Cost = (input tokens × input price) + (output tokens × output price). Prices are per million tokens. The exact cost is deducted after the request completes. You can see per-request costs in the Usage dashboard.
+</Accordion>
+
+<Accordion title="What happens if my balance reaches zero?">
+  API requests return a `401 Insufficient Balance` error. Top up your balance to resume. There are no automatic charges or overdraft.
+</Accordion>
+
+<Accordion title="When should I choose Enterprise?">
+  Choose Enterprise for larger monthly usage, invoice-based billing, procurement requirements, custom routing discounts, or team-level access controls.
+</Accordion>
+
+## Viewing per-model prices
+
+See current prices for all models in the [Model Directory](/reference/model-list) or at [flatkey.ai/models](https://flatkey.ai/models). Prices are updated as vendors change their rates.

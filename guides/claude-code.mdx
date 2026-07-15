@@ -1,0 +1,78 @@
+---
+title: "Use Flatkey with Claude Code for Discounted AI Coding"
+sidebarTitle: "Claude Code"
+description: "Route Claude Code CLI traffic through Flatkey to access Claude models at up to 50% off official Anthropic pricing with two environment variable changes."
+---
+
+Anthropic's Claude Code is an agentic AI coding assistant that runs in your terminal. By setting the `ANTHROPIC_BASE_URL` environment variable, you can route all Claude Code requests through Flatkey and pay Flatkey's discounted rates on Claude model usage.
+
+## Prerequisites
+
+- Claude Code installed: `npm install -g @anthropic-ai/claude-code`
+- A Flatkey account with an API key — [get one here](https://console.flatkey.ai/sign-up)
+
+## Configuration
+
+Set these two environment variables:
+
+```bash
+export ANTHROPIC_BASE_URL="https://router.flatkey.ai"
+export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
+```
+
+To make the setting permanent, add them to your shell profile:
+
+```bash ~/.zshrc
+export ANTHROPIC_BASE_URL="https://router.flatkey.ai"
+export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
+```
+
+<Warning>
+  Set `ANTHROPIC_BASE_URL` to `https://router.flatkey.ai` — without a trailing `/v1`. The Claude Code CLI appends the correct path automatically.
+</Warning>
+
+## Running Claude Code
+
+Use Claude Code exactly as you normally would:
+
+```bash
+claude "Fix the bug in this file"
+```
+
+or interactively:
+
+```bash
+claude
+```
+
+All requests are routed to Flatkey and billed from your prepaid balance at discounted rates.
+
+## Verifying the setup
+
+Run a simple request and then check the **Usage** section of your [Flatkey console](https://console.flatkey.ai). You should see the Claude request logged with its model ID, token counts, and cost.
+
+## Savings estimate
+
+Using Claude Sonnet (a popular choice for Claude Code) through Flatkey:
+
+| | Official price | Flatkey (after $200 bonus) |
+|---|---|---|
+| `claude-sonnet-4-5` input | $3 / 1M tokens | ~$1.6 / 1M tokens |
+| `claude-haiku-4-5-20251001` input | $1 / 1M tokens | ~$0.53 / 1M tokens |
+
+On a typical Claude Code session of 50K input tokens, using Sonnet, that is:
+- Official: ~$0.15 per session
+- Flatkey: ~$0.08 per session
+
+<Tip>
+  Heavy Claude Code users benefit most from the $200 top-up tier — the bonus credit effectively gives you an extra month of usage on top of the model discount.
+</Tip>
+
+## Troubleshooting
+
+| Issue | Fix |
+|---|---|
+| `Authentication failed` | Confirm `ANTHROPIC_API_KEY` is your Flatkey key (`sk-fk-...`) |
+| `Could not connect` | Verify `ANTHROPIC_BASE_URL` is set to `https://router.flatkey.ai` |
+| `Insufficient balance` | Add credit at [console.flatkey.ai](https://console.flatkey.ai) |
+| Requests not in dashboard | Check environment variables are exported in the current shell |

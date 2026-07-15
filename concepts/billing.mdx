@@ -1,0 +1,76 @@
+---
+title: "Flatkey Billing: Prepaid Balance and Top-Up Bonuses"
+sidebarTitle: "Billing"
+description: "Flatkey uses a prepaid balance model. Learn how top-up bonuses work, how costs are calculated per token, and how to manage your balance in the console."
+---
+
+Flatkey billing is entirely prepaid — you add credit to your balance and it is consumed only when your API requests use models. There are no monthly subscriptions, no recurring charges, and no surprise invoices. Every top-up earns bonus credit that is credited instantly and never expires.
+
+## Top-up tiers
+
+| Top-up amount | Bonus credit | Total balance received | Effective saving |
+|---|---|---|---|
+| $10 | +$3 | $13 | 30% |
+| $20 | +$8 | $28 | 40% |
+| $200 | +$100 | $300 | 50% (best value) |
+| Enterprise | Custom | Custom | Custom |
+
+<Tip>
+  Bonus credit stacks with model discounts. Models are already priced at 60–90% of the official vendor list — add the top-up bonus and effective costs drop as low as 50% of official pricing.
+</Tip>
+
+## How costs are calculated
+
+Each model has an input price and an output price, both quoted per million tokens. When you send a request:
+
+1. Flatkey estimates the token cost at the start of the request.
+2. The estimated amount is reserved from your balance.
+3. When the response completes, the exact token counts are confirmed.
+4. The precise cost is deducted; any over-estimate is refunded.
+
+Prices shown in the [Model Directory](/reference/model-list) are the **after-bonus** effective prices when you have topped up at the $200 tier. Official (pre-bonus) prices are also shown for reference.
+
+## Example cost calculation
+
+Using `gpt-4o-mini` with the $200 top-up applied:
+
+- Official OpenAI price: $0.15 / 1M input tokens
+- Flatkey list price: ~$0.09 / 1M input tokens (40% discount)
+- With $200 bonus stacked: ~$0.06 / 1M input tokens (effective ~50% off official)
+
+For a 1,000-token request:
+- At official pricing: $0.00015
+- At Flatkey effective pricing: $0.00006
+
+## Balance and usage in the console
+
+Navigate to **Balance** in the [console](https://console.flatkey.ai) to:
+
+- View your current balance and bonus credit breakdown
+- Add a new top-up
+- See a history of all top-up transactions
+
+Navigate to **Usage** to:
+
+- View per-request logs with model, token counts, and cost
+- Filter by date range, model, or API key
+- Export logs for reconciliation
+
+## Enterprise billing
+
+For teams with larger monthly usage, Flatkey offers enterprise plans with:
+
+- Custom monthly usage and pricing
+- Invoice-based billing (no prepaid top-up required)
+- Custom routing discounts
+- Team procurement support and a dedicated account manager
+
+Contact [support@flatkey.ai](mailto:support@flatkey.ai) to discuss enterprise terms.
+
+## Refunds and balance
+
+Prepaid balance is non-refundable except in cases covered by the [Refund Policy](https://flatkey.ai/refund-policy). Bonus credits are granted immediately on top-up and are subject to the same refund terms as paid credit.
+
+<Note>
+  Your balance never expires. Credit topped up today is available for use indefinitely.
+</Note>

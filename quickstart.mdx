@@ -1,0 +1,129 @@
+---
+title: "Flatkey Quickstart: Your First AI API Call in 5 Minutes"
+sidebarTitle: "Quickstart"
+description: "Learn how to create a Flatkey account, generate an API key, and make your first AI model call using the OpenAI-compatible SDK in under 5 minutes."
+---
+
+This guide walks you through creating a Flatkey account, generating an API key, topping up your balance, and making your first API request. You only need to change one line of code in any OpenAI-compatible project.
+
+## Prerequisites
+
+- A Flatkey account — sign up at [console.flatkey.ai](https://console.flatkey.ai/sign-up)
+- Python 3.8+ or Node.js 16+ with the `openai` package installed
+
+<Steps>
+  <Step title="Create your account and top up">
+    Sign up at [console.flatkey.ai/sign-up](https://console.flatkey.ai/sign-up). After verifying your email, go to **Balance → Top Up** and add at least $10 of prepaid credit. Every top-up earns a bonus: +$3 on $10, +$8 on $20, +$100 on $200.
+  </Step>
+
+  <Step title="Create an API key">
+    In the console, navigate to **Keys** and click **Create Key**. Give it a name (e.g., `my-app-dev`), then copy the secret — it starts with `sk-fk-...` and is shown only once.
+
+    <Warning>
+      Store your API key securely. Do not commit it to source control. Use environment variables or a secrets manager.
+    </Warning>
+  </Step>
+
+  <Step title="Install the OpenAI SDK">
+    <CodeGroup>
+    ```bash pip
+    pip install openai
+    ```
+    ```bash npm
+    npm install openai
+    ```
+    ```bash yarn
+    yarn add openai
+    ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Make your first request">
+    Point the SDK at Flatkey by setting `base_url` to `https://router.flatkey.ai/v1`. Everything else stays the same.
+
+    <CodeGroup>
+    ```python python
+    import os
+    from openai import OpenAI
+
+    client = OpenAI(
+        api_key=os.environ["FLATKEY_API_KEY"],
+        base_url="https://router.flatkey.ai/v1",
+    )
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "user", "content": "Hello! What can you do?"}
+        ],
+    )
+
+    print(response.choices[0].message.content)
+    ```
+    ```javascript node
+    import OpenAI from "openai";
+
+    const client = new OpenAI({
+      apiKey: process.env.FLATKEY_API_KEY,
+      baseURL: "https://router.flatkey.ai/v1",
+    });
+
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "user", content: "Hello! What can you do?" }
+      ],
+    });
+
+    console.log(response.choices[0].message.content);
+    ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Verify in the dashboard">
+    After the request completes, open **Usage** in the console. You'll see the request logged with the model name, token counts, and cost deducted from your balance.
+  </Step>
+</Steps>
+
+## Common errors
+
+| HTTP status | Cause | Fix |
+|---|---|---|
+| `401 invalid_api_key` | Key is missing, wrong, or revoked | Re-copy the key from the **Keys** page; ensure no extra whitespace |
+| `401 insufficient_balance` | Prepaid balance is $0.00 | Go to **Balance → Top Up** in the console |
+| `404 model_not_found` | Model ID is misspelled or not yet available | Check the [Model Directory](/reference/model-list) for the exact model ID |
+| `429 rate_limit_exceeded` | Too many requests in a short window | Add exponential backoff and retry logic |
+
+## Switch an existing project
+
+If you already use the OpenAI SDK, switching to Flatkey requires a single change:
+
+```python
+# Before
+client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+
+# After — only base_url changes
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],  # [!code ++]
+    base_url="https://router.flatkey.ai/v1",  # [!code ++]
+)
+```
+
+You can use any model name that Flatkey supports — the same model IDs that OpenAI, Anthropic, and Google use on their own APIs. See the [Model Directory](/reference/model-list) for the full list.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Anthropic SDK" icon="robot" href="/guides/anthropic-sdk">
+    Route Claude requests through Flatkey with the Anthropic SDK
+  </Card>
+  <Card title="Image Generation" icon="image" href="/guides/image-generation">
+    Generate images with gpt-image-2 through Flatkey
+  </Card>
+  <Card title="Usage Dashboard" icon="chart-bar" href="/dashboard/usage">
+    Monitor token usage, cost, and request logs
+  </Card>
+  <Card title="Model Directory" icon="list" href="/reference/model-list">
+    Browse all 160+ models with live pricing
+  </Card>
+</CardGroup>

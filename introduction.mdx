@@ -1,0 +1,73 @@
+---
+title: "Flatkey: One Key, 160+ Official AI Models, Up to 50% Off"
+sidebarTitle: "Introduction"
+description: "Flatkey is an AI API gateway for GPT, Claude, Gemini, DeepSeek, and 160+ models via one OpenAI-compatible key. Access official models at up to 50% off."
+---
+
+Flatkey is an AI API gateway that lets you access 160+ official models from OpenAI, Anthropic, Google, DeepSeek, Qwen, GLM, and more — all through a single OpenAI-compatible API key. It is a drop-in replacement for any OpenAI-compatible client: change one line of code (`base_url`) and your requests are routed through Flatkey at up to 50% off official pricing, thanks to discounted base rates and stackable bonus credits on every top-up.
+
+## What Flatkey gives you
+
+<CardGroup cols={2}>
+  <Card title="One key, all models" icon="key">
+    A single API key and base URL routes to GPT, Claude, Gemini, DeepSeek, Qwen, GLM, and more. No per-provider keys to manage.
+  </Card>
+  <Card title="Up to 50% savings" icon="piggy-bank">
+    Models priced at 60–90% of official list. Top up $200, get $100 bonus credit — stacked, as low as half the official price.
+  </Card>
+  <Card title="99.9% reliability" icon="shield-check">
+    Automatic failover across upstream providers. Live health dashboards show real success rates from production traffic.
+  </Card>
+  <Card title="Zero data retention" icon="lock">
+    Prompts and completions are never stored. GDPR compliant, SOC 2 and ISO 27001 aligned controls.
+  </Card>
+  <Card title="Prepaid balance" icon="receipt">
+    Top up once, consume as you go. No subscriptions, no surprise invoices.
+  </Card>
+  <Card title="Full API compatibility" icon="plug">
+    OpenAI-compatible endpoints: chat completions, responses, embeddings, image generation, and models list.
+  </Card>
+</CardGroup>
+
+## Supported providers
+
+Flatkey routes to official APIs from every major AI vendor:
+
+| Provider | Example models |
+|---|---|
+| OpenAI | gpt-4o, gpt-4o-mini, gpt-5, gpt-image-2 |
+| Anthropic | claude-opus-4, claude-sonnet-4, claude-haiku-4 |
+| Google | gemini-2.5-pro, gemini-2.5-flash, gemini-flash-latest |
+| DeepSeek | deepseek-v3, deepseek-v4-pro, deepseek-v4-flash |
+| Qwen | qwen3.5-plus, qwen3.7-max, qwen3.5-flash |
+| Z.ai / GLM | glm-4.7, glm-5-turbo, glm-5.2 |
+
+See the full [Model Directory](/reference/model-list) for all 160+ models with live pricing and health data.
+
+## How it works
+
+Flatkey sits between your application and AI providers. When you send a request:
+
+1. Your client calls `https://router.flatkey.ai/v1` with your Flatkey API key.
+2. Flatkey authenticates the request and deducts the cost from your prepaid balance.
+3. The request is forwarded to the official provider API (OpenAI, Anthropic, etc.).
+4. The response is returned directly to your client — no transformation of the content.
+
+Your prompts and completions are never stored. Flatkey only records metadata (model, token counts, timestamps) for billing and analytics.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="bolt" href="/quickstart">
+    Create an account and make your first API call in under 5 minutes
+  </Card>
+  <Card title="Authentication" icon="lock-keyhole" href="/authentication">
+    Learn how to create and use your Flatkey API key
+  </Card>
+  <Card title="OpenAI SDK Guide" icon="python" href="/guides/openai-sdk">
+    Use Flatkey with the official OpenAI SDK — Python or Node.js
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Full endpoint reference for all supported API methods
+  </Card>
+</CardGroup>

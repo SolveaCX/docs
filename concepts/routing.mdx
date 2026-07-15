@@ -1,0 +1,93 @@
+---
+title: "How Flatkey Routes API Requests and Handles Failover"
+sidebarTitle: "Routing"
+description: "Learn how Flatkey routes requests to official AI providers, handles automatic failover, and what routing controls are available from the dashboard."
+---
+
+When you send a request to Flatkey, it authenticates your API key, validates your balance, then forwards the request to the official vendor API for the model you specified. The response flows directly back to your client. Flatkey acts as a transparent proxy — model outputs are never modified or stored.
+
+## Request lifecycle
+
+```
+Your app  →  https://router.flatkey.ai/v1  →  Official vendor API  →  Your app
+```
+
+1. **Authentication**: Flatkey verifies your API key.
+2. **Balance check**: The estimated cost is reserved from your prepaid balance.
+3. **Provider routing**: The request is forwarded to the vendor (OpenAI, Anthropic, Google, etc.).
+4. **Response passthrough**: The vendor's response is returned unchanged to your client.
+5. **Billing settlement**: Token counts are confirmed and the exact cost is deducted.
+
+## Automatic failover
+
+Flatkey monitors the health of upstream provider APIs in real time. If a provider endpoint returns errors or elevated latency, Flatkey can automatically retry on a healthy alternative — without any changes to your code.
+
+<Note>
+  Failover operates at the infrastructure level. You do not need to configure anything to benefit from it. Your 99.9% success rate guarantee is backed by this mechanism.
+</Note>
+
+## Base URL
+
+All requests go to a single base URL:
+
+```
+https://router.flatkey.ai/v1
+```
+
+This single endpoint handles all supported API families:
+
+| Endpoint | Description |
+|---|---|
+| `/v1/chat/completions` | Chat and text generation (OpenAI-compatible) |
+| `/v1/responses` | OpenAI Responses API |
+| `/v1/embeddings` | Text embeddings |
+| `/v1/images/generations` | Image generation |
+| `/v1/models` | List available models |
+
+## Groups and quotas
+
+From the console you can create **Groups** to organize API keys and set routing controls:
+
+- **Model access policies**: Restrict which models a key or group can call
+- **Spend quotas**: Set a monthly or per-request spend cap
+- **Routing rules**: Prefer specific providers or model versions
+
+This is useful for teams that want to limit developers to cheaper models in staging, or enforce a budget for a specific application.
+
+## Latency considerations
+
+Routing through Flatkey adds minimal overhead — typically under 50ms — compared to calling providers directly. For latency-sensitive applications, choose models with low average latency in the [Model Health](/reference/model-health) dashboard.
+
+## Streaming
+
+Flatkey fully supports streaming for all chat and text generation models:
+
+```python python
+stream = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Write a short story."}],
+    stream=True,
+)
+
+for chunk in stream:
+    print(chunk.choices[0].delta.content or "", end="", flush=True)
+```
+
+Streaming works for all OpenAI-compatible models. Check individual model documentation for Anthropic or Gemini streaming specifics.
+
+## Error handling
+
+Flatkey preserves the error format returned by the upstream vendor. If a provider returns a `4xx` or `5xx` error, you receive it with the same structure as the OpenAI error schema so existing error-handling code continues to work.
+
+Common errors and what to do:
+
+| HTTP status | Meaning | Action |
+|---|---|---|
+| `401 Unauthorized` | Invalid or missing API key | Check that your key starts with `sk-fk-` and is set correctly in the `Authorization` header |
+| `402 Payment Required` | Insufficient balance | Top up your balance at [console.flatkey.ai](https://console.flatkey.ai) |
+| `429 Too Many Requests` | Rate limit exceeded | Back off and retry; consider spreading load across multiple keys |
+| `503 Service Unavailable` | Provider outage | Flatkey automatic failover handles most cases; retry if the error persists |
+
+<Note>
+  Errors from Flatkey itself (authentication, balance) are returned before the request reaches the upstream provider and do not consume any balance.
+</Note>

@@ -1,0 +1,54 @@
+---
+title: "Create and Manage Your Flatkey API Keys in the Console"
+sidebarTitle: "API Keys"
+description: "Learn how to create, name, and revoke Flatkey API keys in the console. Manage multiple keys per environment and keep your integrations secure."
+---
+
+Your Flatkey API key authenticates every request to `https://router.flatkey.ai/v1`. You create and manage keys from the **Keys** section of the console. You can create multiple keys — one per environment, application, or team member — and revoke any key instantly if it is compromised.
+
+## Creating a key
+
+<Steps>
+  <Step title="Open the Keys page">
+    Log in to [console.flatkey.ai](https://console.flatkey.ai) and click **Keys** in the left sidebar.
+  </Step>
+  <Step title="Click Create Key">
+    Enter a descriptive name for the key. Choose something meaningful like `production-api`, `staging-test`, or `john-dev`. The name is only visible to you.
+  </Step>
+  <Step title="Copy and store the secret">
+    The full key (starting with `sk-fk-`) is shown **only once**. Copy it immediately and store it in a secrets manager, password manager, or environment variable. You cannot retrieve it again after closing the dialog.
+  </Step>
+</Steps>
+
+<Warning>
+  If you lose an API key, you must create a new one. There is no way to view the secret again after creation. The old key will continue to work until you revoke it.
+</Warning>
+
+## Best practices
+
+- **One key per environment**: Use separate keys for development, staging, and production. If a key leaks, you can revoke just that environment without affecting others.
+- **Descriptive names**: Include the environment and purpose (e.g., `prod-customer-chatbot`, `dev-local`).
+- **Use environment variables**: Never hardcode keys in source code. Use `FLATKEY_API_KEY` as the variable name.
+- **Rotate regularly**: Revoke and replace keys on a regular schedule, especially for production workloads.
+
+## Viewing your keys
+
+The **Keys** page lists all your active keys with:
+- Key name
+- Creation date
+- Last-used timestamp
+- Masked key prefix (e.g., `sk-fk-****abcd`)
+
+You cannot see the full key value after creation — only the prefix.
+
+## Revoking a key
+
+To revoke a key, click the **Delete** (trash) icon next to it on the Keys page. Revocation is immediate — any request using that key will immediately receive a `401 Unauthorized` response. There is no soft-delete or grace period.
+
+<Tip>
+  Before revoking a key used in production, deploy the replacement key to your application first. Revoking the old key before your new key is live will cause downtime.
+</Tip>
+
+## Key permissions
+
+All keys share the same account balance and can access all models by default. If you need to restrict a key to specific models or set a spend quota, use **Groups** in the console to apply routing and access policies.

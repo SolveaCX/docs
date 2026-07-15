@@ -1,0 +1,66 @@
+---
+title: "Flatkey Model Health: Live Success Rates and Latency"
+sidebarTitle: "Model Health"
+description: "Flatkey tracks real-time success rates, average latency, and request volume for every supported model. All metrics come from production traffic, not synthetic tests."
+---
+
+Flatkey measures the health of every model based on real production traffic routed through the platform — not synthetic benchmarks. Health metrics are updated daily and reflect the last 30 days of actual requests.
+
+## What health metrics mean
+
+| Metric | Description |
+|---|---|
+| **30-day success rate** | Percentage of requests that completed without error in the last 30 days |
+| **Average latency** | Mean time to full response across all requests in the last 30 days |
+| **30-day volume** | Total number of requests and tokens for the period |
+
+A "success" means the upstream vendor returned a valid completion response. Errors caused by invalid prompts or context-length violations are counted separately.
+
+## Platform-wide stats
+
+Across all models and providers, Flatkey achieves:
+
+- **99.9% average 30-day success rate** — measured on production traffic
+- **Automatic failover** — when a provider endpoint degrades, Flatkey routes to a healthy alternative
+- **Live dashboards** — health data refreshed daily from real traffic
+
+## Top models by usage (recent)
+
+The following models have the highest traffic volume on the Flatkey platform:
+
+| Rank | Model | Monthly tokens | Traffic share |
+|---|---|---|---|
+| 1 | gpt-5.5 | 7.9T | 39.2% |
+| 2 | deepseek-v4-flash | 210B | 1.0% |
+| 3 | claude-sonnet-4-6 | 70B | 0.4% |
+
+This leaderboard updates daily. See the full live ranking at [flatkey.ai/rankings](https://flatkey.ai/rankings).
+
+## How to use health data
+
+When choosing a model for production:
+
+1. **Prefer high success-rate models** for reliability-sensitive workloads.
+2. **Check average latency** for real-time or streaming applications where time-to-first-token matters.
+3. **Monitor your own usage** in the [Usage dashboard](/dashboard/usage) — filter by model to see your success rate.
+
+<Tip>
+  For critical production workloads, choose models with a 30-day success rate above 99.5%. The [Model Directory](https://flatkey.ai/models) shows health data alongside pricing so you can optimize for both cost and reliability.
+</Tip>
+
+## Failover behavior
+
+Flatkey monitors upstream provider health continuously. When a provider returns elevated error rates or latency spikes:
+
+- Requests are automatically retried on a healthy provider endpoint.
+- Your client receives a valid response without needing to implement retry logic.
+- The failover is transparent — you see a successful response, not an error.
+
+This mechanism underpins the 99.9% platform success rate. You benefit from it automatically without any configuration.
+
+## Viewing live health data
+
+Real-time model health, latency rankings, and volume data are available at:
+
+- [flatkey.ai/rankings](https://flatkey.ai/rankings) — full leaderboard with token volume and share
+- [flatkey.ai/models](https://flatkey.ai/models) — per-model health alongside pricing

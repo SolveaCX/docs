@@ -1,0 +1,132 @@
+---
+title: "Image Generation — POST /v1/images/generations"
+sidebarTitle: "Image Generation"
+description: "Generate images from text prompts using POST /v1/images/generations. Supports gpt-image-2 and Gemini image models, returning URLs or base64-encoded image data."
+---
+
+The `/v1/images/generations` endpoint generates images from text prompts. It is compatible with the OpenAI Images API and supports models including `gpt-image-2` and Gemini image generation models available through Flatkey.
+
+## Endpoint
+
+```
+POST https://router.flatkey.ai/v1/images/generations
+```
+
+## Request
+
+### Headers
+
+| Header | Value |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### Body parameters
+
+<ParamField body="model" type="string" required>
+  Image model ID. Example: `"gpt-image-2"`, `"gemini-3-pro-image"`, `"gemini-2.5-flash-image"`.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Text description of the image to generate. More detailed prompts produce better results.
+</ParamField>
+
+<ParamField body="n" type="integer">
+  Number of images to generate. Default: 1. Maximum varies by model.
+</ParamField>
+
+<ParamField body="size" type="string">
+  Image dimensions. Common values: `"256x256"`, `"512x512"`, `"1024x1024"`, `"1792x1024"`, `"1024x1792"`. Support varies by model.
+</ParamField>
+
+<ParamField body="quality" type="string">
+  Image quality setting. Values: `"standard"` or `"hd"`. Default: `"standard"`. Only supported by some models.
+</ParamField>
+
+<ParamField body="response_format" type="string">
+  `"url"` (default) — returns a temporary URL to the image. `"b64_json"` — returns base64-encoded image data.
+</ParamField>
+
+## Example requests
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.images.generate(
+    model="gpt-image-2",
+    prompt="A futuristic city skyline at dusk, neon lights reflecting on wet streets, cyberpunk style",
+    size="1024x1024",
+    n=1,
+)
+
+print(response.data[0].url)
+```
+```javascript node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const response = await client.images.generate({
+  model: "gpt-image-2",
+  prompt: "A futuristic city skyline at dusk, neon lights reflecting on wet streets, cyberpunk style",
+  size: "1024x1024",
+  n: 1,
+});
+
+console.log(response.data[0].url);
+```
+```bash curl
+curl https://router.flatkey.ai/v1/images/generations \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-2",
+    "prompt": "A serene forest clearing with morning mist and sunbeams",
+    "size": "1024x1024",
+    "n": 1
+  }'
+```
+</CodeGroup>
+
+## Response
+
+```json
+{
+  "created": 1710000000,
+  "data": [
+    {
+      "url": "https://cdn.openai.com/...",
+      "revised_prompt": "A futuristic city skyline at dusk..."
+    }
+  ]
+}
+```
+
+### Response fields
+
+<ResponseField name="created" type="integer">
+  Unix timestamp of when the request was fulfilled.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of generated image objects.
+  <Expandable title="image object">
+    <ResponseField name="url" type="string">Temporary URL to the generated image. Download it promptly — URLs expire.</ResponseField>
+    <ResponseField name="b64_json" type="string">Base64-encoded image data (only present when `response_format` is `"b64_json"`).</ResponseField>
+    <ResponseField name="revised_prompt" type="string">The prompt actually sent to the model after any safety revision.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Warning>
+  Image URLs are temporary and expire after a short period. Download and store images you want to keep.
+</Warning>

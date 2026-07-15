@@ -1,0 +1,77 @@
+---
+title: "Flatkey REST API: Endpoints, Auth, and Request Format"
+sidebarTitle: "Overview"
+description: "Flatkey exposes an OpenAI-compatible REST API at https://router.flatkey.ai/v1. All requests require a Bearer token and target JSON over HTTPS."
+---
+
+The Flatkey API is a REST API that is fully compatible with the OpenAI API specification. Every request goes to `https://router.flatkey.ai/v1` — the same base URL for all endpoints, providers, and models. Authentication uses a Bearer token in the `Authorization` header.
+
+## Base URL
+
+```
+https://router.flatkey.ai/v1
+```
+
+## Authentication
+
+All requests must include your Flatkey API key as a Bearer token:
+
+```
+Authorization: Bearer sk-fk-your-api-key
+```
+
+Generate your API key in the [console](https://console.flatkey.ai/keys). See [Authentication](/api-reference/authentication) for full details.
+
+## Request format
+
+- All requests use **HTTPS**
+- Request bodies must be **JSON** (`Content-Type: application/json`)
+- Responses are JSON (or SSE for streaming)
+
+## Available endpoints
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/v1/chat/completions` | POST | Chat and text generation (OpenAI-compatible) |
+| `/v1/responses` | POST | OpenAI Responses API (stateful multi-turn) |
+| `/v1/embeddings` | POST | Text embeddings |
+| `/v1/images/generations` | POST | Image generation |
+| `/v1/models` | GET | List available models |
+
+## OpenAI SDK compatibility
+
+Because the API is OpenAI-compatible, you can use the official OpenAI Python or Node.js SDK with no changes to the request code — just set `base_url`:
+
+<CodeGroup>
+```python python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-fk-your-api-key",
+    base_url="https://router.flatkey.ai/v1",
+)
+```
+```javascript node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: "sk-fk-your-api-key",
+  baseURL: "https://router.flatkey.ai/v1",
+});
+```
+</CodeGroup>
+
+## Versioning
+
+Flatkey uses the same versioning scheme as the OpenAI API. The `/v1` path prefix is stable. When new OpenAI API versions are released, Flatkey adds support while maintaining backward compatibility with `/v1`.
+
+## Rate limits
+
+Rate limits are applied per API key. If you exceed the limit, you receive a `429 Too Many Requests` response. Contact [support@flatkey.ai](mailto:support@flatkey.ai) if you need higher rate limits for production workloads.
+
+## Supported content types
+
+| Content type | Used for |
+|---|---|
+| `application/json` | All request bodies and responses |
+| `text/event-stream` | Streaming responses (when `stream: true`) |

@@ -1,0 +1,125 @@
+---
+title: "Flatkey API Authentication: Keys, Headers, and Errors"
+sidebarTitle: "Authentication"
+description: "Learn how to create Flatkey API keys, pass them in requests with the Authorization header, and handle authentication errors securely."
+---
+
+Flatkey authenticates every API request using an API key passed in the `Authorization` header as a Bearer token. You create and manage your keys in the Flatkey console — there is no OAuth flow or session management required.
+
+## Creating an API key
+
+<Steps>
+  <Step title="Open the Keys page">
+    Log in to [console.flatkey.ai](https://console.flatkey.ai) and click **Keys** in the left sidebar.
+  </Step>
+  <Step title="Click Create Key">
+    Give your key a descriptive name (e.g., `production-app`, `staging`, `personal-testing`). Names are for your reference only.
+  </Step>
+  <Step title="Copy the secret immediately">
+    The full key is shown **only once** at creation. Copy it and store it in a secure location — a password manager, a secrets manager, or an environment variable. If you lose it, you must create a new key.
+  </Step>
+</Steps>
+
+<Warning>
+  Never commit API keys to source control or include them in client-side code. Use environment variables or a secrets manager like AWS Secrets Manager, HashiCorp Vault, or Doppler.
+</Warning>
+
+## Using your API key
+
+Pass your key in the `Authorization` header on every request:
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+### With the OpenAI SDK
+
+The OpenAI Python and Node.js SDKs accept the key via the `api_key` / `apiKey` constructor parameter:
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+```
+```javascript node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+```
+</CodeGroup>
+
+### With the Anthropic SDK
+
+If you use the Anthropic Python SDK, set `base_url` to `https://router.flatkey.ai/v1` and pass your Flatkey key via the `auth_token` constructor parameter:
+
+<CodeGroup>
+```python python
+import os
+import anthropic
+
+client = anthropic.Anthropic(
+    auth_token=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+```
+```javascript node
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+```
+</CodeGroup>
+
+### With curl
+
+```bash
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+```
+
+## Authentication errors
+
+| HTTP status | Error code | Cause | Fix |
+|---|---|---|---|
+| `401` | `invalid_api_key` | Key is missing, malformed, or revoked | Check the key exists and is correctly copied |
+| `401` | `insufficient_balance` | Balance is $0.00 | Top up your balance in the console |
+| `403` | `model_not_allowed` | Key lacks access to the requested model | Check your key's model access settings |
+
+## Managing keys
+
+- **Multiple keys**: You can create as many keys as you like — one per environment (dev, staging, prod), or one per team member.
+- **Revoking keys**: Click the trash icon next to any key in the **Keys** page. Revocation is immediate.
+- **No key expiry**: Keys do not expire automatically. Rotate them regularly as a security best practice.
+
+<Tip>
+  Use one API key per deployment environment. If a key is ever compromised, you can revoke just that one without affecting your other environments.
+</Tip>
+
+## Environment variable setup
+
+The recommended way to pass your key is via an environment variable:
+
+```bash
+export FLATKEY_API_KEY="sk-fk-..."
+```
+
+Or in a `.env` file (ensure `.env` is in `.gitignore`):
+
+```bash .env
+FLATKEY_API_KEY=sk-fk-...
+```

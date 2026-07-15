@@ -1,0 +1,194 @@
+---
+title: "Flatkey API Errors: HTTP Status Codes and Troubleshooting"
+sidebarTitle: "Errors"
+description: "Reference for all Flatkey API HTTP error codes, error response formats, and recommended fixes for 400, 401, 403, 429, 500, and 503 responses."
+---
+
+Flatkey returns standard HTTP status codes alongside a JSON error body that describes what went wrong. Error responses follow the same format as the OpenAI API, so existing error-handling code works without modification.
+
+## Error response format
+
+All errors return a JSON object with an `error` field:
+
+```json
+{
+  "error": {
+    "message": "A human-readable description of the error.",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## HTTP status codes
+
+### 400 Bad Request
+
+The request body is malformed or missing a required field.
+
+```json
+{
+  "error": {
+    "message": "Missing required field: model",
+    "type": "invalid_request_error",
+    "code": "missing_required_field"
+  }
+}
+```
+
+**Common causes:**
+- Missing `model` or `messages` field in chat completions
+- Invalid JSON in the request body
+- `messages` array is empty
+
+---
+
+### 401 Unauthorized
+
+Authentication failed. Either the key is invalid, missing, or the account balance is zero.
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided.",
+    "type": "authentication_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+**Common causes and fixes:**
+
+| `code` value | Cause | Fix |
+|---|---|---|
+| `invalid_api_key` | Key is missing, malformed, or revoked | Check and regenerate your key |
+| `insufficient_balance` | Account balance is $0.00 | Top up at [console.flatkey.ai](https://console.flatkey.ai) |
+
+---
+
+### 403 Forbidden
+
+The API key does not have permission to access the requested model.
+
+```json
+{
+  "error": {
+    "message": "This key does not have access to model claude-opus-4-5.",
+    "type": "permission_error",
+    "code": "model_not_allowed"
+  }
+}
+```
+
+**Fix:** Check model access settings for this key in the [console](https://console.flatkey.ai/keys).
+
+---
+
+### 404 Not Found
+
+The model ID is not recognized by Flatkey.
+
+```json
+{
+  "error": {
+    "message": "Model 'gpt-unknown' not found.",
+    "type": "invalid_request_error",
+    "code": "model_not_found"
+  }
+}
+```
+
+**Fix:** Verify the model ID in the [Model Directory](/reference/model-list). IDs are case-sensitive.
+
+---
+
+### 429 Too Many Requests
+
+Your key has exceeded the rate limit.
+
+```json
+{
+  "error": {
+    "message": "Rate limit exceeded. Please retry after 1 second.",
+    "type": "rate_limit_error",
+    "code": "rate_limit_exceeded"
+  }
+}
+```
+
+**Fix:** Implement exponential backoff and retry. Contact [support@flatkey.ai](mailto:support@flatkey.ai) if you need higher rate limits.
+
+---
+
+### 500 Internal Server Error
+
+An unexpected error occurred while processing your request.
+
+```json
+{
+  "error": {
+    "message": "The model encountered an error processing your request.",
+    "type": "api_error",
+    "code": "internal_error"
+  }
+}
+```
+
+**Fix:** Retry the request. If the error persists, contact [support@flatkey.ai](mailto:support@flatkey.ai).
+
+---
+
+### 503 Service Unavailable
+
+The model provider is temporarily unavailable.
+
+```json
+{
+  "error": {
+    "message": "Upstream provider temporarily unavailable. Please retry.",
+    "type": "service_error",
+    "code": "upstream_unavailable"
+  }
+}
+```
+
+**Fix:** Retry with exponential backoff. The issue typically resolves within seconds. If it persists, contact [support@flatkey.ai](mailto:support@flatkey.ai).
+
+---
+
+## Retry strategy
+
+For `429`, `500`, and `503` errors, implement exponential backoff:
+
+```python python
+import time
+import random
+from openai import OpenAI, RateLimitError, APIStatusError
+
+client = OpenAI(
+    api_key="sk-fk-your-key",
+    base_url="https://router.flatkey.ai/v1",
+)
+
+def call_with_retry(model, messages, max_retries=5):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model=model,
+                messages=messages,
+            )
+        except RateLimitError:
+            wait = (2 ** attempt) + random.uniform(0, 1)
+            time.sleep(wait)
+        except APIStatusError as e:
+            if e.status_code in (500, 503):
+                wait = (2 ** attempt) + random.uniform(0, 1)
+                time.sleep(wait)
+            else:
+                raise
+    raise RuntimeError("Max retries exceeded")
+```
+
+<Note>
+  The OpenAI SDK has built-in retry logic via the `max_retries` parameter. Set `max_retries=3` in the OpenAI client constructor to automatically retry on transient errors.
+</Note>

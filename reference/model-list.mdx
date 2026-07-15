@@ -1,0 +1,84 @@
+---
+title: "Flatkey Model Directory: All 160+ Supported Models"
+sidebarTitle: "Model List"
+description: "Browse all AI models available through Flatkey including GPT, Claude, Gemini, DeepSeek, Qwen, and GLM — with official and after-bonus pricing per million tokens."
+---
+
+Flatkey provides access to 160+ official models across all major AI providers. Prices shown are per 1 million input tokens. The **after-bonus** column reflects effective pricing when you top up at the $200 tier (which includes $100 free bonus credit on top of model discounts).
+
+<Note>
+  Model availability and pricing may change as vendors update their APIs. For the most current list including latency and health data, visit [flatkey.ai/models](https://flatkey.ai/models).
+</Note>
+
+## OpenAI
+
+| Model | Official ($/1M in) | After-bonus ($/1M in) | Best for |
+|---|---|---|---|
+| `gpt-4o` | $2.50 | $1.50 | Complex reasoning, vision, multimodal |
+| `gpt-4o-mini` | $0.15 | $0.09 | Fast, cost-efficient text tasks |
+| `gpt-4.1-mini` | $0.40 | $0.24 | Balanced quality and speed |
+| `gpt-5.5` | $5.00 | $3.00 | Frontier reasoning and generation |
+| `gpt-5.4` | $2.50 | $1.50 | Latest-generation GPT |
+| `gpt-5-mini` | $0.04 | $0.024 | Ultra-low-cost simple tasks |
+| `gpt-image-2` | $6.65 | $3.99 | Image generation |
+
+## Anthropic
+
+| Model | Official ($/1M in) | After-bonus ($/1M in) | Best for |
+|---|---|---|---|
+| `claude-opus-4-5` | $5.00 | $3.00 | Complex writing, research, analysis |
+| `claude-sonnet-4-5` | $3.00 | $1.80 | Balanced quality and speed |
+| `claude-sonnet-4-6` | $3.00 | $1.80 | Latest-generation Sonnet |
+| `claude-sonnet-5` | $2.00 | $1.20 | Latest generation Claude |
+| `claude-haiku-4-5-20251001` | $1.00 | $0.60 | Fast, cost-efficient tasks |
+
+## Google
+
+| Model | Official ($/1M in) | After-bonus ($/1M in) | Best for |
+|---|---|---|---|
+| `gemini-2.5-pro` | $1.125 | $0.675 | Complex reasoning, long context |
+| `gemini-2.5-flash` | $0.09 | $0.054 | Fast, affordable generalist |
+| `gemini-2.5-flash-lite` | $0.09 | $0.054 | Minimal latency, lowest cost |
+| `gemini-3-flash-preview` | $0.07 | $0.042 | Next-gen flash preview |
+| `gemini-embedding-001` | $0.15 | $0.09 | Text embeddings |
+| `gemini-2.5-flash-image` | $0.30 | $0.18 | Image understanding |
+| `gemini-3-pro-image` | $2.00 | $1.20 | High-quality image generation |
+
+## DeepSeek
+
+| Model | Official ($/1M in) | After-bonus ($/1M in) | Best for |
+|---|---|---|---|
+| `deepseek-v3` | $0.40 | $0.24 | Cost-effective general tasks |
+| `deepseek-v3.1` | $0.21 | $0.126 | Updated V3 variant |
+| `deepseek-v4-pro` | $2.40 | $1.44 | Frontier DeepSeek reasoning |
+| `deepseek-v4-flash` | $0.14 | $0.084 | Fast, cheap DeepSeek |
+
+## Qwen
+
+| Model | Official ($/1M in) | After-bonus ($/1M in) | Best for |
+|---|---|---|---|
+| `qwen3.7-max` | $2.50 | $1.50 | Frontier Qwen generation |
+| `qwen3.5-plus` | $0.40 | $0.24 | Balanced quality |
+| `qwen3.5-flash` | $0.10 | $0.06 | Fast, cheap tasks |
+| `qwen3.5-397b-a17b` | $0.43 | $0.258 | Large MoE model |
+
+## Z.ai / GLM
+
+| Model | Official ($/1M in) | After-bonus ($/1M in) | Best for |
+|---|---|---|---|
+| `glm-4.7` | $0.286 | $0.172 | General-purpose GLM |
+| `glm-5-turbo` | $0.72 | $0.432 | High-speed GLM variant |
+| `glm-5.2` | $1.40 | $0.84 | Latest GLM generation |
+
+## Using model IDs
+
+All models use their canonical vendor IDs. Pass the model ID in the `model` field of your request:
+
+```python python
+response = client.chat.completions.create(
+    model="gemini-2.5-flash",  # Google Gemini via Flatkey
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+```
+
+For the complete list including all variants and real-time health data, visit [flatkey.ai/models](https://flatkey.ai/models).

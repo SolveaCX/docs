@@ -1,0 +1,72 @@
+---
+title: "Use Flatkey with the OpenAI Codex CLI Terminal Agent"
+sidebarTitle: "Codex CLI"
+description: "Route OpenAI Codex CLI traffic through Flatkey to access GPT models at up to 50% off official pricing. Set two environment variables to get started."
+---
+
+OpenAI's Codex CLI is an AI coding assistant that runs in your terminal. By setting two environment variables, you can route all Codex CLI requests through Flatkey and pay Flatkey's discounted rates — typically 40%+ savings on GPT model usage.
+
+## Prerequisites
+
+- Codex CLI installed: `npm install -g @openai/codex`
+- A Flatkey account with an API key — [get one here](https://console.flatkey.ai/sign-up)
+
+## Configuration
+
+Set the following environment variables before running Codex CLI:
+
+```bash
+export OPENAI_BASE_URL="https://router.flatkey.ai/v1"
+export OPENAI_API_KEY="sk-fk-your-flatkey-key"
+```
+
+Or add them to your shell profile (`~/.bashrc`, `~/.zshrc`) to make the setting permanent:
+
+```bash ~/.zshrc
+export OPENAI_BASE_URL="https://router.flatkey.ai/v1"
+export OPENAI_API_KEY="sk-fk-your-flatkey-key"
+```
+
+## Running Codex CLI
+
+Once the environment variables are set, use Codex normally:
+
+```bash
+codex "Refactor this function to use async/await"
+```
+
+or in interactive mode:
+
+```bash
+codex
+```
+
+All requests are routed through Flatkey and billed against your prepaid balance at Flatkey's discounted rates.
+
+## Choosing a model
+
+By default, Codex CLI uses a GPT model. You can specify a different model with the `--model` flag:
+
+```bash
+codex --model gpt-4o "Write unit tests for this module"
+codex --model gpt-4o-mini "Add docstrings to this file"  # cheaper for simple tasks
+```
+
+Any GPT model available in the [Model Directory](/reference/model-list) works with Codex CLI through Flatkey.
+
+## Verifying the setup
+
+After running a Codex command, check your [Usage dashboard](https://console.flatkey.ai) — you should see the request logged with the model and token counts. If the request appears but used your old balance, confirm the `OPENAI_BASE_URL` is set in the current shell session.
+
+<Tip>
+  Use the $200 top-up tier for the best effective rate on sustained Codex usage — the stacked bonus brings costs to as low as 50% of official GPT pricing.
+</Tip>
+
+## Troubleshooting
+
+| Issue | Fix |
+|---|---|
+| `Authentication error` | Verify `OPENAI_API_KEY` is set to your Flatkey key (starts with `sk-fk-`) |
+| `Model not found` | Check the model ID in the [Model Directory](/reference/model-list) |
+| `Insufficient balance` | Top up your balance at [console.flatkey.ai](https://console.flatkey.ai) |
+| Requests not appearing in dashboard | Confirm `OPENAI_BASE_URL` is set in the active shell |

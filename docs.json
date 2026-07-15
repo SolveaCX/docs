@@ -1,0 +1,93 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "Flatkey",
+  "theme": "luma",
+  "colors": {
+    "primary": "#ef7025",
+    "light": "#eec9bc",
+    "dark": "#4fa1ab"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/models",
+              "concepts/routing",
+              "concepts/billing"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/openai-sdk",
+              "guides/anthropic-sdk",
+              "guides/codex-cli",
+              "guides/claude-code",
+              "guides/image-generation"
+            ]
+          },
+          {
+            "group": "Dashboard",
+            "pages": [
+              "dashboard/api-keys",
+              "dashboard/usage",
+              "dashboard/top-up"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/model-list",
+              "reference/pricing",
+              "reference/model-health",
+              "reference/faq"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/overview",
+              "api-reference/authentication",
+              "api-reference/errors"
+            ]
+          },
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api-reference/chat-completions",
+              "api-reference/responses",
+              "api-reference/embeddings",
+              "api-reference/image-generation",
+              "api-reference/models"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "primary": {
+      "type": "button",
+      "label": "Console",
+      "href": "https://console.flatkey.ai/dashboard"
+    }
+  }
+}

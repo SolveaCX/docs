@@ -1,0 +1,69 @@
+---
+title: "Monitor Your Flatkey API Usage and Costs in the Dashboard"
+sidebarTitle: "Usage"
+description: "Track every Flatkey API request with token counts, model names, and per-request costs. Filter, search, and export usage logs for billing reconciliation."
+---
+
+The Flatkey **Usage** dashboard gives you full visibility into every API request made with your account. Each log entry shows the model used, input and output token counts, the cost deducted from your balance, and the timestamp. Use this view to understand your spending patterns, debug errors, and reconcile costs.
+
+## Accessing usage logs
+
+<Steps>
+  <Step title="Open the console">
+    Log in to [console.flatkey.ai](https://console.flatkey.ai) and click **Usage** in the left sidebar.
+  </Step>
+  <Step title="Set a date range">
+    Use the date picker at the top to filter logs by day, week, month, or a custom range. The default view shows the last 7 days.
+  </Step>
+  <Step title="Filter by model or key">
+    Use the **Model** and **API Key** dropdowns to focus on a specific model or key. This is useful for comparing costs between models or auditing a specific integration.
+  </Step>
+</Steps>
+
+## What each log entry shows
+
+| Field | Description |
+|---|---|
+| **Timestamp** | When the request was received by Flatkey |
+| **Model** | The model ID used (e.g., `gpt-4o-mini`, `claude-sonnet-4-5`) |
+| **Input tokens** | Number of tokens in the prompt |
+| **Output tokens** | Number of tokens in the completion |
+| **Cost** | Amount deducted from your balance for this request |
+| **API Key** | Which key was used (shown as name + masked prefix) |
+| **Status** | Whether the request succeeded or failed |
+
+## Understanding costs
+
+Each request shows the actual cost charged, which reflects:
+- The model's input and output price (at Flatkey's discounted rate)
+- Your current top-up bonus applied automatically
+
+The sum of all request costs equals the total balance consumed in that period.
+
+## Monitoring your balance
+
+Your current balance is shown at the top of the Usage page and in the **Balance** section. When balance drops below a threshold you set, you will receive an email alert. To configure alerts, go to **Settings → Notifications**.
+
+<Note>
+  Balance is deducted in real time as requests complete. If a request fails on the provider side, the cost may still be partially deducted depending on how many tokens were processed before the failure.
+</Note>
+
+## Exporting logs
+
+To export usage data:
+1. Set your desired date range and filters.
+2. Click **Export** in the top-right corner.
+3. Choose CSV or JSON format.
+4. The file downloads to your browser.
+
+Exported logs contain all fields shown in the dashboard and are suitable for uploading to spreadsheets or finance tooling.
+
+## High-usage alerts
+
+To prevent runaway spend:
+- Set a **monthly spend cap** in **Settings → Billing** — requests are blocked once the cap is reached.
+- Use **Groups** to set per-key or per-application quotas.
+
+<Tip>
+  During development, use a separate key with a spend quota set to a small amount (e.g., $5). This prevents accidental high-cost requests from depleting your production balance.
+</Tip>

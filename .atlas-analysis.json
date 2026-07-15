@@ -1,0 +1,105 @@
+{
+  "projectType": "api-service",
+  "projectName": "Flatkey",
+  "projectDescription": "Flatkey is an AI API gateway that provides access to 160+ official models from OpenAI, Anthropic, Google, DeepSeek, and more through a single OpenAI-compatible API key at up to 50% off official pricing.",
+  "theme": "luma",
+  "primaryColor": "#ef7025",
+  "lightColor": "#eec9bc",
+  "darkColor": "#4fa1ab",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/models",
+              "concepts/routing",
+              "concepts/billing"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/openai-sdk",
+              "guides/anthropic-sdk",
+              "guides/codex-cli",
+              "guides/claude-code",
+              "guides/image-generation"
+            ]
+          },
+          {
+            "group": "Dashboard",
+            "pages": [
+              "dashboard/api-keys",
+              "dashboard/usage",
+              "dashboard/top-up"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/model-list",
+              "reference/pricing",
+              "reference/model-health",
+              "reference/faq"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/overview",
+              "api-reference/authentication",
+              "api-reference/errors"
+            ]
+          },
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api-reference/chat-completions",
+              "api-reference/responses",
+              "api-reference/embeddings",
+              "api-reference/image-generation",
+              "api-reference/models"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Single OpenAI-compatible API key for 160+ models",
+    "60–90% of official model pricing with top-up bonus credits",
+    "Automatic failover and 99.9% success rate SLA",
+    "Live model health dashboard and rankings",
+    "Zero prompt and completion retention (GDPR, SOC 2, ISO 27001)",
+    "Prepaid balance with no surprise billing",
+    "Supports chat, embeddings, image generation, and video endpoints",
+    "Drop-in replacement — just change base_url"
+  ],
+  "publicApiSurface": [
+    "POST https://router.flatkey.ai/v1/chat/completions",
+    "POST https://router.flatkey.ai/v1/responses",
+    "POST https://router.flatkey.ai/v1/embeddings",
+    "POST https://router.flatkey.ai/v1/images/generations",
+    "GET  https://router.flatkey.ai/v1/models",
+    "Authorization: Bearer <FLATKEY_API_KEY>",
+    "OpenAI Python SDK (base_url swap)",
+    "OpenAI Node.js SDK (base_url swap)",
+    "Anthropic SDK (base_url swap)"
+  ]
+}

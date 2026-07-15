@@ -1,0 +1,171 @@
+---
+title: "Embeddings — POST /v1/embeddings"
+sidebarTitle: "Embeddings"
+description: "Generate vector embeddings for text using POST /v1/embeddings. Supports batch input and multiple embedding models for semantic search, clustering, and RAG."
+---
+
+The `/v1/embeddings` endpoint generates vector embeddings for text input. Embeddings represent the semantic meaning of text as a high-dimensional float array, enabling similarity search, clustering, and retrieval-augmented generation (RAG). The endpoint is compatible with the OpenAI Embeddings API.
+
+## Endpoint
+
+```
+POST https://router.flatkey.ai/v1/embeddings
+```
+
+## Supported embedding models
+
+| Model | Dimensions | Provider |
+|---|---|---|
+| `gemini-embedding-001` | 3072 | Google |
+| `text-embedding-3-small` | 1536 | OpenAI |
+| `text-embedding-3-large` | 3072 | OpenAI |
+
+See the [Model Directory](/reference/model-list) for current availability and pricing.
+
+## Request
+
+### Headers
+
+| Header | Value |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### Body parameters
+
+<ParamField body="model" type="string" required>
+  Embedding model ID. Example: `"gemini-embedding-001"`, `"text-embedding-3-small"`.
+</ParamField>
+
+<ParamField body="input" type="string | array" required>
+  Text to embed. Can be a single string or an array of strings for batch embedding.
+</ParamField>
+
+<ParamField body="encoding_format" type="string">
+  `"float"` (default) returns a float array. `"base64"` returns a base64-encoded string.
+</ParamField>
+
+<ParamField body="dimensions" type="integer">
+  Number of dimensions for the output embedding. Not supported by all models.
+</ParamField>
+
+## Example requests
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+# Single text
+response = client.embeddings.create(
+    model="gemini-embedding-001",
+    input="The quick brown fox jumps over the lazy dog",
+)
+
+embedding = response.data[0].embedding
+print(f"Embedding dimensions: {len(embedding)}")
+print(f"First 5 values: {embedding[:5]}")
+```
+```python python batch
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+# Batch embedding
+texts = [
+    "What is machine learning?",
+    "How does neural network training work?",
+    "Explain gradient descent",
+]
+
+response = client.embeddings.create(
+    model="gemini-embedding-001",
+    input=texts,
+)
+
+for i, item in enumerate(response.data):
+    print(f"{texts[i]}: {len(item.embedding)} dimensions")
+```
+```bash curl
+curl https://router.flatkey.ai/v1/embeddings \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini-embedding-001",
+    "input": "The quick brown fox jumps over the lazy dog"
+  }'
+```
+</CodeGroup>
+
+## Response
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "object": "embedding",
+      "index": 0,
+      "embedding": [0.0023064255, -0.009327292, ...]
+    }
+  ],
+  "model": "gemini-embedding-001",
+  "usage": {
+    "prompt_tokens": 9,
+    "total_tokens": 9
+  }
+}
+```
+
+### Response fields
+
+<ResponseField name="data" type="array">
+  Array of embedding objects, one per input string.
+  <Expandable title="embedding object">
+    <ResponseField name="index" type="integer">Position in the input array.</ResponseField>
+    <ResponseField name="embedding" type="array">Float array of the embedding vector.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage.prompt_tokens" type="integer">
+  Number of tokens processed.
+</ResponseField>
+
+## Cosine similarity example
+
+```python python
+import os
+import numpy as np
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+def embed(text):
+    return client.embeddings.create(
+        model="gemini-embedding-001",
+        input=text,
+    ).data[0].embedding
+
+def cosine_similarity(a, b):
+    a, b = np.array(a), np.array(b)
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+q = embed("capital city of France")
+doc1 = embed("Paris is the capital and most populous city of France.")
+doc2 = embed("The Eiffel Tower is a famous landmark.")
+
+print(cosine_similarity(q, doc1))  # higher — more relevant
+print(cosine_similarity(q, doc2))  # lower
+```

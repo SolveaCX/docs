@@ -1,0 +1,89 @@
+---
+title: "Flatkey FAQ: Common Questions Answered"
+sidebarTitle: "FAQ"
+description: "Answers to the most common questions about Flatkey — including model compatibility, billing, privacy, API key management, and enterprise options."
+---
+
+This page covers the most common questions about using Flatkey. If you have a question not answered here, contact [support@flatkey.ai](mailto:support@flatkey.ai) or use the live chat in the console.
+
+## Getting started
+
+<Accordion title="What is Flatkey?">
+  Flatkey is an AI API gateway that provides access to 160+ official AI models from OpenAI, Anthropic, Google, DeepSeek, Qwen, GLM, and more — all through a single OpenAI-compatible API key. It is a drop-in replacement for any OpenAI-compatible client: change `base_url` to `https://router.flatkey.ai/v1`, use your Flatkey key, and route to any model at discounted rates.
+</Accordion>
+
+<Accordion title="Do I need a separate API key for each provider?">
+  No. One Flatkey API key routes to all 160+ models across all providers. You do not need separate OpenAI, Anthropic, or Google API keys.
+</Accordion>
+
+<Accordion title="Are the models official versions from the original providers?">
+  Yes. Flatkey routes your requests to the official vendor APIs — OpenAI, Anthropic, Google, DeepSeek, etc. The model outputs come directly from the original provider infrastructure. Flatkey does not host, fine-tune, or modify any models.
+</Accordion>
+
+## Billing and pricing
+
+<Accordion title="How does billing work?">
+  Flatkey is prepaid. You top up your balance ($10, $20, $200, or custom enterprise) and the cost of each API request is deducted from your balance in real time. There are no subscriptions or recurring charges.
+</Accordion>
+
+<Accordion title="How does the top-up bonus work?">
+  Every top-up earns bonus credit: +$3 on $10, +$8 on $20, +$100 on $200. Bonus credit is added to your balance instantly, never expires, and spends just like paid credit. It is not a discount code — it is real credit that appears in your balance.
+</Accordion>
+
+<Accordion title="Can I top up multiple times?">
+  Yes. You can top up as many times as you like, and you earn bonus credit on each top-up. Three $200 top-ups earn $300 in bonus credit total.
+</Accordion>
+
+<Accordion title="What happens if my balance hits zero?">
+  API requests return a `401 Insufficient Balance` error. There are no automatic charges. Top up your balance to resume. Enable low-balance alerts in **Settings → Notifications** to avoid interruptions.
+</Accordion>
+
+## Compatibility and models
+
+<Accordion title="Is Flatkey compatible with the official OpenAI SDK?">
+  Yes. The OpenAI Python and Node.js SDKs support a `base_url` parameter. Set it to `https://router.flatkey.ai/v1` and use your Flatkey API key. No other changes are needed.
+</Accordion>
+
+<Accordion title="Can I use Flatkey with the Anthropic SDK?">
+  Yes. Set `base_url` to `https://router.flatkey.ai` (no `/v1`) in the Anthropic SDK constructor and use your Flatkey API key. See the [Anthropic SDK guide](/guides/anthropic-sdk) for details.
+</Accordion>
+
+<Accordion title="Which model names should I use?">
+  Use the same canonical model IDs you would use with the original provider — for example `gpt-4o`, `claude-sonnet-4-5`, `gemini-2.5-flash`. The full list is in the [Model Directory](/reference/model-list).
+</Accordion>
+
+<Accordion title="Does Flatkey support streaming?">
+  Yes. Set `stream: true` in your request. Flatkey returns server-sent events (SSE) in the same format as the OpenAI API. Streaming works for all chat and text generation models.
+</Accordion>
+
+## Privacy and security
+
+<Accordion title="Does Flatkey store my prompts or completions?">
+  No. Flatkey has zero retention of request content — prompts and completions are never written to disk or stored. Only metadata (model, token counts, timestamps, cost) is recorded for billing and analytics.
+</Accordion>
+
+<Accordion title="What compliance certifications does Flatkey have?">
+  Flatkey operates under GDPR-compliant infrastructure and maintains controls aligned with SOC 2 and ISO 27001 standards.
+</Accordion>
+
+<Accordion title="What should I do if my API key is compromised?">
+  Revoke the key immediately from the **Keys** page in the console. Revocation is instant. Then create a new key and update your application. See [API Key Management](/dashboard/api-keys) for details.
+</Accordion>
+
+## Enterprise
+
+<Accordion title="Does Flatkey offer invoice-based billing?">
+  Yes. Enterprise accounts support invoice billing, custom monthly usage, team procurement, and dedicated routing discounts. Contact [support@flatkey.ai](mailto:support@flatkey.ai) to discuss terms.
+</Accordion>
+
+<Accordion title="Can I restrict which models a key can access?">
+  Yes. Use **Groups** in the console to set model access policies and spend quotas on individual keys or groups of keys.
+</Accordion>
+
+## Support
+
+<Accordion title="How do I contact support?">
+  - **Email**: [support@flatkey.ai](mailto:support@flatkey.ai)
+  - **Live chat**: Available at [flatkey.ai](https://flatkey.ai) and in the console
+  - **X (Twitter)**: [@flatkey101](https://x.com/flatkey101)
+</Accordion>

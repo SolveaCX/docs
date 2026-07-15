@@ -1,0 +1,60 @@
+---
+title: "Top Up Your Flatkey Account Balance and Earn Bonus Credit"
+sidebarTitle: "Top Up"
+description: "Add prepaid credit to your Flatkey account. Learn about top-up tiers, bonus credits, and how to manage your balance for uninterrupted API access."
+---
+
+Flatkey uses a prepaid balance model — you add credit to your account and it is consumed as your API requests use models. There are no subscriptions or recurring charges. Every top-up earns bonus credit, credited instantly to your balance.
+
+## Top-up tiers
+
+| Top-up | Bonus | Total credit | Effective saving |
+|---|---|---|---|
+| $10 | +$3 | $13 | 30% |
+| $20 | +$8 | $28 | 40% |
+| $200 | +$100 | $300 | **50% (best value)** |
+
+<Tip>
+  The $200 top-up tier offers the best effective rate. Combined with model discounts (60–90% of official list), this brings costs to as low as 50% of official provider pricing.
+</Tip>
+
+## Adding a top-up
+
+<Steps>
+  <Step title="Open Balance">
+    In the [console](https://console.flatkey.ai), click **Balance** in the left sidebar.
+  </Step>
+  <Step title="Select a top-up amount">
+    Choose $10, $20, or $200. The bonus credit is displayed before you confirm.
+  </Step>
+  <Step title="Complete payment">
+    Enter your card details and confirm. Payment is processed via Stripe. The credit (including bonus) is added to your balance immediately.
+  </Step>
+</Steps>
+
+## How bonus credit works
+
+- **Instant credit**: Bonus credit appears in your balance as soon as payment is processed.
+- **Never expires**: Bonus credit and paid credit both remain in your balance indefinitely — there is no expiry date.
+- **Spends like normal credit**: Bonus credit is consumed the same way as paid credit. There is no restriction on which models it can be used for.
+- **Stacks every time**: Each top-up earns a new bonus. Top up $200 three times and earn $300 in bonus credit total.
+
+## Balance management
+
+Your balance is displayed in the **Balance** section of the console. You can:
+
+- View the breakdown between paid credit and bonus credit
+- See the history of all top-up transactions with dates and amounts
+- Enable low-balance email alerts from **Settings → Notifications**
+
+## What happens when balance runs out
+
+If your balance drops to $0.00, API requests will return a `401 Insufficient Balance` error until you top up. There are no automatic charges or overdraft — your requests simply stop until you add more credit.
+
+<Warning>
+  For production workloads, set up a low-balance alert to ensure you top up before the balance is fully consumed. Go to **Settings → Notifications** to configure the threshold.
+</Warning>
+
+## Enterprise billing
+
+For teams that need invoice-based billing, custom monthly volumes, or procurement support, contact [support@flatkey.ai](mailto:support@flatkey.ai) to discuss enterprise terms. Enterprise accounts do not require prepaid top-ups.

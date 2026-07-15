@@ -1,0 +1,118 @@
+---
+title: "Generate Images via Flatkey Using gpt-image-2 and More"
+sidebarTitle: "Image Generation"
+description: "Use Flatkey's image generation endpoint with gpt-image-2 and other image models. Compatible with the OpenAI images SDK and direct REST calls."
+---
+
+Generate images from text prompts at up to 50% off official pricing using Flatkey's `/v1/images/generations` endpoint. It is fully compatible with the OpenAI images API, so you can use `gpt-image-2` and other supported models with the OpenAI SDK or a direct REST call.
+
+## Supported image models
+
+| Model | Official price | After-bonus price |
+|---|---|---|
+| `gpt-image-2` | $6.65 / 1M tokens | ~$3.99 / 1M tokens |
+| `gemini-3-pro-image` | $2.00 / 1M tokens | ~$1.20 / 1M tokens |
+| `gemini-2.5-flash-image` | $0.30 / 1M tokens | ~$0.18 / 1M tokens |
+
+See the [Model Directory](/reference/model-list) for the full image model list.
+
+## Quick start with the OpenAI SDK
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.images.generate(
+    model="gpt-image-2",
+    prompt="A serene mountain lake at sunset, photorealistic",
+    size="1024x1024",
+    n=1,
+)
+
+print(response.data[0].url)
+```
+```javascript node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const response = await client.images.generate({
+  model: "gpt-image-2",
+  prompt: "A serene mountain lake at sunset, photorealistic",
+  size: "1024x1024",
+  n: 1,
+});
+
+console.log(response.data[0].url);
+```
+</CodeGroup>
+
+## With curl
+
+```bash
+curl https://router.flatkey.ai/v1/images/generations \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-2",
+    "prompt": "A futuristic cityscape at night, neon lights, wide angle",
+    "size": "1024x1024",
+    "n": 1
+  }'
+```
+
+## Parameters
+
+<ParamField body="model" type="string" required>
+  The image model to use. E.g. `gpt-image-2`, `gemini-3-pro-image`.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  A text description of the image to generate. More detailed prompts produce better results.
+</ParamField>
+
+<ParamField body="n" type="integer">
+  Number of images to generate (default: 1). Maximum depends on the model.
+</ParamField>
+
+<ParamField body="size" type="string">
+  Image dimensions. Common values: `"256x256"`, `"512x512"`, `"1024x1024"`, `"1792x1024"`, `"1024x1792"`. Support varies by model.
+</ParamField>
+
+<ParamField body="response_format" type="string">
+  `"url"` (default) returns a temporary URL. `"b64_json"` returns base64-encoded image data.
+</ParamField>
+
+## Response format
+
+```json
+{
+  "created": 1710000000,
+  "data": [
+    {
+      "url": "https://...",
+      "revised_prompt": "A serene mountain lake at sunset..."
+    }
+  ]
+}
+```
+
+<Note>
+  URLs returned from image generation are temporary and expire after a short period. Download and store images you want to keep.
+</Note>
+
+## Writing effective prompts
+
+- Be specific about style: *photorealistic, oil painting, watercolor, 3D render*
+- Include lighting details: *golden hour, studio lighting, dramatic shadows*
+- Specify composition: *close-up, wide angle, bird's eye view, portrait orientation*
+- Add quality modifiers: *highly detailed, 4K, professional photography*

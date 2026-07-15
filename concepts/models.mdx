@@ -1,0 +1,92 @@
+---
+title: "AI Models on Flatkey: 160+ Official Models Explained"
+sidebarTitle: "Models"
+description: "Flatkey provides access to 160+ official AI models across OpenAI, Anthropic, Google, DeepSeek, Qwen, and GLM. Learn how models are organized and priced."
+---
+
+Flatkey gives you access to 160+ official AI models from the world's leading providers. Every model runs on the official vendor infrastructure — Flatkey routes your request, it does not host or fine-tune models itself. You use the exact same model IDs you would use on the provider's own API.
+
+## Supported providers
+
+| Provider | Models available | Representative models |
+|---|---|---|
+| **OpenAI** | 12+ | gpt-4o, gpt-4o-mini, gpt-5, gpt-image-2 |
+| **Anthropic** | 8+ | claude-opus-4, claude-sonnet-4, claude-haiku-4 |
+| **Google** | 21+ | gemini-2.5-pro, gemini-2.5-flash, gemini-flash-latest |
+| **DeepSeek** | 6+ | deepseek-v3, deepseek-v3.1, deepseek-v4-pro, deepseek-v4-flash |
+| **Qwen** | 10+ | qwen3.5-plus, qwen3.7-max, qwen3.5-flash |
+| **Z.ai / GLM** | 3+ | glm-4.7, glm-5-turbo, glm-5.2 |
+
+## Endpoint families
+
+Flatkey supports several endpoint families, each with its own request format:
+
+<CardGroup cols={2}>
+  <Card title="OpenAI (chat completions)" icon="message">
+    POST `/v1/chat/completions` — used by GPT models and most non-Google providers. OpenAI-compatible JSON format.
+  </Card>
+  <Card title="OpenAI (responses)" icon="reply">
+    POST `/v1/responses` — the newer OpenAI Responses API. Supports stateful multi-turn conversations.
+  </Card>
+  <Card title="Gemini" icon="sparkles">
+    Gemini models can also be called via the standard `/v1/chat/completions` endpoint — Flatkey handles the translation automatically.
+  </Card>
+  <Card title="Anthropic" icon="robot">
+    Claude models are accessible via the OpenAI-compatible endpoint. You can also use the native Anthropic SDK with Flatkey.
+  </Card>
+  <Card title="Image Generation" icon="image">
+    POST `/v1/images/generations` — supports `gpt-image-2` and other image models.
+  </Card>
+  <Card title="Embeddings" icon="vector-square">
+    POST `/v1/embeddings` — create text embeddings for semantic search and RAG.
+  </Card>
+</CardGroup>
+
+## Choosing a model
+
+Every model in the [Model Directory](/reference/model-list) shows:
+
+- **Official price**: The per-million-token price the vendor charges
+- **After-bonus price**: The effective price after applying top-up bonus credits
+- **30-day success rate**: Real production traffic data, not synthetic benchmarks
+- **Average latency**: Measured on live requests through Flatkey
+
+For most general-purpose tasks:
+
+- **Cost-sensitive workloads**: `gpt-4o-mini`, `gemini-2.5-flash-lite`, `deepseek-v4-flash`, `qwen3.5-flash`
+- **High-quality generation**: `gpt-4o`, `claude-sonnet-4`, `gemini-2.5-pro`
+- **Reasoning & research**: `deepseek-v3`, `qwen3.7-max`, `claude-opus-4`
+- **Image generation**: `gpt-image-2`, `gemini-3-pro-image`
+- **Embeddings**: `gemini-embedding-001`
+
+## Model IDs
+
+Use the model's canonical ID exactly as listed in the [Model Directory](/reference/model-list). For example:
+
+```python python
+response = client.chat.completions.create(
+    model="claude-sonnet-4-5",  # Anthropic Claude Sonnet
+    messages=[{"role": "user", "content": "Summarize this document."}],
+)
+```
+
+```python python
+response = client.chat.completions.create(
+    model="deepseek-ai/deepseek-r1",  # DeepSeek R1
+    messages=[{"role": "user", "content": "Explain step by step."}],
+)
+```
+
+<Tip>
+  When switching between providers, only the `model` parameter changes. All other request fields (messages, temperature, max_tokens, etc.) follow the same OpenAI-compatible schema.
+</Tip>
+
+## Model health
+
+Flatkey tracks live health for every model based on real production traffic:
+
+- **Success rate**: Percentage of requests that completed successfully in the last 30 days
+- **Average latency**: Time to first token or total response time
+- **Volume**: Total requests and tokens over the period
+
+View real-time health data at [flatkey.ai/rankings](https://flatkey.ai/rankings) or in the [Model Health](/reference/model-health) reference.
