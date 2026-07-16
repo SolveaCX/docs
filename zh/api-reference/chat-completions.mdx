@@ -1,0 +1,178 @@
+---
+title: "对话补全 — POST /v1/chat/completions"
+sidebarTitle: "对话补全"
+description: "向任意受支持模型发送 messages 数组，通过 Flatkey 生成对话和文本补全。响应包含生成文本及 token 用量。"
+---
+
+`/v1/chat/completions` 端点根据消息列表生成文本补全。它是对话、指令遵循和文本生成任务的主要端点。请求格式与 OpenAI Chat Completions API 完全相同，因此任何兼容 OpenAI 的 SDK 都无需修改即可使用。
+
+## 端点
+
+```
+POST https://router.flatkey.ai/v1/chat/completions
+```
+
+## 请求
+
+### 请求头
+
+| 请求头 | 值 |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### 请求体参数
+
+<ParamField body="model" type="string" required>
+  要使用的模型 ID。所有有效值请参阅[模型目录](/zh/reference/model-list)。例如：`"gpt-4o"`、`"claude-sonnet-4-5"`、`"gemini-2.5-flash"`。
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  表示对话的消息对象数组。每个对象都必须包含 `role`（`"system"`、`"user"` 或 `"assistant"`）和 `content`（字符串）。
+</ParamField>
+
+<ParamField body="max_tokens" type="integer">
+  要生成的最大 token 数量。默认值因模型而异。
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  0 到 2 之间的采样温度。值越高，输出越随机。默认值：1。
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  若为 `true`，响应将作为服务器发送事件（SSE）流返回。默认值：`false`。
+</ParamField>
+
+<ParamField body="top_p" type="number">
+  核采样参数，只考虑累计概率质量位于前 `top_p` 的 token。默认值：1。
+</ParamField>
+
+<ParamField body="stop" type="string | array">
+  一个或多个让模型停止生成的序列。可以是字符串或字符串数组。
+</ParamField>
+
+<ParamField body="tools" type="array">
+  用于函数调用的工具定义列表。每个工具必须包含 `type: "function"`，并包含带有 `name`、`description` 和 `parameters` 的 `function` 对象。
+</ParamField>
+
+<ParamField body="tool_choice" type="string | object">
+  控制工具选择：`"none"`、`"auto"`、`"required"`，或指定工具 `{"type": "function", "function": {"name": "..."}}`。
+</ParamField>
+
+## 请求示例
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "What is the speed of light?"},
+    ],
+    max_tokens=256,
+    temperature=0.7,
+)
+
+print(response.choices[0].message.content)
+```
+```bash curl
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant."},
+      {"role": "user", "content": "What is the speed of light?"}
+    ],
+    "max_tokens": 256
+  }'
+```
+</CodeGroup>
+
+## 响应
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1710000000,
+  "model": "gpt-4o",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The speed of light in a vacuum is approximately 299,792,458 meters per second."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 28,
+    "completion_tokens": 22,
+    "total_tokens": 50
+  }
+}
+```
+
+### 响应字段
+
+<ResponseField name="id" type="string">
+  此补全的唯一标识符。
+</ResponseField>
+
+<ResponseField name="choices" type="array">
+  生成的补全选项数组。
+  <Expandable title="选项属性">
+    <ResponseField name="message.content" type="string">
+      生成的文本。
+    </ResponseField>
+    <ResponseField name="message.role" type="string">
+      生成的消息始终为 `"assistant"`。
+    </ResponseField>
+    <ResponseField name="finish_reason" type="string">
+      生成停止的原因：`"stop"`（自然结束）、`"length"`（达到 max_tokens）或 `"tool_calls"`（调用工具）。
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  用于计费的 token 数量。
+  <Expandable title="用量属性">
+    <ResponseField name="prompt_tokens" type="integer">输入 token 数量。</ResponseField>
+    <ResponseField name="completion_tokens" type="integer">输出 token 数量。</ResponseField>
+    <ResponseField name="total_tokens" type="integer">输入和输出 token 数量之和。</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## 流式传输
+
+设置 `stream: true` 以接收 SSE 数据块流。每个数据块结构相同，但使用部分 `delta` 内容，而不是完整消息：
+
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+stream = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Tell me a story."}],
+    stream=True,
+)
+
+for chunk in stream:
+    print(chunk.choices[0].delta.content or "", end="", flush=True)
+```

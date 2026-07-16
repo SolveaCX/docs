@@ -1,0 +1,195 @@
+---
+title: "Flatkey API 错误：HTTP 状态码与故障排查"
+sidebarTitle: "错误"
+description: "Flatkey API HTTP 错误码、错误响应格式，以及 400、401、403、429、500 和 503 响应的建议解决方法。"
+---
+
+Flatkey 会返回标准 HTTP 状态码，并在 JSON 错误响应体中说明问题。错误响应与 OpenAI API 的格式相同，因此现有错误处理代码无需修改即可工作。
+
+## 错误响应格式
+
+所有错误都会返回包含 `error` 字段的 JSON 对象：
+
+```json
+{
+  "error": {
+    "message": "A human-readable description of the error.",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## HTTP 状态码
+
+### 400 Bad Request
+
+请求体格式错误或缺少必填字段。
+
+```json
+{
+  "error": {
+    "message": "Missing required field: model",
+    "type": "invalid_request_error",
+    "code": "missing_required_field"
+  }
+}
+```
+
+**常见原因：**
+
+- 对话补全请求中缺少 `model` 或 `messages` 字段
+- 请求体中的 JSON 无效
+- `messages` 数组为空
+
+---
+
+### 401 Unauthorized
+
+认证失败。密钥无效、缺失或账号余额为零。
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided.",
+    "type": "authentication_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+**常见原因与解决方法：**
+
+| `code` 值 | 原因 | 解决方法 |
+|---|---|---|
+| `invalid_api_key` | 密钥缺失、格式错误或已撤销 | 检查并重新生成密钥 |
+| `insufficient_balance` | 账号余额为 $0.00 | 前往 [console.flatkey.ai](https://console.flatkey.ai?lng=zh)充值 |
+
+---
+
+### 403 Forbidden
+
+API 密钥无权访问请求的模型。
+
+```json
+{
+  "error": {
+    "message": "This key does not have access to model claude-opus-4-5.",
+    "type": "permission_error",
+    "code": "model_not_allowed"
+  }
+}
+```
+
+**解决方法：**在[控制台](https://console.flatkey.ai/keys?lng=zh)中检查此密钥的模型访问设置。
+
+---
+
+### 404 Not Found
+
+Flatkey 无法识别该模型 ID。
+
+```json
+{
+  "error": {
+    "message": "Model 'gpt-unknown' not found.",
+    "type": "invalid_request_error",
+    "code": "model_not_found"
+  }
+}
+```
+
+**解决方法：**在[模型目录](/zh/reference/model-list)中核对模型 ID。ID 区分大小写。
+
+---
+
+### 429 Too Many Requests
+
+你的密钥已超出速率限制。
+
+```json
+{
+  "error": {
+    "message": "Rate limit exceeded. Please retry after 1 second.",
+    "type": "rate_limit_error",
+    "code": "rate_limit_exceeded"
+  }
+}
+```
+
+**解决方法：**实现指数退避并重试。如需更高的速率限制，请联系 [support@flatkey.ai](mailto:support@flatkey.ai)。
+
+---
+
+### 500 Internal Server Error
+
+处理请求时发生了意外错误。
+
+```json
+{
+  "error": {
+    "message": "The model encountered an error processing your request.",
+    "type": "api_error",
+    "code": "internal_error"
+  }
+}
+```
+
+**解决方法：**重试请求。如果错误持续存在，请联系 [support@flatkey.ai](mailto:support@flatkey.ai)。
+
+---
+
+### 503 Service Unavailable
+
+模型供应商暂时不可用。
+
+```json
+{
+  "error": {
+    "message": "Upstream provider temporarily unavailable. Please retry.",
+    "type": "service_error",
+    "code": "upstream_unavailable"
+  }
+}
+```
+
+**解决方法：**使用指数退避重试。问题通常会在数秒内恢复。如果持续存在，请联系 [support@flatkey.ai](mailto:support@flatkey.ai)。
+
+---
+
+## 重试策略
+
+遇到 `429`、`500` 和 `503` 错误时，请实现指数退避：
+
+```python python
+import time
+import random
+from openai import OpenAI, RateLimitError, APIStatusError
+
+client = OpenAI(
+    api_key="sk-fk-your-key",
+    base_url="https://router.flatkey.ai/v1",
+)
+
+def call_with_retry(model, messages, max_retries=5):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model=model,
+                messages=messages,
+            )
+        except RateLimitError:
+            wait = (2 ** attempt) + random.uniform(0, 1)
+            time.sleep(wait)
+        except APIStatusError as e:
+            if e.status_code in (500, 503):
+                wait = (2 ** attempt) + random.uniform(0, 1)
+                time.sleep(wait)
+            else:
+                raise
+    raise RuntimeError("Max retries exceeded")
+```
+
+<Note>
+  OpenAI SDK 通过 `max_retries` 参数提供内置重试逻辑。在 OpenAI 客户端构造函数中设置 `max_retries=3`，即可自动重试瞬时错误。
+</Note>

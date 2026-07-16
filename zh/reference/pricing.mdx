@@ -1,0 +1,79 @@
+---
+title: "Flatkey 价格：Token 费用与充值赠送"
+sidebarTitle: "价格"
+description: "Flatkey 按 Token 计费，模型价格为官方价的 60–90%。充值获得赠送额度后，实际成本最低可至官方价的 5 折。"
+---
+
+Flatkey 按 Token 计费，模型价格为官方标价的 60–90%。在模型折扣之外，每次充值还会获得赠送额度——将 $200 充值赠送与模型折扣叠加，实际成本最低可至官方价的 5 折。没有订阅、月费或按席位收费。
+
+## 充值方案
+
+<CardGroup cols={2}>
+  <Card title="$10 充值" icon="coins">
+    **支付 $10 → 获得 $13**
+
+    赠送 $3 额度，适合测试和探索。
+  </Card>
+  <Card title="$20 充值" icon="coins">
+    **支付 $20 → 获得 $28**
+
+    赠送 $8 额度，适合开发工作负载。
+  </Card>
+  <Card title="$200 充值" icon="star">
+    **支付 $200 → 获得 $300**
+
+    赠送 $100 额度，生产使用最划算。
+  </Card>
+  <Card title="企业版" icon="building">
+    **自定义价格**
+
+    账单结算、自定义路由折扣和采购支持。[联系销售](mailto:support@flatkey.ai)。
+  </Card>
+</CardGroup>
+
+## 折扣如何叠加
+
+Flatkey 的价格分为两层：
+
+1. **模型折扣**：每个模型价格为官方厂商价格的 60–90%。
+2. **充值赠送**：每充值 $200 获赠 $100，相当于进一步降低约 33% 成本。
+
+两者叠加后，每 Token 实际成本最低可至 **官方价格的 50%**。
+
+### 示例：gpt-4o-mini
+
+| 价格来源 | 每 100 万输入 Token |
+|---|---|
+| OpenAI 官方 | $0.150 |
+| Flatkey 标价（优惠 40%） | $0.090 |
+| Flatkey 叠加 $200 赠送后（官方价 5 折） | $0.060 |
+
+## 价格常见问题
+
+<Accordion title="是否有月度订阅？">
+  没有。Flatkey 自助方案全部采用预付费充值，只为实际用量付费，没有周期性收费。
+</Accordion>
+
+<Accordion title="赠送额度会过期吗？">
+  不会。赠送额度和付费额度都会无限期保留，没有过期时间。
+</Accordion>
+
+<Accordion title="所有模型都能使用赠送额度吗？">
+  可以。赠送额度与付费额度的使用方式完全相同，可以用于任何端点的任何模型，包括聊天、Embeddings 和图像生成。
+</Accordion>
+
+<Accordion title="每次请求如何计算费用？">
+  费用 =（输入 Token × 输入价格）+（输出 Token × 输出价格）。价格按每百万 Token 计算，请求完成后扣除准确费用。每次请求的费用可在使用日志中查看。
+</Accordion>
+
+<Accordion title="余额归零后会怎样？">
+  API 请求会返回 `401 Insufficient Balance` 错误。充值余额后即可恢复，不会自动扣款或透支。
+</Accordion>
+
+<Accordion title="什么时候应该选择企业版？">
+  如果需要更大的月度用量、账单结算、采购流程、自定义路由折扣或团队级访问控制，请选择企业版。
+</Accordion>
+
+## 查看各模型价格
+
+可在[模型目录](/zh/reference/model-list)或 [flatkey.ai/models](https://flatkey.ai/zh/models) 查看全部模型的当前价格。价格会随厂商费率变化而更新。

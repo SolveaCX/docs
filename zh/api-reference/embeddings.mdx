@@ -1,0 +1,171 @@
+---
+title: "嵌入 — POST /v1/embeddings"
+sidebarTitle: "嵌入"
+description: "使用 POST /v1/embeddings 为文本生成向量嵌入。支持批量输入和多种嵌入模型，可用于语义搜索、聚类和 RAG。"
+---
+
+`/v1/embeddings` 端点为文本输入生成向量嵌入。嵌入以高维浮点数组表示文本的语义，可用于相似度搜索、聚类和检索增强生成（RAG）。此端点兼容 OpenAI Embeddings API。
+
+## 端点
+
+```
+POST https://router.flatkey.ai/v1/embeddings
+```
+
+## 支持的嵌入模型
+
+| 模型 | 维度 | 供应商 |
+|---|---|---|
+| `gemini-embedding-001` | 3072 | Google |
+| `text-embedding-3-small` | 1536 | OpenAI |
+| `text-embedding-3-large` | 3072 | OpenAI |
+
+当前可用情况和价格请参阅[模型目录](/zh/reference/model-list)。
+
+## 请求
+
+### 请求头
+
+| 请求头 | 值 |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### 请求体参数
+
+<ParamField body="model" type="string" required>
+  嵌入模型 ID。例如：`"gemini-embedding-001"`、`"text-embedding-3-small"`。
+</ParamField>
+
+<ParamField body="input" type="string | array" required>
+  要进行嵌入的文本。可以是单个字符串，也可以是用于批量嵌入的字符串数组。
+</ParamField>
+
+<ParamField body="encoding_format" type="string">
+  `"float"`（默认）返回浮点数组；`"base64"` 返回 Base64 编码的字符串。
+</ParamField>
+
+<ParamField body="dimensions" type="integer">
+  输出嵌入的维度数。并非所有模型都支持此参数。
+</ParamField>
+
+## 请求示例
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+# Single text
+response = client.embeddings.create(
+    model="gemini-embedding-001",
+    input="The quick brown fox jumps over the lazy dog",
+)
+
+embedding = response.data[0].embedding
+print(f"Embedding dimensions: {len(embedding)}")
+print(f"First 5 values: {embedding[:5]}")
+```
+```python python batch
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+# Batch embedding
+texts = [
+    "What is machine learning?",
+    "How does neural network training work?",
+    "Explain gradient descent",
+]
+
+response = client.embeddings.create(
+    model="gemini-embedding-001",
+    input=texts,
+)
+
+for i, item in enumerate(response.data):
+    print(f"{texts[i]}: {len(item.embedding)} dimensions")
+```
+```bash curl
+curl https://router.flatkey.ai/v1/embeddings \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini-embedding-001",
+    "input": "The quick brown fox jumps over the lazy dog"
+  }'
+```
+</CodeGroup>
+
+## 响应
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "object": "embedding",
+      "index": 0,
+      "embedding": [0.0023064255, -0.009327292, ...]
+    }
+  ],
+  "model": "gemini-embedding-001",
+  "usage": {
+    "prompt_tokens": 9,
+    "total_tokens": 9
+  }
+}
+```
+
+### 响应字段
+
+<ResponseField name="data" type="array">
+  嵌入对象数组，每个输入字符串对应一个对象。
+  <Expandable title="嵌入对象">
+    <ResponseField name="index" type="integer">在输入数组中的位置。</ResponseField>
+    <ResponseField name="embedding" type="array">嵌入向量的浮点数组。</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage.prompt_tokens" type="integer">
+  已处理的 token 数量。
+</ResponseField>
+
+## 余弦相似度示例
+
+```python python
+import os
+import numpy as np
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+def embed(text):
+    return client.embeddings.create(
+        model="gemini-embedding-001",
+        input=text,
+    ).data[0].embedding
+
+def cosine_similarity(a, b):
+    a, b = np.array(a), np.array(b)
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+q = embed("capital city of France")
+doc1 = embed("Paris is the capital and most populous city of France.")
+doc2 = embed("The Eiffel Tower is a famous landmark.")
+
+print(cosine_similarity(q, doc1))  # higher — more relevant
+print(cosine_similarity(q, doc2))  # lower
+```

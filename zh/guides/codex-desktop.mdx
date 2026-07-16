@@ -1,0 +1,114 @@
+---
+title: "通过 Flatkey 使用 Codex 桌面端"
+sidebarTitle: "Codex 桌面端"
+description: "手工配置或通过 CC Switch 让 Codex 桌面应用使用 Flatkey，同时保留官方 ChatGPT 登录。"
+---
+
+Codex 桌面端与 Codex CLI 读取同一份用户级 Codex 配置。你可以将 Flatkey 添加为自定义模型供应商，而无需替换官方 ChatGPT 或 Codex 登录。
+
+## 前置条件
+
+- 已安装 Codex 桌面端
+- 已在桌面应用中完成至少一次官方 ChatGPT 或 Codex 登录
+- Flatkey API 密钥——[在 Flatkey 控制台中创建](https://console.flatkey.ai/keys?lng=zh)
+- [Flatkey 模型目录](/zh/reference/model-list)中的受支持模型 ID
+- 如果使用 CC Switch 配置，需要 CC Switch v3.16.1 或更高版本，建议使用最新版
+
+## 手工配置
+
+### 1. 设置 API 密钥
+
+将密钥保存在用户环境变量中，不要写入配置文件。
+
+<CodeGroup>
+```powershell Windows PowerShell
+[Environment]::SetEnvironmentVariable(
+  "FLATKEY_API_KEY",
+  "sk-fk-...",
+  "User"
+)
+```
+```bash macOS
+launchctl setenv FLATKEY_API_KEY "sk-fk-..."
+```
+```bash Linux
+export FLATKEY_API_KEY="sk-fk-..."
+```
+</CodeGroup>
+
+更改环境变量后，请完全退出 Codex 桌面端，再重新打开。
+
+### 2. 更新 `config.toml`
+
+打开用户级 Codex 配置文件：
+
+| 平台 | 配置文件路径 |
+|---|---|
+| Windows | `%USERPROFILE%\.codex\config.toml` |
+| macOS 和 Linux | `~/.codex/config.toml` |
+
+更新顶层的 `model` 和 `model_provider` 设置。如果其中任一键已存在，请替换它的值，不要追加重复键。保留所有无关设置。然后添加下方供应商配置表；如果 `[model_providers.flatkey]` 已存在，请更新该表，不要重复创建：
+
+```toml
+model = "gpt-5.4"
+model_provider = "flatkey"
+
+[model_providers.flatkey]
+name = "Flatkey"
+base_url = "https://router.flatkey.ai/v1"
+env_key = "FLATKEY_API_KEY"
+wire_api = "responses"
+```
+
+本文撰写时，`gpt-5.4` 已在 Flatkey 模型目录中提供。切换到其他模型 ID 前，请先查阅模型目录。
+
+<Warning>
+  不要替换 `auth.json`，也不要将 Flatkey API 密钥粘贴到该文件中。桌面应用使用这个文件保存官方 ChatGPT 或 Codex 登录，以及模型选择器状态。
+</Warning>
+
+### 3. 重启并验证
+
+完全退出 Codex 桌面端，重新打开并发送一条简单提示。打开 [Flatkey 用量日志](https://console.flatkey.ai/usage-logs/common?lng=zh)，确认模型、token 数量、延迟和费用。
+
+## 使用 CC Switch 配置
+
+[CC Switch](https://ccswitch.io) 是第三方桌面配置管理器，也可以从其[官方 GitHub 仓库](https://github.com/farion1231/cc-switch)下载。
+
+1. 打开 Codex 桌面端，并至少完成一次官方 ChatGPT 或 Codex 登录。
+2. 在 CC Switch 中启用**设置 → 通用 → Codex App 增强 → 直连切换时保持官方登录**。在 v3.16.1–v3.16.x 中，该选项名为**切换第三方供应商时保持官方登录**。
+3. 打开 **Codex** 面板，添加名为 `Flatkey` 的**自定义供应商**。
+4. 将 **Base URL** 设为 `https://router.flatkey.ai/v1`。
+5. 选择 **OpenAI Responses** 协议。
+6. 输入 Flatkey API 密钥，并选择受支持的模型，例如 `gpt-5.4`。
+7. 启用该供应商，完全退出 Codex 桌面端后重新打开。
+8. 发送一条简单提示，并在 [Flatkey 用量日志](https://console.flatkey.ai/usage-logs/common?lng=zh)中验证请求。
+
+<Note>
+  Flatkey 直接支持 Responses 路由。除非未来的供应商变更明确要求协议转换，否则不要启用 CC Switch 本地路由。
+</Note>
+
+## 如果模型不可见
+
+Codex 桌面端的模型选择器可能依赖官方登录状态和应用当前的模型目录。选择器中缺少自定义模型，并不能证明供应商配置失败。
+
+1. 确认官方 ChatGPT 或 Codex 登录仍然有效。
+2. 在 CC Switch 中确认已启用**直连切换时保持官方登录**。在 v3.16.1–v3.16.x 中，请确认旧版的**切换第三方供应商时保持官方登录**选项。
+3. 确认 `config.toml` 中的 `model_provider = "flatkey"` 和目标模型 ID。
+4. 完全退出并重新打开 Codex 桌面端。
+5. 使用 Flatkey 用量日志验证实际请求由哪个供应商处理。
+
+保留官方登录不会将模型流量转到 OpenAI 计费。`config.toml` 或 CC Switch 中的当前供应商决定请求路由。
+
+## 切回官方供应商
+
+在 CC Switch 中启用官方 Codex 供应商，然后重启 Codex 桌面端。手工配置时，请在 `config.toml` 中恢复原来的 `model_provider` 和模型值。保持 `auth.json` 不变，以便继续使用官方登录。
+
+## 故障排查
+
+| 问题 | 检查项 |
+|---|---|
+| 缺少 `FLATKEY_API_KEY` | 确认桌面应用可以读取用户环境变量，然后重启应用 |
+| `Model not found` | 从[模型目录](/zh/reference/model-list)复制准确的模型 ID |
+| 选择器中没有自定义模型 | 检查官方登录保留设置、当前供应商，然后重启应用 |
+| 用量日志中没有请求 | 确认 `base_url`、`wire_api = "responses"` 和当前供应商 |
+| 官方登录消失 | 通过 Codex 桌面端重新登录，并启用 CC Switch 的登录保留设置；不要用 Flatkey 凭据替换 `auth.json` |

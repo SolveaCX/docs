@@ -1,0 +1,73 @@
+---
+title: "Flatkey：一个密钥访问 160+ 个官方 AI 模型，最高节省 50%"
+sidebarTitle: "简介"
+description: "Flatkey 通过一个兼容 OpenAI 的密钥连接 GPT、Claude、Gemini、DeepSeek 等 160+ 个官方模型，价格最低可至官方价的 5 折。"
+---
+
+Flatkey 是一个 AI API 网关，让你通过一个兼容 OpenAI 的 API 密钥访问 OpenAI、Anthropic、Google、DeepSeek、Qwen、GLM 等厂商的 160+ 个官方模型。它可以直接替换任何兼容 OpenAI 的客户端：只需修改一行 `base_url`，请求就会通过 Flatkey 路由。凭借更低的基础价格和每次充值可叠加的赠送额度，实际价格最低可至官方价的 5 折。
+
+## Flatkey 为你提供什么
+
+<CardGroup cols={2}>
+  <Card title="一个密钥，全部模型" icon="key">
+    使用一个 API 密钥和基础 URL 访问 GPT、Claude、Gemini、DeepSeek、Qwen、GLM 等模型，无需管理不同提供商的密钥。
+  </Card>
+  <Card title="最高节省 50%" icon="piggy-bank">
+    模型价格为官方标价的 60–90%。充值 $200 可获赠 $100 额度，叠加后最低只需官方价的一半。
+  </Card>
+  <Card title="99.9% 可靠性" icon="shield-check">
+    在多个上游提供商之间自动故障转移，实时健康看板展示来自生产流量的真实成功率。
+  </Card>
+  <Card title="请求内容零留存" icon="lock">
+    从不存储提示词和模型回复，符合 GDPR，并对齐 SOC 2 和 ISO 27001 控制要求。
+  </Card>
+  <Card title="预付费余额" icon="receipt">
+    充值后按实际用量扣费，无订阅，也没有意外账单。
+  </Card>
+  <Card title="完整 API 兼容性" icon="plug">
+    支持兼容 OpenAI 的 Chat Completions、Responses、Embeddings、图像生成和模型列表端点。
+  </Card>
+</CardGroup>
+
+## 支持的提供商
+
+Flatkey 路由到各主要 AI 厂商的官方 API：
+
+| 提供商 | 示例模型 |
+|---|---|
+| OpenAI | gpt-4o, gpt-4o-mini, gpt-5, gpt-image-2 |
+| Anthropic | claude-opus-4, claude-sonnet-4, claude-haiku-4 |
+| Google | gemini-2.5-pro, gemini-2.5-flash, gemini-flash-latest |
+| DeepSeek | deepseek-v3, deepseek-v4-pro, deepseek-v4-flash |
+| Qwen | qwen3.5-plus, qwen3.7-max, qwen3.5-flash |
+| Z.ai / GLM | glm-4.7, glm-5-turbo, glm-5.2 |
+
+在完整的[模型目录](/zh/reference/model-list)中查看全部 160+ 个模型、实时价格和健康数据。
+
+## 工作原理
+
+Flatkey 位于你的应用与 AI 提供商之间。发送请求时：
+
+1. 客户端使用 Flatkey API 密钥调用 `https://router.flatkey.ai/v1`。
+2. Flatkey 验证请求，并从预付费余额中扣除费用。
+3. 请求被转发到官方提供商 API（OpenAI、Anthropic 等）。
+4. 响应直接返回客户端，不会转换内容。
+
+你的提示词和模型回复从不被存储。Flatkey 只记录模型、Token 数量和时间戳等元数据，用于计费和分析。
+
+## 后续步骤
+
+<CardGroup cols={2}>
+  <Card title="快速开始" icon="bolt" href="/zh/quickstart">
+    创建账号，并在 5 分钟内完成第一次 API 调用
+  </Card>
+  <Card title="身份验证" icon="lock-keyhole" href="/zh/authentication">
+    了解如何创建和使用 Flatkey API 密钥
+  </Card>
+  <Card title="OpenAI SDK 指南" icon="python" href="/zh/guides/openai-sdk">
+    在官方 OpenAI Python 或 Node.js SDK 中使用 Flatkey
+  </Card>
+  <Card title="API 参考" icon="code" href="/zh/api-reference/overview">
+    查看所有支持的 API 方法和完整端点参考
+  </Card>
+</CardGroup>

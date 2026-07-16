@@ -1,0 +1,92 @@
+---
+title: "Flatkey 上的 AI 模型：160+ 个官方模型详解"
+sidebarTitle: "模型"
+description: "Flatkey 提供 OpenAI、Anthropic、Google、DeepSeek、Qwen 和 GLM 等 160+ 个官方 AI 模型。了解模型分类和定价方式。"
+---
+
+Flatkey 让你访问全球主要提供商的 160+ 个官方 AI 模型。每个模型都运行在原厂基础设施上——Flatkey 只负责路由请求，不自行托管或微调模型。使用的模型 ID 与原厂 API 完全相同。
+
+## 支持的提供商
+
+| 提供商 | 可用模型数量 | 代表模型 |
+|---|---|---|
+| **OpenAI** | 12+ | gpt-4o, gpt-4o-mini, gpt-5, gpt-image-2 |
+| **Anthropic** | 8+ | claude-opus-4, claude-sonnet-4, claude-haiku-4 |
+| **Google** | 21+ | gemini-2.5-pro, gemini-2.5-flash, gemini-flash-latest |
+| **DeepSeek** | 6+ | deepseek-v3, deepseek-v3.1, deepseek-v4-pro, deepseek-v4-flash |
+| **Qwen** | 10+ | qwen3.5-plus, qwen3.7-max, qwen3.5-flash |
+| **Z.ai / GLM** | 3+ | glm-4.7, glm-5-turbo, glm-5.2 |
+
+## 端点系列
+
+Flatkey 支持多个端点系列，每个系列都有对应的请求格式：
+
+<CardGroup cols={2}>
+  <Card title="OpenAI（Chat Completions）" icon="message">
+    POST `/v1/chat/completions`——适用于 GPT 和大多数非 Google 模型，采用兼容 OpenAI 的 JSON 格式。
+  </Card>
+  <Card title="OpenAI（Responses）" icon="reply">
+    POST `/v1/responses`——新版 OpenAI Responses API，支持有状态的多轮对话。
+  </Card>
+  <Card title="Gemini" icon="sparkles">
+    Gemini 模型也可以通过标准 `/v1/chat/completions` 端点调用，Flatkey 会自动完成格式转换。
+  </Card>
+  <Card title="Anthropic" icon="robot">
+    Claude 模型可通过兼容 OpenAI 的端点访问，也可以通过原生 Anthropic SDK 连接 Flatkey。
+  </Card>
+  <Card title="图像生成" icon="image">
+    POST `/v1/images/generations`——支持 `gpt-image-2` 等图像模型。
+  </Card>
+  <Card title="Embeddings" icon="vector-square">
+    POST `/v1/embeddings`——为语义搜索和 RAG 创建文本向量。
+  </Card>
+</CardGroup>
+
+## 选择模型
+
+[模型目录](/zh/reference/model-list)中的每个模型都会显示：
+
+- **官方价格**：厂商收取的每百万 Token 价格
+- **赠送后价格**：叠加充值赠送额度后的实际价格
+- **30 天成功率**：来自真实生产流量，而非合成基准测试
+- **平均延迟**：通过 Flatkey 的实际请求测得
+
+对大多数通用任务：
+
+- **成本敏感型工作负载**：`gpt-4o-mini`、`gemini-2.5-flash-lite`、`deepseek-v4-flash`、`qwen3.5-flash`
+- **高质量生成**：`gpt-4o`、`claude-sonnet-4`、`gemini-2.5-pro`
+- **推理与研究**：`deepseek-v3`、`qwen3.7-max`、`claude-opus-4`
+- **图像生成**：`gpt-image-2`、`gemini-3-pro-image`
+- **Embeddings**：`gemini-embedding-001`
+
+## 模型 ID
+
+请使用[模型目录](/zh/reference/model-list)列出的标准模型 ID。例如：
+
+```python python
+response = client.chat.completions.create(
+    model="claude-sonnet-4-5",  # Anthropic Claude Sonnet
+    messages=[{"role": "user", "content": "Summarize this document."}],
+)
+```
+
+```python python
+response = client.chat.completions.create(
+    model="deepseek-ai/deepseek-r1",  # DeepSeek R1
+    messages=[{"role": "user", "content": "Explain step by step."}],
+)
+```
+
+<Tip>
+  切换提供商时，只需更改 `model` 参数。其他请求字段（messages、temperature、max_tokens 等）都遵循同一套兼容 OpenAI 的 Schema。
+</Tip>
+
+## 模型健康度
+
+Flatkey 根据真实生产流量跟踪每个模型的实时健康度：
+
+- **成功率**：最近 30 天内成功完成的请求比例
+- **平均延迟**：首 Token 时间或完整响应时间
+- **用量**：统计周期内的请求总数和 Token 总量
+
+可在 [flatkey.ai/rankings](https://flatkey.ai/zh/rankings) 或[模型健康度](/zh/reference/model-health)参考页查看实时数据。

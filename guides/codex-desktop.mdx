@@ -1,0 +1,114 @@
+---
+title: "Use Flatkey with Codex Desktop"
+sidebarTitle: "Codex Desktop"
+description: "Configure the Codex desktop app to use Flatkey manually or with CC Switch while preserving your official ChatGPT login."
+---
+
+Codex Desktop reads the same user-level Codex configuration as Codex CLI. You can add Flatkey as a custom model provider without replacing your official ChatGPT or Codex login.
+
+## Prerequisites
+
+- Codex Desktop installed
+- One completed official ChatGPT or Codex sign-in in the desktop app
+- A Flatkey API key — [create one in the Flatkey Console](https://console.flatkey.ai/keys)
+- A supported model ID from the [Flatkey Model Directory](/reference/model-list)
+- CC Switch v3.16.1 or later, preferably the latest version, if you use the CC Switch setup
+
+## Manual configuration
+
+### 1. Set the API key
+
+Store the key in a user environment variable instead of writing it into a configuration file.
+
+<CodeGroup>
+```powershell Windows PowerShell
+[Environment]::SetEnvironmentVariable(
+  "FLATKEY_API_KEY",
+  "sk-fk-...",
+  "User"
+)
+```
+```bash macOS
+launchctl setenv FLATKEY_API_KEY "sk-fk-..."
+```
+```bash Linux
+export FLATKEY_API_KEY="sk-fk-..."
+```
+</CodeGroup>
+
+After changing the variable, fully quit Codex Desktop before reopening it.
+
+### 2. Update `config.toml`
+
+Open the user-level Codex configuration file:
+
+| Platform | Configuration path |
+|---|---|
+| Windows | `%USERPROFILE%\.codex\config.toml` |
+| macOS and Linux | `~/.codex/config.toml` |
+
+Update the top-level `model` and `model_provider` settings. If either key already exists, replace its value instead of appending a duplicate key. Preserve all unrelated settings. Then add the provider table below; if `[model_providers.flatkey]` already exists, update that table instead of creating a duplicate:
+
+```toml
+model = "gpt-5.4"
+model_provider = "flatkey"
+
+[model_providers.flatkey]
+name = "Flatkey"
+base_url = "https://router.flatkey.ai/v1"
+env_key = "FLATKEY_API_KEY"
+wire_api = "responses"
+```
+
+`gpt-5.4` is available in the Flatkey Model Directory at the time of writing. Check the directory before switching to a different model ID.
+
+<Warning>
+  Do not replace or paste a Flatkey API key into `auth.json`. That file stores the official ChatGPT or Codex login that the desktop app uses for account access and model-picker state.
+</Warning>
+
+### 3. Restart and verify
+
+Fully quit Codex Desktop, reopen it, and send a small prompt. Open [Flatkey Usage Logs](https://console.flatkey.ai/usage-logs/common) and confirm the model, token counts, latency, and cost.
+
+## Configure with CC Switch
+
+[CC Switch](https://ccswitch.io) is a third-party desktop configuration manager. You can also download it from the [official GitHub repository](https://github.com/farion1231/cc-switch).
+
+1. Open Codex Desktop and complete an official ChatGPT or Codex sign-in at least once.
+2. In CC Switch, enable **Settings → General → Codex App Enhancements → Keep official login for direct switches**. In v3.16.1–v3.16.x, this option is labeled **Keep official login when switching third-party providers**.
+3. Open the **Codex** panel and add a **Custom Provider** named `Flatkey`.
+4. Set **Base URL** to `https://router.flatkey.ai/v1`.
+5. Select the **OpenAI Responses** protocol.
+6. Enter the Flatkey API key and choose a supported model such as `gpt-5.4`.
+7. Activate the provider, fully quit Codex Desktop, and reopen it.
+8. Send a small prompt and verify the request in [Flatkey Usage Logs](https://console.flatkey.ai/usage-logs/common).
+
+<Note>
+  Flatkey supports the Responses route directly. Do not enable CC Switch Local Routing unless a future provider change explicitly requires protocol conversion.
+</Note>
+
+## If the model is not visible
+
+The Codex Desktop model picker can depend on the official login state and the app's current model catalog. A missing custom model in the picker does not prove that the provider configuration failed.
+
+1. Confirm the official ChatGPT or Codex login is still active.
+2. In CC Switch, confirm **Keep official login for direct switches** is enabled. In v3.16.1–v3.16.x, confirm the legacy **Keep official login when switching third-party providers** option instead.
+3. Confirm `model_provider = "flatkey"` and the intended model ID in `config.toml`.
+4. Fully quit and reopen Codex Desktop.
+5. Use Flatkey Usage Logs to verify which provider handled the real request.
+
+Keeping the official login does not route model traffic to OpenAI billing. The active provider in `config.toml` or CC Switch controls request routing.
+
+## Switch back to the official provider
+
+In CC Switch, activate the official Codex provider and restart Codex Desktop. For a manual setup, restore your previous `model_provider` and model values in `config.toml`. Keep `auth.json` unchanged so the official login remains available.
+
+## Troubleshooting
+
+| Issue | What to check |
+|---|---|
+| `FLATKEY_API_KEY` is missing | Confirm the user environment variable is available to the desktop app, then restart it |
+| `Model not found` | Copy the exact model ID from the [Model Directory](/reference/model-list) |
+| Custom model is absent from the picker | Check official login preservation, the active provider, and restart the app |
+| Request does not appear in Usage Logs | Confirm `base_url`, `wire_api = "responses"`, and the active provider |
+| Official login disappeared | Sign in again through Codex Desktop and enable the CC Switch login-preservation setting; do not replace `auth.json` with Flatkey credentials |

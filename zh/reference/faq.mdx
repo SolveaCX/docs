@@ -1,0 +1,89 @@
+---
+title: "Flatkey 常见问题"
+sidebarTitle: "常见问题"
+description: "回答有关 Flatkey 模型兼容性、计费、隐私、API 密钥管理和企业方案的常见问题。"
+---
+
+本页汇总使用 Flatkey 时最常见的问题。如果这里没有你需要的答案，请联系 [support@flatkey.ai](mailto:support@flatkey.ai)，或使用控制台中的在线客服。
+
+## 快速入门
+
+<Accordion title="Flatkey 是什么？">
+  Flatkey 是一个 AI API 网关，通过一个兼容 OpenAI 的 API 密钥访问 OpenAI、Anthropic、Google、DeepSeek、Qwen、GLM 等厂商的 160+ 个官方 AI 模型。它可以直接替换任何兼容 OpenAI 的客户端：将 `base_url` 改为 `https://router.flatkey.ai/v1`，使用 Flatkey 密钥，即可按折扣价路由到任意模型。
+</Accordion>
+
+<Accordion title="每个提供商都需要单独的 API 密钥吗？">
+  不需要。一个 Flatkey API 密钥可以路由到全部提供商的 160+ 个模型，无需分别准备 OpenAI、Anthropic 或 Google API 密钥。
+</Accordion>
+
+<Accordion title="这些模型是原厂官方版本吗？">
+  是。Flatkey 将请求路由到 OpenAI、Anthropic、Google、DeepSeek 等厂商的官方 API，模型输出直接来自原厂基础设施。Flatkey 不托管、微调或修改任何模型。
+</Accordion>
+
+## 计费和价格
+
+<Accordion title="如何计费？">
+  Flatkey 采用预付费模式。向余额充值（$10、$20、$200 或自定义企业方案）后，每次 API 请求的费用会实时从余额中扣除。没有订阅或周期性收费。
+</Accordion>
+
+<Accordion title="充值赠送如何计算？">
+  每次充值都会获得赠送额度：充值 $10 赠 $3，充值 $20 赠 $8，充值 $200 赠 $100。赠送额度立即加入余额，永不过期，使用方式与付费额度相同。它不是优惠码，而是会实际显示在余额中的额度。
+</Accordion>
+
+<Accordion title="可以多次充值吗？">
+  可以。充值次数不限，每次都会获得赠送额度。充值三次 $200，总计可获得 $300 赠送额度。
+</Accordion>
+
+<Accordion title="余额归零后会怎样？">
+  API 请求会返回 `401 Insufficient Balance` 错误，不会自动扣款。充值后即可恢复。可在 **设置 → 通知** 中启用低余额提醒，避免中断。
+</Accordion>
+
+## 兼容性和模型
+
+<Accordion title="Flatkey 兼容官方 OpenAI SDK 吗？">
+  兼容。OpenAI Python 和 Node.js SDK 都支持 `base_url` 参数。将其设置为 `https://router.flatkey.ai/v1`，并使用 Flatkey API 密钥即可，无需其他改动。
+</Accordion>
+
+<Accordion title="可以在 Anthropic SDK 中使用 Flatkey 吗？">
+  可以。在 Anthropic SDK 构造函数中将 `base_url` 设置为 `https://router.flatkey.ai`（不带 `/v1`），并使用 Flatkey API 密钥。详情请参阅 [Anthropic SDK 指南](/zh/guides/anthropic-sdk)。
+</Accordion>
+
+<Accordion title="应该使用哪些模型名称？">
+  使用与原厂提供商相同的标准模型 ID，例如 `gpt-4o`、`claude-sonnet-4-5`、`gemini-2.5-flash`。完整列表请查看[模型目录](/zh/reference/model-list)。
+</Accordion>
+
+<Accordion title="Flatkey 支持流式传输吗？">
+  支持。在请求中设置 `stream: true`。Flatkey 会以与 OpenAI API 相同的格式返回服务器发送事件（SSE）。所有聊天和文本生成模型都支持流式传输。
+</Accordion>
+
+## 隐私和安全
+
+<Accordion title="Flatkey 会存储提示词或模型回复吗？">
+  不会。Flatkey 对请求内容实行零留存，提示词和模型回复不会写入磁盘或存储。只记录模型、Token 数量、时间戳和费用等元数据，用于计费和分析。
+</Accordion>
+
+<Accordion title="Flatkey 符合哪些合规标准？">
+  Flatkey 使用符合 GDPR 的基础设施，并维护与 SOC 2 和 ISO 27001 标准对齐的控制措施。
+</Accordion>
+
+<Accordion title="API 密钥泄露后怎么办？">
+  立即在控制台的 **API 密钥** 页面撤销密钥，撤销会立即生效。然后创建新密钥并更新应用。详情请参阅 [API 密钥管理](/zh/dashboard/api-keys)。
+</Accordion>
+
+## 企业版
+
+<Accordion title="Flatkey 支持账单结算吗？">
+  支持。企业账号支持账单结算、自定义月度用量、团队采购和专属路由折扣。请联系 [support@flatkey.ai](mailto:support@flatkey.ai) 了解条款。
+</Accordion>
+
+<Accordion title="可以限制密钥能访问的模型吗？">
+  可以。在控制台中使用 **分组**，为单个密钥或密钥组设置模型访问策略和支出额度。
+</Accordion>
+
+## 支持
+
+<Accordion title="如何联系支持团队？">
+  - **邮箱**：[support@flatkey.ai](mailto:support@flatkey.ai)
+  - **在线客服**：[flatkey.ai](https://flatkey.ai/zh) 和控制台中均可使用
+  - **X（Twitter）**：[@flatkey101](https://x.com/flatkey101)
+</Accordion>
