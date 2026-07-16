@@ -24,13 +24,27 @@ assert.equal(config.favicon, "/favicon.svg");
 assert.deepEqual(config.appearance, { default: "system", strict: false });
 assert.equal(config.styling.codeblocks, "dark");
 
-const pages = config.navigation.languages.flatMap((language) =>
+const navigationPages = config.navigation.languages.flatMap((language) =>
   language.tabs.flatMap((tab) => tab.groups.flatMap((group) => group.pages)),
 );
+assert.equal(navigationPages.length, 54);
+const pages = ["index", "zh/index", ...navigationPages];
 assert.equal(pages.length, 56);
 assert.equal(new Set(pages).size, 56);
 for (const page of pages) {
   assert.ok(existsSync(resolve(root, `${page}.mdx`)), page);
+}
+
+for (const path of ["logo/light.svg", "logo/dark.svg", "favicon.svg"]) {
+  const svg = read(path);
+  assert.match(svg, /^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
+  assert.ok(svg.includes("#5B21B6"), path);
+}
+
+for (const logo of ["logo/light.svg", "logo/dark.svg"]) {
+  const svg = read(logo);
+  assert.ok(svg.includes("flatkey"), logo);
+  assert.ok(svg.includes("DOCS"), logo);
 }
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -63,18 +77,6 @@ for (const token of [
   "JetBrains Mono",
 ]) {
   assert.ok(css.includes(token), token);
-}
-
-for (const path of ["logo/light.svg", "logo/dark.svg", "favicon.svg"]) {
-  const svg = read(path);
-  assert.match(svg, /^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
-  assert.ok(svg.includes("#5B21B6"), path);
-}
-
-for (const logo of ["logo/light.svg", "logo/dark.svg"]) {
-  const svg = read(logo);
-  assert.ok(svg.includes("flatkey"), logo);
-  assert.ok(svg.includes("DOCS"), logo);
 }
 
 assert.doesNotMatch(css, /\.bg-|\.text-|\.dark\:|\[class[\^*$|~]?=/);
