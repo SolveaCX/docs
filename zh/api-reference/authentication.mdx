@@ -1,0 +1,68 @@
+---
+title: "Flatkey API 认证：Bearer token 与 API 密钥"
+sidebarTitle: "认证"
+description: "在 Authorization 请求头中将 API 密钥作为 Bearer token 传入，以认证 Flatkey API 请求。了解密钥格式、错误和最佳实践。"
+---
+
+对 Flatkey API 的每个请求都必须在 `Authorization` 请求头中包含有效 API 密钥，并将其作为 Bearer token 传入。你可以在 [Flatkey 控制台](https://console.flatkey.ai/keys?lng=zh)中创建和管理密钥。
+
+## 请求头格式
+
+```http
+Authorization: Bearer sk-fk-your-api-key
+```
+
+Flatkey API 密钥以 `sk-fk-` 开头。密钥区分大小写，必须与生成时完全一致。
+
+## 请求示例
+
+```bash
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+## 创建 API 密钥
+
+1. 登录 [console.flatkey.ai](https://console.flatkey.ai?lng=zh)
+2. 点击左侧边栏中的**密钥**
+3. 点击**创建密钥**并输入名称
+4. 复制密钥——它只会显示**一次**
+
+如果密钥丢失，必须创建新密钥。旧密钥会保持有效，直到你明确撤销它。
+
+## 认证错误
+
+| HTTP 状态 | 情况 | 解决方法 |
+|---|---|---|
+| `401 Unauthorized` | 请求中缺少密钥 | 添加 `Authorization: Bearer sk-fk-...` 请求头 |
+| `401 Unauthorized` | 密钥无效或已撤销 | 在控制台中生成新密钥 |
+| `401 Unauthorized` | 余额为 $0.00 | 前往 [console.flatkey.ai](https://console.flatkey.ai?lng=zh)充值 |
+| `403 Forbidden` | 密钥无权访问模型 | 在控制台中检查密钥权限 |
+
+### 错误响应格式
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided.",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## 安全最佳实践
+
+- 将密钥保存在环境变量中，不要写入源代码
+- 每个部署环境使用一个独立密钥
+- 密钥泄露时立即撤销
+- 生产工作负载应定期轮换密钥
+
+<Warning>
+  切勿在客户端 JavaScript、移动应用包或公开仓库中包含 API 密钥。密钥可能被滥用并耗尽你的余额。
+</Warning>

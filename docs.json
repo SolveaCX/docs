@@ -9,86 +9,175 @@
   },
   "favicon": "/favicon.svg",
   "navigation": {
-    "tabs": [
+    "languages": [
       {
-        "tab": "Documentation",
-        "groups": [
+        "language": "en",
+        "navbar": {
+          "primary": {
+            "type": "button",
+            "label": "Console",
+            "href": "https://console.flatkey.ai/dashboard"
+          }
+        },
+        "tabs": [
           {
-            "group": "Get Started",
-            "pages": [
-              "introduction",
-              "quickstart",
-              "authentication"
+            "tab": "Documentation",
+            "groups": [
+              {
+                "group": "Get Started",
+                "pages": [
+                  "introduction",
+                  "quickstart",
+                  "authentication"
+                ]
+              },
+              {
+                "group": "Core Concepts",
+                "pages": [
+                  "concepts/models",
+                  "concepts/routing",
+                  "concepts/billing"
+                ]
+              },
+              {
+                "group": "Guides",
+                "pages": [
+                  "guides/openai-sdk",
+                  "guides/anthropic-sdk",
+                  "guides/codex-cli",
+                  "guides/codex-desktop",
+                  "guides/claude-code",
+                  "guides/image-generation"
+                ]
+              },
+              {
+                "group": "Dashboard",
+                "pages": [
+                  "dashboard/api-keys",
+                  "dashboard/usage",
+                  "dashboard/top-up"
+                ]
+              },
+              {
+                "group": "Reference",
+                "pages": [
+                  "reference/model-list",
+                  "reference/pricing",
+                  "reference/model-health",
+                  "reference/faq"
+                ]
+              }
             ]
           },
           {
-            "group": "Core Concepts",
-            "pages": [
-              "concepts/models",
-              "concepts/routing",
-              "concepts/billing"
-            ]
-          },
-          {
-            "group": "Guides",
-            "pages": [
-              "guides/openai-sdk",
-              "guides/anthropic-sdk",
-              "guides/codex-cli",
-              "guides/codex-desktop",
-              "guides/claude-code",
-              "guides/image-generation"
-            ]
-          },
-          {
-            "group": "Dashboard",
-            "pages": [
-              "dashboard/api-keys",
-              "dashboard/usage",
-              "dashboard/top-up"
-            ]
-          },
-          {
-            "group": "Reference",
-            "pages": [
-              "reference/model-list",
-              "reference/pricing",
-              "reference/model-health",
-              "reference/faq"
+            "tab": "API Reference",
+            "groups": [
+              {
+                "group": "Overview",
+                "pages": [
+                  "api-reference/overview",
+                  "api-reference/authentication",
+                  "api-reference/errors"
+                ]
+              },
+              {
+                "group": "Endpoints",
+                "pages": [
+                  "api-reference/chat-completions",
+                  "api-reference/responses",
+                  "api-reference/embeddings",
+                  "api-reference/image-generation",
+                  "api-reference/models"
+                ]
+              }
             ]
           }
         ]
       },
       {
-        "tab": "API Reference",
-        "groups": [
+        "language": "zh",
+        "navbar": {
+          "primary": {
+            "type": "button",
+            "label": "控制台",
+            "href": "https://console.flatkey.ai/dashboard?lng=zh"
+          }
+        },
+        "tabs": [
           {
-            "group": "Overview",
-            "pages": [
-              "api-reference/overview",
-              "api-reference/authentication",
-              "api-reference/errors"
+            "tab": "文档",
+            "groups": [
+              {
+                "group": "快速入门",
+                "pages": [
+                  "zh/introduction",
+                  "zh/quickstart",
+                  "zh/authentication"
+                ]
+              },
+              {
+                "group": "核心概念",
+                "pages": [
+                  "zh/concepts/models",
+                  "zh/concepts/routing",
+                  "zh/concepts/billing"
+                ]
+              },
+              {
+                "group": "使用指南",
+                "pages": [
+                  "zh/guides/openai-sdk",
+                  "zh/guides/anthropic-sdk",
+                  "zh/guides/codex-cli",
+                  "zh/guides/codex-desktop",
+                  "zh/guides/claude-code",
+                  "zh/guides/image-generation"
+                ]
+              },
+              {
+                "group": "控制台",
+                "pages": [
+                  "zh/dashboard/api-keys",
+                  "zh/dashboard/usage",
+                  "zh/dashboard/top-up"
+                ]
+              },
+              {
+                "group": "参考",
+                "pages": [
+                  "zh/reference/model-list",
+                  "zh/reference/pricing",
+                  "zh/reference/model-health",
+                  "zh/reference/faq"
+                ]
+              }
             ]
           },
           {
-            "group": "Endpoints",
-            "pages": [
-              "api-reference/chat-completions",
-              "api-reference/responses",
-              "api-reference/embeddings",
-              "api-reference/image-generation",
-              "api-reference/models"
+            "tab": "API 参考",
+            "groups": [
+              {
+                "group": "概览",
+                "pages": [
+                  "zh/api-reference/overview",
+                  "zh/api-reference/authentication",
+                  "zh/api-reference/errors"
+                ]
+              },
+              {
+                "group": "端点",
+                "pages": [
+                  "zh/api-reference/chat-completions",
+                  "zh/api-reference/responses",
+                  "zh/api-reference/embeddings",
+                  "zh/api-reference/image-generation",
+                  "zh/api-reference/models"
+                ]
+              }
             ]
           }
         ]
       }
     ]
-  },
-  "navbar": {
-    "primary": {
-      "type": "button",
-      "label": "Console",
-      "href": "https://console.flatkey.ai/dashboard"
-    }
   }
 }

@@ -1,0 +1,132 @@
+---
+title: "图片生成 — POST /v1/images/generations"
+sidebarTitle: "图片生成"
+description: "使用 POST /v1/images/generations 根据文本提示词生成图片。支持 gpt-image-2 和 Gemini 图片模型，可返回 URL 或 Base64 编码的图片数据。"
+---
+
+`/v1/images/generations` 端点根据文本提示词生成图片。它兼容 OpenAI Images API，并支持 `gpt-image-2` 以及 Flatkey 提供的 Gemini 图片生成模型。
+
+## 端点
+
+```
+POST https://router.flatkey.ai/v1/images/generations
+```
+
+## 请求
+
+### 请求头
+
+| 请求头 | 值 |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### 请求体参数
+
+<ParamField body="model" type="string" required>
+  图片模型 ID。例如：`"gpt-image-2"`、`"gemini-3-pro-image"`、`"gemini-2.5-flash-image"`。
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  对要生成图片的文本描述。提示词越详细，通常生成效果越好。
+</ParamField>
+
+<ParamField body="n" type="integer">
+  要生成的图片数量。默认值：1。最大值因模型而异。
+</ParamField>
+
+<ParamField body="size" type="string">
+  图片尺寸。常用值包括 `"256x256"`、`"512x512"`、`"1024x1024"`、`"1792x1024"`、`"1024x1792"`。支持情况因模型而异。
+</ParamField>
+
+<ParamField body="quality" type="string">
+  图片质量设置。可选值：`"standard"` 或 `"hd"`。默认值：`"standard"`。仅部分模型支持。
+</ParamField>
+
+<ParamField body="response_format" type="string">
+  `"url"`（默认）返回图片的临时 URL；`"b64_json"` 返回 Base64 编码的图片数据。
+</ParamField>
+
+## 请求示例
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.images.generate(
+    model="gpt-image-2",
+    prompt="A futuristic city skyline at dusk, neon lights reflecting on wet streets, cyberpunk style",
+    size="1024x1024",
+    n=1,
+)
+
+print(response.data[0].url)
+```
+```javascript node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const response = await client.images.generate({
+  model: "gpt-image-2",
+  prompt: "A futuristic city skyline at dusk, neon lights reflecting on wet streets, cyberpunk style",
+  size: "1024x1024",
+  n: 1,
+});
+
+console.log(response.data[0].url);
+```
+```bash curl
+curl https://router.flatkey.ai/v1/images/generations \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-2",
+    "prompt": "A serene forest clearing with morning mist and sunbeams",
+    "size": "1024x1024",
+    "n": 1
+  }'
+```
+</CodeGroup>
+
+## 响应
+
+```json
+{
+  "created": 1710000000,
+  "data": [
+    {
+      "url": "https://cdn.openai.com/...",
+      "revised_prompt": "A futuristic city skyline at dusk..."
+    }
+  ]
+}
+```
+
+### 响应字段
+
+<ResponseField name="created" type="integer">
+  请求完成时的 Unix 时间戳。
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  生成的图片对象数组。
+  <Expandable title="图片对象">
+    <ResponseField name="url" type="string">生成图片的临时 URL。请及时下载，URL 会过期。</ResponseField>
+    <ResponseField name="b64_json" type="string">Base64 编码的图片数据，仅当 `response_format` 为 `"b64_json"` 时提供。</ResponseField>
+    <ResponseField name="revised_prompt" type="string">经过安全修订后实际发送给模型的提示词。</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Warning>
+  图片 URL 是临时地址，会在短时间后过期。请下载并保存需要长期保留的图片。
+</Warning>

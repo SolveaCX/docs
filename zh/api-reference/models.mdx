@@ -1,0 +1,104 @@
+---
+title: "列出模型 — GET /v1/models"
+sidebarTitle: "模型"
+description: "使用 GET /v1/models 获取 Flatkey 账号可用的全部 AI 模型。以兼容 OpenAI 的格式返回模型 ID、供应商和时间戳。"
+---
+
+`/v1/models` 端点返回 Flatkey 账号可用的所有模型。响应遵循 OpenAI API 格式，返回的模型 ID 可以直接用于 `/v1/chat/completions`、`/v1/embeddings` 和其他端点。
+
+## 端点
+
+```
+GET https://router.flatkey.ai/v1/models
+```
+
+## 请求
+
+### 请求头
+
+| 请求头 | 值 |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+
+无需请求体。
+
+## 请求示例
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+models = client.models.list()
+
+for model in models.data:
+    print(model.id)
+```
+```javascript node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const models = await client.models.list();
+
+for (const model of models.data) {
+  console.log(model.id);
+}
+```
+```bash curl
+curl https://router.flatkey.ai/v1/models \
+  -H "Authorization: Bearer $FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+## 响应
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-4o",
+      "object": "model",
+      "created": 1710000000,
+      "owned_by": "openai"
+    },
+    {
+      "id": "claude-sonnet-4-5",
+      "object": "model",
+      "created": 1710000000,
+      "owned_by": "anthropic"
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "object": "model",
+      "created": 1710000000,
+      "owned_by": "google"
+    }
+  ]
+}
+```
+
+### 响应字段
+
+<ResponseField name="data" type="array">
+  模型对象数组。
+  <Expandable title="模型对象">
+    <ResponseField name="id" type="string">在请求中使用的模型标识符。</ResponseField>
+    <ResponseField name="object" type="string">始终为 `"model"`。</ResponseField>
+    <ResponseField name="created" type="integer">添加模型时的 Unix 时间戳。</ResponseField>
+    <ResponseField name="owned_by" type="string">供应商，例如 `"openai"`、`"anthropic"`、`"google"`。</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Tip>
+  如需查看价格、健康状态和详细模型规格，请访问 [flatkey.ai/models](https://flatkey.ai/models) 或[模型目录](/zh/reference/model-list)。
+</Tip>

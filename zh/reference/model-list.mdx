@@ -1,0 +1,84 @@
+---
+title: "Flatkey 模型目录：全部 160+ 个支持的模型"
+sidebarTitle: "模型列表"
+description: "浏览 Flatkey 提供的 GPT、Claude、Gemini、DeepSeek、Qwen 和 GLM 等全部 AI 模型，并查看每百万 Token 的官方价和赠送后价格。"
+---
+
+Flatkey 提供各主要 AI 厂商的 160+ 个官方模型。下表价格按每 100 万输入 Token 计算。**赠送后**一栏表示充值 $200 档位后的实际价格，该档位在模型折扣基础上额外赠送 $100 额度。
+
+<Note>
+  厂商更新 API 后，模型可用性和价格可能变化。包含延迟和健康数据的最新列表请访问 [flatkey.ai/models](https://flatkey.ai/zh/models)。
+</Note>
+
+## OpenAI
+
+| 模型 | 官方价（$/1M 输入） | 赠送后（$/1M 输入） | 适用场景 |
+|---|---|---|---|
+| `gpt-4o` | $2.50 | $1.50 | 复杂推理、视觉、多模态 |
+| `gpt-4o-mini` | $0.15 | $0.09 | 快速、经济的文本任务 |
+| `gpt-4.1-mini` | $0.40 | $0.24 | 质量与速度平衡 |
+| `gpt-5.5` | $5.00 | $3.00 | 前沿推理与生成 |
+| `gpt-5.4` | $2.50 | $1.50 | 新一代 GPT |
+| `gpt-5-mini` | $0.04 | $0.024 | 超低成本简单任务 |
+| `gpt-image-2` | $6.65 | $3.99 | 图像生成 |
+
+## Anthropic
+
+| 模型 | 官方价（$/1M 输入） | 赠送后（$/1M 输入） | 适用场景 |
+|---|---|---|---|
+| `claude-opus-4-5` | $5.00 | $3.00 | 复杂写作、研究、分析 |
+| `claude-sonnet-4-5` | $3.00 | $1.80 | 质量与速度平衡 |
+| `claude-sonnet-4-6` | $3.00 | $1.80 | 新一代 Sonnet |
+| `claude-sonnet-5` | $2.00 | $1.20 | 新一代 Claude |
+| `claude-haiku-4-5-20251001` | $1.00 | $0.60 | 快速、经济的任务 |
+
+## Google
+
+| 模型 | 官方价（$/1M 输入） | 赠送后（$/1M 输入） | 适用场景 |
+|---|---|---|---|
+| `gemini-2.5-pro` | $1.125 | $0.675 | 复杂推理、长上下文 |
+| `gemini-2.5-flash` | $0.09 | $0.054 | 快速、实惠的通用模型 |
+| `gemini-2.5-flash-lite` | $0.09 | $0.054 | 最低延迟和成本 |
+| `gemini-3-flash-preview` | $0.07 | $0.042 | 新一代 Flash 预览版 |
+| `gemini-embedding-001` | $0.15 | $0.09 | 文本向量 |
+| `gemini-2.5-flash-image` | $0.30 | $0.18 | 图像理解 |
+| `gemini-3-pro-image` | $2.00 | $1.20 | 高质量图像生成 |
+
+## DeepSeek
+
+| 模型 | 官方价（$/1M 输入） | 赠送后（$/1M 输入） | 适用场景 |
+|---|---|---|---|
+| `deepseek-v3` | $0.40 | $0.24 | 高性价比通用任务 |
+| `deepseek-v3.1` | $0.21 | $0.126 | 更新后的 V3 版本 |
+| `deepseek-v4-pro` | $2.40 | $1.44 | 前沿 DeepSeek 推理 |
+| `deepseek-v4-flash` | $0.14 | $0.084 | 快速、低价的 DeepSeek |
+
+## Qwen
+
+| 模型 | 官方价（$/1M 输入） | 赠送后（$/1M 输入） | 适用场景 |
+|---|---|---|---|
+| `qwen3.7-max` | $2.50 | $1.50 | 前沿 Qwen 生成 |
+| `qwen3.5-plus` | $0.40 | $0.24 | 质量平衡 |
+| `qwen3.5-flash` | $0.10 | $0.06 | 快速、低价的任务 |
+| `qwen3.5-397b-a17b` | $0.43 | $0.258 | 大型 MoE 模型 |
+
+## Z.ai / GLM
+
+| 模型 | 官方价（$/1M 输入） | 赠送后（$/1M 输入） | 适用场景 |
+|---|---|---|---|
+| `glm-4.7` | $0.286 | $0.172 | 通用 GLM |
+| `glm-5-turbo` | $0.72 | $0.432 | 高速 GLM 版本 |
+| `glm-5.2` | $1.40 | $0.84 | 新一代 GLM |
+
+## 使用模型 ID
+
+所有模型都使用厂商标准 ID。在请求的 `model` 字段中传入模型 ID：
+
+```python python
+response = client.chat.completions.create(
+    model="gemini-2.5-flash",  # Google Gemini via Flatkey
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+```
+
+包含全部版本和实时健康数据的完整列表请访问 [flatkey.ai/models](https://flatkey.ai/zh/models)。

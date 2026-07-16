@@ -1,0 +1,93 @@
+---
+title: "Flatkey 如何路由 API 请求并处理故障转移"
+sidebarTitle: "路由"
+description: "了解 Flatkey 如何把请求路由到官方 AI 提供商、自动处理故障转移，以及控制台提供的路由控制能力。"
+---
+
+向 Flatkey 发送请求后，系统会验证 API 密钥和余额，再把请求转发到指定模型的官方厂商 API。响应会直接返回客户端。Flatkey 是透明代理，不会修改或存储模型输出。
+
+## 请求生命周期
+
+```
+Your app  →  https://router.flatkey.ai/v1  →  Official vendor API  →  Your app
+```
+
+1. **身份验证**：Flatkey 验证 API 密钥。
+2. **余额检查**：从预付费余额中预留估算费用。
+3. **提供商路由**：将请求转发给对应厂商（OpenAI、Anthropic、Google 等）。
+4. **响应透传**：厂商响应不经修改直接返回客户端。
+5. **计费结算**：确认 Token 数量并扣除准确费用。
+
+## 自动故障转移
+
+Flatkey 实时监控上游提供商 API 的健康状态。如果某个端点出现错误或延迟升高，Flatkey 可以自动在健康的备用端点上重试，无需修改代码。
+
+<Note>
+  故障转移在基础设施层运行，无需额外配置即可受益。99.9% 成功率由这一机制提供支持。
+</Note>
+
+## 基础 URL
+
+所有请求使用同一个基础 URL：
+
+```
+https://router.flatkey.ai/v1
+```
+
+该端点支持所有 API 系列：
+
+| 端点 | 说明 |
+|---|---|
+| `/v1/chat/completions` | 聊天和文本生成（兼容 OpenAI） |
+| `/v1/responses` | OpenAI Responses API |
+| `/v1/embeddings` | 文本向量 |
+| `/v1/images/generations` | 图像生成 |
+| `/v1/models` | 列出可用模型 |
+
+## 分组和额度
+
+可以在控制台中创建 **分组**，组织 API 密钥并设置路由控制：
+
+- **模型访问策略**：限制某个密钥或分组可调用的模型
+- **支出额度**：设置每月或单次请求的支出上限
+- **路由规则**：优先选择特定提供商或模型版本
+
+这适用于希望在测试环境中只允许开发者使用低价模型，或为特定应用设置预算的团队。
+
+## 延迟考虑
+
+与直接调用提供商相比，通过 Flatkey 路由通常只增加不到 50ms 的开销。对延迟敏感的应用，可在[模型健康度](/zh/reference/model-health)中选择平均延迟较低的模型。
+
+## 流式传输
+
+Flatkey 完整支持所有聊天和文本生成模型的流式传输：
+
+```python python
+stream = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Write a short story."}],
+    stream=True,
+)
+
+for chunk in stream:
+    print(chunk.choices[0].delta.content or "", end="", flush=True)
+```
+
+所有兼容 OpenAI 的模型都支持流式传输。Anthropic 或 Gemini 的具体行为请参阅对应模型文档。
+
+## 错误处理
+
+Flatkey 保留上游厂商返回的错误格式。如果提供商返回 `4xx` 或 `5xx` 错误，你会收到与 OpenAI 错误 Schema 相同结构的响应，因此现有错误处理代码可以继续工作。
+
+常见错误及处理方法：
+
+| HTTP 状态码 | 含义 | 处理方法 |
+|---|---|---|
+| `401 Unauthorized` | API 密钥无效或缺失 | 确认密钥以 `sk-fk-` 开头，并已正确设置在 `Authorization` 请求头中 |
+| `402 Payment Required` | 余额不足 | 在 [console.flatkey.ai](https://console.flatkey.ai/wallet?lng=zh) 充值 |
+| `429 Too Many Requests` | 超出速率限制 | 退避后重试，并考虑将负载分散到多个密钥 |
+| `503 Service Unavailable` | 提供商故障 | Flatkey 会自动处理大多数故障转移；如果错误持续，请重试 |
+
+<Note>
+  Flatkey 自身产生的错误（身份验证、余额不足）会在请求到达上游提供商之前返回，不会消耗余额。
+</Note>

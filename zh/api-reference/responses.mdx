@@ -1,0 +1,166 @@
+---
+title: "Responses API — POST /v1/responses"
+sidebarTitle: "Responses"
+description: "使用 POST /v1/responses 按 OpenAI Responses API 格式运行有状态多轮对话。Flatkey 为兼容模型代理此端点。"
+---
+
+`/v1/responses` 端点实现了 OpenAI Responses API，支持带有内置对话历史管理的有状态多轮对话。对于需要 OpenAI 新版响应格式的工作流，它可作为 `/v1/chat/completions` 的替代方案。传入 `previous_response_id` 即可继续对话，无需重新发送完整消息历史。
+
+## 端点
+
+```
+POST https://router.flatkey.ai/v1/responses
+```
+
+## 何时使用此端点
+
+以下情况适合使用 `/v1/responses`：
+
+- 应用基于 OpenAI Responses API 构建
+- 需要有状态的对话管理
+- 使用 `previous_response_id` 参数进行多轮对话
+
+对大多数新集成，建议使用 `/v1/chat/completions`，它支持更广泛的模型。
+
+## 请求
+
+### 请求头
+
+| 请求头 | 值 |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### 请求体参数
+
+<ParamField body="model" type="string" required>
+  要使用的模型 ID。此处仅支持兼容 Responses API 格式的模型。
+</ParamField>
+
+<ParamField body="input" type="string | array" required>
+  本轮的用户输入。可以是字符串或内容对象数组。
+</ParamField>
+
+<ParamField body="instructions" type="string">
+  给模型的系统级指令，相当于对话补全中的 `system` 消息。
+</ParamField>
+
+<ParamField body="previous_response_id" type="string">
+  上一次响应的 `id`。提供后，模型会从该位置继续对话，客户端无需发送历史记录。
+</ParamField>
+
+<ParamField body="max_output_tokens" type="integer">
+  要生成的最大 token 数量。
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  若为 `true`，则返回服务器发送事件流。默认值：`false`。
+</ParamField>
+
+## 请求示例
+
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.responses.create(
+    model="gpt-4o",
+    input="What is the capital of Japan?",
+    instructions="Answer concisely.",
+)
+
+print(response.output_text)
+```
+
+## 使用 previous_response_id 进行多轮对话
+
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+# First turn
+response1 = client.responses.create(
+    model="gpt-4o",
+    input="My name is Alice.",
+)
+
+# Second turn — continue from the first
+response2 = client.responses.create(
+    model="gpt-4o",
+    input="What is my name?",
+    previous_response_id=response1.id,
+)
+
+print(response2.output_text)  # "Your name is Alice."
+```
+
+## 响应
+
+```json
+{
+  "id": "resp_abc123",
+  "object": "response",
+  "created_at": 1710000000,
+  "model": "gpt-4o",
+  "output": [
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {"type": "output_text", "text": "The capital of Japan is Tokyo."}
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 15,
+    "output_tokens": 9,
+    "total_tokens": 24
+  }
+}
+```
+
+### 响应字段
+
+<ResponseField name="id" type="string">
+  此响应的唯一标识符。将其作为 `previous_response_id` 传入，即可继续对话。
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  始终为 `"response"`。
+</ResponseField>
+
+<ResponseField name="created_at" type="integer">
+  创建响应时的 Unix 时间戳。
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  生成响应的模型。
+</ResponseField>
+
+<ResponseField name="output" type="array">
+  模型生成的输出对象数组。
+  <Expandable title="输出项属性">
+    <ResponseField name="type" type="string">输出类型。文本响应为 `"message"`。</ResponseField>
+    <ResponseField name="role" type="string">生成的输出始终为 `"assistant"`。</ResponseField>
+    <ResponseField name="content" type="array">内容块数组。每个内容块都包含 `type`（`"output_text"`）和 `text` 字符串。</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  用于计费的 token 数量。
+  <Expandable title="用量属性">
+    <ResponseField name="input_tokens" type="integer">已处理的输入 token 数量。</ResponseField>
+    <ResponseField name="output_tokens" type="integer">生成的输出 token 数量。</ResponseField>
+    <ResponseField name="total_tokens" type="integer">输入和输出 token 数量之和。</ResponseField>
+  </Expandable>
+</ResponseField>

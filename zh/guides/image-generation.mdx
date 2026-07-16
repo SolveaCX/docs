@@ -1,0 +1,118 @@
+---
+title: "通过 Flatkey 使用 gpt-image-2 等模型生成图片"
+sidebarTitle: "图片生成"
+description: "通过 Flatkey 的图片生成端点使用 gpt-image-2 和其他图片模型，兼容 OpenAI Images SDK 和直接 REST 调用。"
+---
+
+通过 Flatkey 的 `/v1/images/generations` 端点，根据文本提示词生成图片，价格低至官方的 5 折。该端点完全兼容 OpenAI Images API，因此你可以通过 OpenAI SDK 或直接 REST 调用使用 `gpt-image-2` 和其他受支持的模型。
+
+## 支持的图片模型
+
+| 模型 | 官方价格 | 奖励后价格 |
+|---|---|---|
+| `gpt-image-2` | $6.65 / 100 万 tokens | 约 $3.99 / 100 万 tokens |
+| `gemini-3-pro-image` | $2.00 / 100 万 tokens | 约 $1.20 / 100 万 tokens |
+| `gemini-2.5-flash-image` | $0.30 / 100 万 tokens | 约 $0.18 / 100 万 tokens |
+
+完整图片模型列表请参阅[模型目录](/zh/reference/model-list)。
+
+## 使用 OpenAI SDK 快速开始
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.images.generate(
+    model="gpt-image-2",
+    prompt="A serene mountain lake at sunset, photorealistic",
+    size="1024x1024",
+    n=1,
+)
+
+print(response.data[0].url)
+```
+```javascript node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const response = await client.images.generate({
+  model: "gpt-image-2",
+  prompt: "A serene mountain lake at sunset, photorealistic",
+  size: "1024x1024",
+  n: 1,
+});
+
+console.log(response.data[0].url);
+```
+</CodeGroup>
+
+## 使用 curl
+
+```bash
+curl https://router.flatkey.ai/v1/images/generations \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-2",
+    "prompt": "A futuristic cityscape at night, neon lights, wide angle",
+    "size": "1024x1024",
+    "n": 1
+  }'
+```
+
+## 参数
+
+<ParamField body="model" type="string" required>
+  要使用的图片模型，例如 `gpt-image-2`、`gemini-3-pro-image`。
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  对要生成图片的文本描述。提示词越详细，通常生成效果越好。
+</ParamField>
+
+<ParamField body="n" type="integer">
+  要生成的图片数量，默认为 1。最大值取决于模型。
+</ParamField>
+
+<ParamField body="size" type="string">
+  图片尺寸。常用值包括 `"256x256"`、`"512x512"`、`"1024x1024"`、`"1792x1024"`、`"1024x1792"`。支持情况因模型而异。
+</ParamField>
+
+<ParamField body="response_format" type="string">
+  `"url"`（默认）返回临时 URL；`"b64_json"` 返回 Base64 编码的图片数据。
+</ParamField>
+
+## 响应格式
+
+```json
+{
+  "created": 1710000000,
+  "data": [
+    {
+      "url": "https://...",
+      "revised_prompt": "A serene mountain lake at sunset..."
+    }
+  ]
+}
+```
+
+<Note>
+  图片生成返回的 URL 是临时地址，会在短时间后过期。请下载并保存需要长期保留的图片。
+</Note>
+
+## 编写有效的提示词
+
+- 明确风格：*写实摄影、油画、水彩、3D 渲染*
+- 加入光线细节：*黄金时刻、影棚灯光、强烈阴影*
+- 指定构图：*特写、广角、俯瞰视角、竖幅构图*
+- 添加质量描述：*高细节、4K、专业摄影*

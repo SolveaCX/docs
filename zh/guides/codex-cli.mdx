@@ -1,0 +1,88 @@
+---
+title: "通过 Flatkey 使用 OpenAI Codex CLI 终端智能体"
+sidebarTitle: "Codex CLI"
+description: "将 OpenAI Codex CLI 流量路由到 Flatkey，低至官方价格的 5 折使用 GPT 模型。设置两个环境变量即可开始。"
+---
+
+OpenAI Codex CLI 是一款在终端中运行的 AI 编程助手。设置两个环境变量，即可将 Codex CLI 的全部请求路由到 Flatkey，并按 Flatkey 的优惠价格计费，GPT 模型用量通常可节省 40% 以上。
+
+## 前置条件
+
+- 已安装 Codex CLI：`npm install -g @openai/codex`
+- 拥有 Flatkey 账号和 API 密钥——[在此获取](https://console.flatkey.ai/sign-up?lng=zh)
+
+## 配置
+
+运行 Codex CLI 前，设置以下环境变量：
+
+```bash
+export OPENAI_BASE_URL="https://router.flatkey.ai/v1"
+export OPENAI_API_KEY="sk-fk-your-flatkey-key"
+```
+
+也可以将它们添加到 shell 配置文件（`~/.bashrc`、`~/.zshrc`），使设置永久生效：
+
+```bash ~/.zshrc
+export OPENAI_BASE_URL="https://router.flatkey.ai/v1"
+export OPENAI_API_KEY="sk-fk-your-flatkey-key"
+```
+
+## 使用 CC Switch 配置
+
+[CC Switch](https://ccswitch.io) 是面向编程助手的第三方桌面配置管理器，也可以从其[官方 GitHub 仓库](https://github.com/farion1231/cc-switch)下载。
+
+1. 打开 CC Switch 并选择 **Codex**。
+2. 添加名为 `Flatkey` 的**自定义供应商**。
+3. 将 **Base URL** 设为 `https://router.flatkey.ai/v1`。
+4. 选择 **OpenAI Responses** 协议。
+5. 输入 Flatkey API 密钥（`sk-fk-...`），并从[模型目录](/zh/reference/model-list)中选择受支持的 GPT 模型。
+6. 启用该供应商，完全退出 Codex CLI 后重新启动。
+7. 运行一条简单命令，然后前往[用量日志](https://console.flatkey.ai/usage-logs/common?lng=zh)确认请求。
+
+<Note>
+  如果你的 CC Switch 版本没有 Flatkey 预设，请使用**自定义供应商**。Flatkey 直接支持 Responses 路由，因此无需为此配置启用 CC Switch 本地路由。
+</Note>
+
+## 运行 Codex CLI
+
+设置环境变量后，照常使用 Codex：
+
+```bash
+codex "Refactor this function to use async/await"
+```
+
+或进入交互模式：
+
+```bash
+codex
+```
+
+所有请求都会通过 Flatkey 路由，并按 Flatkey 优惠价格从预付余额中扣费。
+
+## 选择模型
+
+Codex CLI 默认使用 GPT 模型。你可以通过 `--model` 参数指定其他模型：
+
+```bash
+codex --model gpt-4o "Write unit tests for this module"
+codex --model gpt-4o-mini "Add docstrings to this file"  # cheaper for simple tasks
+```
+
+[模型目录](/zh/reference/model-list)中任何可用的 GPT 模型都能通过 Flatkey 与 Codex CLI 配合使用。
+
+## 验证配置
+
+运行 Codex 命令后，查看[用量日志](https://console.flatkey.ai/usage-logs/common?lng=zh)。你应当能看到包含模型和 token 数量的请求记录。如果没有记录，请确认当前供应商以及当前 shell 会话中的 `OPENAI_BASE_URL`。
+
+<Tip>
+  如果持续使用 Codex，可选择 $200 充值档位获得更优惠的实际费率。叠加奖励后，费用最低可至 GPT 官方价格的 5 折。
+</Tip>
+
+## 故障排查
+
+| 问题 | 解决方法 |
+|---|---|
+| `Authentication error` | 确认 `OPENAI_API_KEY` 已设为以 `sk-fk-` 开头的 Flatkey 密钥 |
+| `Model not found` | 在[模型目录](/zh/reference/model-list)中核对模型 ID |
+| `Insufficient balance` | 前往 [console.flatkey.ai](https://console.flatkey.ai?lng=zh)充值余额 |
+| 控制台中没有请求记录 | 确认当前 shell 中已设置 `OPENAI_BASE_URL` |
