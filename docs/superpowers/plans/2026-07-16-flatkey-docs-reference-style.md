@@ -56,6 +56,27 @@ assert.equal(pages.length, 56);
 assert.equal(new Set(pages).size, 56);
 for (const page of pages) assert.ok(existsSync(resolve(root, `${page}.mdx`)), page);
 
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const cssRules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/gs)].flatMap(
+  ([, selectorList, declarations]) =>
+    selectorList
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .split(",")
+      .map((selector) => ({ selector: selector.trim(), declarations })),
+);
+const assertDeclaration = (selector, property, value) => {
+  const rules = cssRules.filter((rule) => rule.selector === selector);
+  assert.ok(rules.length > 0, `Missing CSS rule for ${selector}`);
+  assert.ok(
+    rules.some((rule) =>
+      new RegExp(
+        `${escapeRegex(property)}:\\s*${escapeRegex(value)}(?:\\s*;|\\s*$)`,
+      ).test(rule.declarations),
+    ),
+    `${selector} must set ${property}: ${value}`,
+  );
+};
+
 for (const selector of [
   "#navbar",
   "#sidebar-content",
@@ -64,11 +85,19 @@ for (const selector of [
   "#page-title",
   "#table-of-contents",
   "nav-logo",
+  ".nav-logo",
   "sidebar-group-header",
-  "code-block",
+  ".sidebar-group-header",
+  "toc-item",
+  ".toc-item",
   "card",
+  ".card",
   "callout",
-]) assert.match(css, new RegExp(selector.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")));
+  ".callout",
+  "code-block",
+  "[data-component-part=\"code-block-root\"]",
+  "[data-component-part=\"code-group-tab-bar\"]",
+]) assert.match(css, new RegExp(escapeRegex(selector)));
 
 for (const token of [
   "#5B21B6",
@@ -96,6 +125,38 @@ for (const logo of ["logo/light.svg", "logo/dark.svg"]) {
 }
 
 assert.doesNotMatch(css, /\.bg-|\.text-|\.dark\\:|\\[class[\\^*$|~]?=/);
+assertDeclaration(
+  '#content .code-group [role="tab"][aria-selected="true"]',
+  "background",
+  "#F5F5F2",
+);
+assertDeclaration(
+  '#content [data-component-part="code-group-tab-bar"] [role="tab"][aria-selected="true"]',
+  "background",
+  "#F5F5F2",
+);
+assertDeclaration(
+  '#content .code-group [data-testid="copy-code-button"]',
+  "background",
+  "transparent",
+);
+assertDeclaration(
+  '#content [data-component-part="code-group-tab-bar"] [data-testid="copy-code-button"]',
+  "background",
+  "transparent",
+);
+assert.match(
+  css,
+  /@media \(max-width: 640px\)\s*\{[\s\S]*?#content-area\s*\{[^}]*padding-inline:\s*20px/s,
+);
+assert.match(
+  css,
+  /#mobile-nav \[role="group"\]\s*\{[^}]*min-width:\s*140px[^}]*min-height:\s*52px/s,
+);
+assert.match(
+  css,
+  /#mobile-nav \[role="group"\] button\[aria-pressed\]\s*\{[^}]*min-width:\s*44px[^}]*min-height:\s*44px/s,
+);
 console.log("Reference style contract validated for 56 routes.");
 ```
 
