@@ -31,13 +31,13 @@ export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
   将 `ANTHROPIC_BASE_URL` 设为 `https://router.flatkey.ai`，末尾不要添加 `/v1`。Claude Code CLI 会自动追加正确的路径。
 </Warning>
 
-<Note>
-  上述环境变量配置和 CC Switch 是两种可选方法，请选择其中一种。如果你使用 CC Switch，启动 Claude Code 的 shell 中残留的 `ANTHROPIC_BASE_URL` 或 `ANTHROPIC_API_KEY` 可能覆盖 CC Switch 当前选择的供应商，或与其发生冲突。验证 CC Switch 前，请在该 shell 中暂时取消设置这两个变量，并注释掉 shell 配置文件中过期的导出项。不要清除其他无关的 `ANTHROPIC_*` 变量。
-</Note>
-
 ## 使用 CC Switch 配置
 
 [CC Switch](https://ccswitch.io) 是面向编程助手的第三方桌面配置管理器，并非 Flatkey 产品。请使用 CC Switch v3.17.0 或更高版本。本教程已在 v3.17.0 中验证；更高版本的界面标签可能不同。
+
+<Note>
+  上述环境变量配置和 CC Switch 是两种可选方法，请选择其中一种。如果你使用 CC Switch，启动 Claude Code 的 shell 中残留的 `ANTHROPIC_BASE_URL` 或 `ANTHROPIC_API_KEY` 可能覆盖 CC Switch 当前选择的供应商，或与其发生冲突。验证 CC Switch 前，请在该 shell 中暂时取消设置这两个变量，并注释掉 shell 配置文件中过期的导出项。不要清除其他无关的 `ANTHROPIC_*` 变量。
+</Note>
 
 ### 1. 安装 CC Switch
 
@@ -107,7 +107,7 @@ claude "Fix the bug in this file"
 claude
 ```
 
-当 Flatkey 环境变量配置或 CC Switch 中的 Flatkey 供应商处于启用状态时，Claude Code 请求才会路由到 Flatkey，并按优惠价格从预付余额中扣费。
+所有请求都会路由到 Flatkey，并按优惠价格从预付余额中扣费。
 
 ## 验证配置
 
@@ -131,9 +131,7 @@ claude
   重度 Claude Code 用户选择 $200 充值档位最为划算。奖励额度相当于在模型折扣之外额外获得约一个月用量。
 </Tip>
 
-## 手动环境变量配置故障排查
-
-下表仅适用于**配置**一节中的手动 `ANTHROPIC_*` 配置。使用 CC Switch 时，请参阅上方的 **CC Switch 故障排查**。
+## 故障排查
 
 | 问题 | 解决方法 |
 |---|---|

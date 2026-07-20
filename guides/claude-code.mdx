@@ -31,13 +31,13 @@ export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
   Set `ANTHROPIC_BASE_URL` to `https://router.flatkey.ai` — without a trailing `/v1`. The Claude Code CLI appends the correct path automatically.
 </Warning>
 
-<Note>
-  The environment variables above and CC Switch are alternative configuration methods. Choose one method. If you use CC Switch, stale `ANTHROPIC_BASE_URL` or `ANTHROPIC_API_KEY` values in the shell that launches Claude Code can override or conflict with the provider selected in CC Switch. Before validating CC Switch, temporarily unset those two variables in that shell and comment out any stale exports in your shell profile. Do not clear unrelated `ANTHROPIC_*` variables.
-</Note>
-
 ## Configure with CC Switch
 
 [CC Switch](https://ccswitch.io) is a third-party desktop configuration manager for coding assistants. It is not a Flatkey product. Use CC Switch v3.17.0 or later. This tutorial was verified with v3.17.0; labels may differ in newer versions.
+
+<Note>
+  The environment variables above and CC Switch are alternative configuration methods. Choose one method. If you use CC Switch, stale `ANTHROPIC_BASE_URL` or `ANTHROPIC_API_KEY` values in the shell that launches Claude Code can override or conflict with the provider selected in CC Switch. Before validating CC Switch, temporarily unset those two variables in that shell and comment out any stale exports in your shell profile. Do not clear unrelated `ANTHROPIC_*` variables.
+</Note>
 
 ### 1. Install CC Switch
 
@@ -107,7 +107,7 @@ or interactively:
 claude
 ```
 
-While your Flatkey environment-variable configuration or Flatkey provider in CC Switch is active, Claude Code requests are routed to Flatkey and billed from your prepaid balance at discounted rates.
+All requests are routed to Flatkey and billed from your prepaid balance at discounted rates.
 
 ## Verifying the setup
 
@@ -130,9 +130,7 @@ On a typical Claude Code session of 50K input tokens, using Sonnet, that is:
   Heavy Claude Code users benefit most from the $200 top-up tier — the bonus credit effectively gives you an extra month of usage on top of the model discount.
 </Tip>
 
-## Troubleshooting the manual environment-variable setup
-
-This table applies to the manual `ANTHROPIC_*` configuration under **Configuration**. For CC Switch, use **Troubleshooting CC Switch** above.
+## Troubleshooting
 
 | Issue | Fix |
 |---|---|
