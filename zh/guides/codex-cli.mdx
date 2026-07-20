@@ -29,19 +29,68 @@ export OPENAI_API_KEY="sk-fk-your-flatkey-key"
 
 ## 使用 CC Switch 配置
 
-[CC Switch](https://ccswitch.io) 是面向编程助手的第三方桌面配置管理器，也可以从其[官方 GitHub 仓库](https://github.com/farion1231/cc-switch)下载。
+[CC Switch](https://ccswitch.io) 是面向编程助手的第三方桌面配置管理器，不属于 Flatkey，也没有内置 Flatkey 预设。本教程已使用 CC Switch v3.17.0 验证。较新版本中的标签可能不同。
 
-1. 打开 CC Switch 并选择 **Codex**。
-2. 添加名为 `Flatkey` 的**自定义供应商**。
-3. 将 **Base URL** 设为 `https://router.flatkey.ai/v1`。
-4. 选择 **OpenAI Responses** 协议。
-5. 输入 Flatkey API 密钥（`sk-fk-...`），并从[模型目录](/zh/reference/model-list)中选择受支持的 GPT 模型。
-6. 启用该供应商，完全退出 Codex CLI 后重新启动。
-7. 运行一条简单命令，然后前往[用量日志](https://console.flatkey.ai/usage-logs/common?lng=zh)确认请求。
+上方的手动 `OPENAI_BASE_URL` 和 `OPENAI_API_KEY` 配置方法与 CC Switch 是两种替代方案。测试 CC Switch 时，只需清除指向其他供应商或密钥的过期 `OPENAI_BASE_URL` 或 `OPENAI_API_KEY` 值。shell 继承的这些值可能覆盖 CC Switch 中启用的供应商，或与其发生冲突。
+
+### 1. 安装 CC Switch
+
+从 [ccswitch.io](https://ccswitch.io) 或其[官方 GitHub 仓库](https://github.com/farion1231/cc-switch)下载 CC Switch。安装适用于你操作系统的版本，然后打开应用。
+
+### 2. 打开 Codex 供应商面板
+
+在 CC Switch 中选择 **Codex**。此操作会打开供应商面板，用于管理新 Codex 会话使用的配置。
+
+### 3. 将 Flatkey 添加为自定义供应商
+
+选择**自定义供应商（Custom Provider）**，并使用以下值添加供应商：
+
+| 字段 | 值 |
+|---|---|
+| 供应商名称 | `Flatkey` |
+| API 密钥 | 你的 Flatkey 密钥，例如 `sk-fk-...` |
+| API 端点 | `https://router.flatkey.ai/v1` |
+| 默认模型 | Flatkey [模型目录](/zh/reference/model-list)中的准确模型 ID |
+| 上游格式 | `Responses（原生）` |
+
+Flatkey 原生支持 Responses API。此配置不需要 CC Switch **本地路由**，请将其保持关闭。
+
+### 4. 配置模型
+
+使用 Flatkey [模型目录](/zh/reference/model-list)中的准确模型 ID 作为默认模型。请勿使用显示名称或猜测模型 ID。
+
+模型映射决定 CC Switch 在 Codex `/model` 菜单中显示哪些条目。如果你的 CC Switch 版本提供**获取模型（Fetch Models）**，请使用该功能，然后映射你想显示的准确模型 ID。即使有效的默认模型未被映射或未显示在 `/model` 菜单中，你仍然可以直接请求该模型。
+
+### 5. 保存并启用 Flatkey
+
+保存供应商，然后在 Codex 供应商面板中启用 **Flatkey**。启动 Codex 前，请确认当前启用的供应商是 Flatkey。
+
+### 6. 重启并验证
+
+完全关闭现有 Codex 进程和终端，避免继续使用旧环境或会话。打开新终端，进入一个较小或空目录，启动新的 Codex 会话，然后发送一个最小请求。
+
+随后打开 Flatkey [用量日志](https://console.flatkey.ai/usage-logs/common?lng=zh)，确认实际请求。检查模型、输入和输出 token、延迟及费用。
 
 <Note>
-  如果你的 CC Switch 版本没有 Flatkey 预设，请使用**自定义供应商**。Flatkey 直接支持 Responses 路由，因此无需为此配置启用 CC Switch 本地路由。
+  智能体请求可能包含系统提示词、工具定义、对话历史、文件和命令结果。连接测试时请保持较小的上下文，以便轻松核对 token 数量和费用。
 </Note>
+
+### 切换回其他供应商
+
+在 CC Switch 中打开 Codex 供应商面板，选择并启用你要使用的供应商。完全关闭现有 Codex 进程和终端，然后启动新会话。如果你之前手动设置过 `OPENAI_BASE_URL` 或 `OPENAI_API_KEY`，请确保它们与预期供应商一致。
+
+### CC Switch 故障排查
+
+| 问题 | 解决方法 |
+|---|---|
+| 身份验证失败或密钥无效 | 重新输入 Flatkey 密钥，并确认它以 `sk-fk-` 开头。再次测试前，只清除过期的 `OPENAI_API_KEY` 值。 |
+| API 端点或连接错误 | 将 API 端点准确设置为 `https://router.flatkey.ai/v1`。检查新 shell 中是否存在过期的 `OPENAI_BASE_URL`。 |
+| 找不到模型或 `/model` 中没有模型 | 从[模型目录](/zh/reference/model-list)复制准确 ID。如果可用，请使用**获取模型（Fetch Models）**和模型映射。你仍可直接请求有效的默认模型。 |
+| 请求使用了错误的供应商 | 返回 Codex 供应商面板并启用 **Flatkey**。检查手动设置的 `OPENAI_*` 值是否指向其他供应商。 |
+| 更改未影响当前会话 | 完全关闭所有 Codex 进程和终端，然后打开新终端并启动新会话。 |
+| 余额不足 | 充值 Flatkey 余额，然后重试最小请求。 |
+| **本地路由**被误启用 | 关闭**本地路由**。Flatkey 原生接受 Responses 格式。 |
+| 用量日志中没有请求 | 发送新的最小请求，确认 **Flatkey** 已启用，并检查上述端点、密钥、余额和新会话步骤。 |
 
 ## 运行 Codex CLI
 
