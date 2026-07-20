@@ -33,18 +33,61 @@ export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
 
 ## Configure with CC Switch
 
-[CC Switch](https://ccswitch.io) is a third-party desktop configuration manager for coding assistants. You can also download it from the [official GitHub repository](https://github.com/farion1231/cc-switch).
+[CC Switch](https://ccswitch.io) is a third-party desktop configuration manager for coding assistants. It is not a Flatkey product. Use CC Switch v3.17.0 or later so the available controls match this tutorial.
 
-1. Open CC Switch and select **Claude Code**.
-2. Add a **Custom Provider** named `Flatkey`.
-3. Set the base URL to `https://router.flatkey.ai` without a trailing `/v1`.
-4. Enter your Flatkey API key (`sk-fk-...`) and activate the provider.
-5. Fully quit and reopen Claude Code so it reloads the provider settings.
-6. Send a small request, then confirm it in **Usage Logs** in the [Flatkey Console](https://console.flatkey.ai/usage-logs/common).
+### 1. Install CC Switch
 
-<Note>
-  If your CC Switch version does not include a Flatkey preset, use **Custom Provider**. CC Switch is not a Flatkey product.
-</Note>
+Download CC Switch from the [CC Switch website](https://ccswitch.io) or its [official GitHub repository](https://github.com/farion1231/cc-switch). Install v3.17.0 or later. If you already use an older version, update it before continuing.
+
+### 2. Open the Claude Code provider panel
+
+Open CC Switch and select **Claude Code**. Make sure you are editing the Claude Code provider list, not the provider list for another coding assistant.
+
+### 3. Add Flatkey as a custom provider
+
+Add a provider and choose **Custom Provider**. Configure Flatkey yourself; Flatkey is not a built-in CC Switch provider.
+
+| Field | Value |
+|---|---|
+| Provider name | `Flatkey` |
+| API key | Your Flatkey key in the form `sk-fk-...` |
+| Endpoint / Base URL | `https://router.flatkey.ai` |
+| Model ID | Copy the exact model ID from the [Flatkey Model Directory](/reference/model-list) |
+
+<Warning>
+  The Claude endpoint must be exactly `https://router.flatkey.ai`. It must **not** end in `/v1`.
+</Warning>
+
+Copy the model ID exactly as shown in the directory, including any hyphens and version suffixes.
+
+### 4. Save and activate Flatkey
+
+Save the custom provider. Then select **Flatkey** and activate it for Claude Code. Before you leave CC Switch, confirm that Flatkey is the active Claude Code provider.
+
+### 5. Restart and verify
+
+Fully exit Claude Code, including any running Claude Code terminal sessions, and then start it again. Open a small or empty directory and send a minimal prompt, such as `Reply with OK only.`
+
+Open [Flatkey Usage Logs](https://console.flatkey.ai/usage-logs/common) and find the request you just sent. Confirm its model, input and output token counts, latency, and cost. This log entry verifies that the real request reached Flatkey.
+
+<Tip>
+  Agent requests can include system prompts, tool definitions, conversation history, files, and command output. Keep the verification directory and prompt small so your test uses as few tokens as practical.
+</Tip>
+
+### Switch back to another provider
+
+Open the Claude Code provider panel in CC Switch, select the provider you want to use, and activate it. Fully exit and restart Claude Code again so the new provider takes effect. You can keep the Flatkey entry and switch back to it later.
+
+### Troubleshooting CC Switch
+
+| Issue | What to check |
+|---|---|
+| Authentication fails | Re-enter your Flatkey API key. It must start with `sk-fk-` and must not contain spaces. |
+| Claude Code cannot connect | Set the endpoint to exactly `https://router.flatkey.ai`; remove `/v1` and check your network connection. |
+| Requests use the wrong provider | Return to the Claude Code provider panel and confirm that **Flatkey** is selected and active. |
+| Changes do not take effect | Fully exit every Claude Code process and terminal session, then restart Claude Code. |
+| Flatkey reports insufficient balance | Add credit in the [Flatkey Console](https://console.flatkey.ai) before retrying. |
+| The request is missing from Usage Logs | Confirm Flatkey is active, restart Claude Code, and send a new minimal prompt. A request that fails before reaching Flatkey will not create a log entry. |
 
 ## Running Claude Code
 
