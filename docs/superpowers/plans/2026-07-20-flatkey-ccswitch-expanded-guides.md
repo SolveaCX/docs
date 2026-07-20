@@ -442,4 +442,3 @@ Expected: only the design/plan documents, six guide pages, and twenty screenshot
 - [ ] **Step 7: Create the final verification commit if validation caused changes**
 
 Use a Lore-format message. `Tested:` must list the content contracts, image parity, secret scan, JSON parse, `git diff --check`, and Mintlify result or its exact gap.
-
