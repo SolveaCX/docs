@@ -65,11 +65,27 @@ Flatkey natively supports the Responses API. CC Switch **Local Routing** is not 
 
 ### 4. Configure the model
 
-Use an exact model ID from the Flatkey [Model Directory](/reference/model-list) as the default model. Do not use a display name or guess an ID. **Default Model** is the model Codex uses when you start a new session without an explicit model.
+Find **Flatkey** in the Codex provider panel in CC Switch, then click **Edit**. To change the model used by new Codex sessions, set **Default Model** to an exact model ID from the Flatkey [Model Directory](/reference/model-list). Do not use a display name or guess an ID.
+
+For example, you can enter any of these text-generation models in the CC Switch **Default Model** field:
+
+```text
+gpt-5.4
+claude-sonnet-4-6
+gemini-2.5-flash
+```
 
 **Model Mapping** affects only the entries shown in the Codex `/model` menu. It does not rename a model or make an incompatible model work with Codex. Click **Fetch Models**, then map exact IDs such as `claude-sonnet-4-6` or `gemini-2.5-flash` if you want them to appear in `/model`.
 
-For one command, `codex --model <id>` passes the exact ID for that invocation. It does not require a `/model` entry. Copy current IDs from the Flatkey [Model Directory](/reference/model-list) before use.
+After you save and activate Flatkey, new Codex sessions use the **Default Model** set in CC Switch. To override it for one command only, pass the same exact ID:
+
+```bash
+codex --model gpt-5.4 "Review this change"
+codex --model claude-sonnet-4-6 "Review this change"
+codex --model gemini-2.5-flash "Review this change"
+```
+
+Choose a text-generation model that is available through Flatkey and compatible with the Codex request format. Do not use image, audio, or embedding models with Codex CLI. After sending a request, treat Flatkey [Usage Logs](https://console.flatkey.ai/usage-logs/common) as authoritative for the actual model served.
 
 ![Choose Responses native and configure the Codex model mapping](/images/guides/cc-switch/en/codex-model-mapping.png)
 
@@ -123,20 +139,6 @@ codex
 ```
 
 All requests are routed through Flatkey and billed against your prepaid balance at Flatkey's discounted rates.
-
-## Choosing a model
-
-You can specify a model with the `--model` flag:
-
-```bash
-codex --model gpt-5.4 "Review this change"
-codex --model claude-sonnet-4-6 "Review this change"
-codex --model gemini-2.5-flash "Review this change"
-```
-
-Choose a text-generation model that is available through Flatkey and compatible with the Codex request format. Copy its exact ID from the current [Model Directory](/reference/model-list). Do not use image, audio, or embedding models with Codex CLI.
-
-After sending a request, treat Flatkey [Usage Logs](https://console.flatkey.ai/usage-logs/common) as authoritative for the actual model served.
 
 ## Verify the manual environment-variable setup
 
