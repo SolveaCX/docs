@@ -1,10 +1,10 @@
 ---
 title: "通过 Flatkey 使用 OpenAI Codex CLI 终端智能体"
 sidebarTitle: "Codex CLI"
-description: "将 OpenAI Codex CLI 流量路由到 Flatkey，低至官方价格的 5 折使用 GPT 模型。设置两个环境变量即可开始。"
+description: "将 OpenAI Codex CLI 流量路由到 Flatkey，在可用时使用兼容的 GPT、Claude、Gemini 等文本模型。"
 ---
 
-OpenAI Codex CLI 是一款在终端中运行的 AI 编程助手。设置两个环境变量，即可将 Codex CLI 的全部请求路由到 Flatkey，并按 Flatkey 的优惠价格计费，GPT 模型用量通常可节省 40% 以上。
+OpenAI Codex CLI 是一款在终端中运行的 AI 编程助手。设置两个环境变量，即可将 Codex CLI 请求路由到 Flatkey，并在这些模型通过 Flatkey 可用时使用兼容的 GPT、Claude、Gemini 等文本模型。
 
 ## 前置条件
 
@@ -65,9 +65,11 @@ Flatkey 原生支持 Responses API。此配置不需要 CC Switch **本地路由
 
 ### 4. 配置模型
 
-使用 Flatkey [模型目录](/zh/reference/model-list)中的准确模型 ID 作为默认模型。请勿使用显示名称或猜测模型 ID。
+使用 Flatkey [模型目录](/zh/reference/model-list)中的准确模型 ID 作为默认模型。请勿使用显示名称或猜测模型 ID。**默认模型**是你在没有显式指定模型时启动新会话所使用的模型。
 
-模型映射只影响 Codex `/model` 菜单中显示的条目。点击**获取模型列表**，然后映射你想显示的准确模型 ID。即使准确模型 ID 未被映射或未显示，你仍可将其设为供应商的**默认模型**，或通过 `codex --model <id>` 直接传入。
+**模型映射**只影响 Codex `/model` 菜单中显示的条目。它不会重命名模型，也不会让不兼容的模型适用于 Codex。点击**获取模型列表**，然后映射 `claude-sonnet-4-6` 或 `gemini-2.5-flash` 等准确 ID，让它们显示在 `/model` 中。
+
+对单次命令，`codex --model <id>` 会为本次调用传入这个准确 ID。它不需要 `/model` 条目。使用前请从 Flatkey [模型目录](/zh/reference/model-list)复制当前 ID。
 
 ![选择原生 Responses 上游格式并配置 Codex 模型映射](/images/guides/cc-switch/zh/codex-model-mapping.png)
 
@@ -99,7 +101,7 @@ Flatkey 原生支持 Responses API。此配置不需要 CC Switch **本地路由
 |---|---|
 | 身份验证失败或密钥无效 | 重新输入 Flatkey 密钥，并确认它以 `sk-fk-` 开头。再次测试前，只清除过期的 `OPENAI_API_KEY` 值。 |
 | API 请求地址或连接错误 | 将**API 请求地址**准确设置为 `https://router.flatkey.ai/v1`。检查新 shell 中是否存在过期的 `OPENAI_BASE_URL`。 |
-| 找不到模型或 `/model` 中没有模型 | 从[模型目录](/zh/reference/model-list)复制准确 ID。使用**获取模型列表**和模型映射。映射只影响 `/model`；请将准确 ID 设为供应商的**默认模型**，或通过 `codex --model <id>` 传入。 |
+| 找不到模型或 `/model` 中没有模型 | 从[模型目录](/zh/reference/model-list)复制准确 ID。使用**获取模型列表**和**模型映射**只为 `/model` 添加条目。映射不会重命名模型，也不会让不兼容的模型适用于 Codex。请将准确 ID 设为供应商的**默认模型**，或通过 `codex --model <id>` 传入。 |
 | 请求使用了错误的供应商 | 返回 Codex 供应商面板并启用 **Flatkey**。检查手动设置的 `OPENAI_*` 值是否指向其他供应商。 |
 | 更改未影响当前会话 | 退出现有 Codex 会话并结束其进程。关闭运行 Codex 的特定终端窗口或标签页，不要关闭其他无关终端。打开一个不会继承过期相关 `OPENAI_BASE_URL` 或 `OPENAI_API_KEY` 值的新终端，然后启动新会话。 |
 | 余额不足 | 充值 Flatkey 余额，然后重试最小请求。 |
@@ -124,14 +126,17 @@ codex
 
 ## 选择模型
 
-Codex CLI 默认使用 GPT 模型。你可以通过 `--model` 参数指定其他模型：
+你可以通过 `--model` 参数指定模型：
 
 ```bash
-codex --model gpt-4o "Write unit tests for this module"
-codex --model gpt-4o-mini "Add docstrings to this file"  # cheaper for simple tasks
+codex --model gpt-5.4 "Review this change"
+codex --model claude-sonnet-4-6 "Review this change"
+codex --model gemini-2.5-flash "Review this change"
 ```
 
-请从[模型目录](/zh/reference/model-list)中选择当前列出且兼容 Codex 的文本模型，并复制其准确 ID。发送请求后，请在[用量日志](https://console.flatkey.ai/usage-logs/common?lng=zh)中确认实际使用的模型。图像和音频模型不适用于 Codex CLI。
+请选择 Flatkey 可用且兼容 Codex 请求格式的文本生成模型，并从当前[模型目录](/zh/reference/model-list)复制准确 ID。不要将图像、音频或嵌入模型用于 Codex CLI。
+
+发送请求后，请以 Flatkey [用量日志](https://console.flatkey.ai/usage-logs/common?lng=zh)为准确认实际服务的模型。
 
 ## 验证手动环境变量配置
 
