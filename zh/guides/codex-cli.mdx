@@ -75,7 +75,13 @@ claude-sonnet-4-6
 gemini-2.5-flash
 ```
 
-**模型映射**只影响 Codex `/model` 菜单中显示的条目。它不会重命名模型，也不会让不兼容的模型适用于 Codex。点击**获取模型列表**，然后映射 `claude-sonnet-4-6` 或 `gemini-2.5-flash` 等准确 ID，让它们显示在 `/model` 中。
+要在 CC Switch 中添加或编辑其他模型，并让它们显示在 Codex CLI 的 `/model` 菜单中，请使用**模型映射**：
+
+1. 点击**获取模型列表**，让 CC Switch 从 Flatkey 加载可用模型。若目标模型不在列表中，请点击**添加模型**。
+2. 编辑映射条目中的**菜单显示名**。这个名称会显示在 `/model` 菜单中。
+3. 将**实际请求模型**填写为模型目录中的准确 ID，例如 `claude-sonnet-4-6` 或 `gemini-2.5-flash`。Codex 发送请求时使用的是这个 ID，而不是菜单显示名。
+
+模型映射只控制 `/model` 菜单条目和对应的实际请求 ID，不会让不兼容的模型适用于 Codex。修改映射后，请按下面的步骤保存供应商并重启 Codex，新的模型列表才会生效。
 
 保存并启用 Flatkey 后，新启动的 Codex 会话会使用你在 CC Switch 中设置的**默认模型**。如果只想为单次命令临时指定模型，也可以传入同一个准确 ID：
 
@@ -87,7 +93,7 @@ codex --model gemini-2.5-flash "Review this change"
 
 请选择 Flatkey 可用且兼容 Codex 请求格式的文本生成模型。不要将图像、音频或嵌入模型用于 Codex CLI。发送请求后，请以 Flatkey [用量日志](https://console.flatkey.ai/usage-logs/common?lng=zh)中记录的实际服务模型为准。
 
-![选择原生 Responses 上游格式并配置 Codex 模型映射](/images/guides/cc-switch/zh/codex-model-mapping.png)
+![获取或添加其他模型并配置 Codex CLI 的模型映射](/images/guides/cc-switch/zh/codex-model-mapping.png)
 
 ### 5. 保存并启用 Flatkey
 
@@ -97,7 +103,7 @@ codex --model gemini-2.5-flash "Review this change"
 
 ### 6. 重启并验证
 
-退出现有 Codex 会话并结束其进程。关闭运行 Codex 的特定终端窗口或标签页，不要关闭其他无关终端。打开一个不会继承过期相关 `OPENAI_BASE_URL` 或 `OPENAI_API_KEY` 值的新终端。进入一个较小或空目录并启动新的 Codex 会话。确认启动信息显示预期的 Codex 模型，例如 `gpt-5.6-sol`，然后发送一个最小请求。
+退出现有 Codex 会话并结束其进程。关闭运行 Codex 的特定终端窗口或标签页，不要关闭其他无关终端。打开一个不会继承过期相关 `OPENAI_BASE_URL` 或 `OPENAI_API_KEY` 值的新终端。进入一个较小或空目录并启动新的 Codex 会话。输入 `/model`，确认刚才添加或编辑的模型已经显示，并选择需要使用的模型。然后发送一个最小请求。
 
 ![在新的 Codex CLI 会话中确认 gpt-5.6-sol 并发送最小请求](/images/guides/cc-switch/zh/codex-cli-verify.png)
 
@@ -117,7 +123,7 @@ codex --model gemini-2.5-flash "Review this change"
 |---|---|
 | 身份验证失败或密钥无效 | 重新输入 Flatkey 密钥，并确认它以 `sk-fk-` 开头。再次测试前，只清除过期的 `OPENAI_API_KEY` 值。 |
 | API 请求地址或连接错误 | 将**API 请求地址**准确设置为 `https://router.flatkey.ai/v1`。检查新 shell 中是否存在过期的 `OPENAI_BASE_URL`。 |
-| 找不到模型或 `/model` 中没有模型 | 从[模型目录](/zh/reference/model-list)复制准确 ID。使用**获取模型列表**和**模型映射**只为 `/model` 添加条目。映射不会重命名模型，也不会让不兼容的模型适用于 Codex。请将准确 ID 设为供应商的**默认模型**，或通过 `codex --model <id>` 传入。 |
+| 找不到模型或 `/model` 中没有模型 | 从[模型目录](/zh/reference/model-list)复制准确 ID。在**模型映射**中点击**获取模型列表**或**添加模型**，设置**菜单显示名**，并将**实际请求模型**填写为准确 ID。保存供应商并完全重启 Codex 后，再次输入 `/model`。也可以将准确 ID 设为供应商的**默认模型**，或通过 `codex --model <id>` 临时传入。 |
 | 请求使用了错误的供应商 | 返回 Codex 供应商面板并启用 **Flatkey**。检查手动设置的 `OPENAI_*` 值是否指向其他供应商。 |
 | 更改未影响当前会话 | 退出现有 Codex 会话并结束其进程。关闭运行 Codex 的特定终端窗口或标签页，不要关闭其他无关终端。打开一个不会继承过期相关 `OPENAI_BASE_URL` 或 `OPENAI_API_KEY` 值的新终端，然后启动新会话。 |
 | 余额不足 | 充值 Flatkey 余额，然后重试最小请求。 |

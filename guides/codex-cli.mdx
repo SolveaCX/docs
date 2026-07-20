@@ -75,7 +75,13 @@ claude-sonnet-4-6
 gemini-2.5-flash
 ```
 
-**Model Mapping** affects only the entries shown in the Codex `/model` menu. It does not rename a model or make an incompatible model work with Codex. Click **Fetch Models**, then map exact IDs such as `claude-sonnet-4-6` or `gemini-2.5-flash` if you want them to appear in `/model`.
+To add or edit other models in CC Switch and show them in the Codex CLI `/model` menu, use **Model Mapping**:
+
+1. Click **Fetch Models** to load available models from Flatkey. If the model you need is missing, click **Add Model**.
+2. Edit the mapping's **Menu Display Name**. This is the label shown in the `/model` menu.
+3. Set **Actual Request Model** to the exact ID from the model directory, such as `claude-sonnet-4-6` or `gemini-2.5-flash`. Codex sends this ID in requests, not the menu label.
+
+Model Mapping controls the `/model` menu entry and its corresponding request ID. It does not make an incompatible model work with Codex. After changing a mapping, follow the steps below to save the provider and restart Codex before the updated model list takes effect.
 
 After you save and activate Flatkey, new Codex sessions use the **Default Model** set in CC Switch. To override it for one command only, pass the same exact ID:
 
@@ -87,7 +93,7 @@ codex --model gemini-2.5-flash "Review this change"
 
 Choose a text-generation model that is available through Flatkey and compatible with the Codex request format. Do not use image, audio, or embedding models with Codex CLI. After sending a request, treat Flatkey [Usage Logs](https://console.flatkey.ai/usage-logs/common) as authoritative for the actual model served.
 
-![Choose Responses native and configure the Codex model mapping](/images/guides/cc-switch/en/codex-model-mapping.png)
+![Fetch or add other models and configure their Codex CLI model mappings](/images/guides/cc-switch/en/codex-model-mapping.png)
 
 ### 5. Save and activate Flatkey
 
@@ -97,7 +103,7 @@ Save the provider, then activate **Flatkey** in the Codex provider panel. Confir
 
 ### 6. Restart and verify
 
-Exit the existing Codex session and end its process. Close the specific terminal window or tab that ran Codex, not unrelated terminals. Open a fresh terminal that does not inherit stale relevant `OPENAI_BASE_URL` or `OPENAI_API_KEY` values. Move to a small or empty directory, start a new Codex session, and send a minimal request.
+Exit the existing Codex session and end its process. Close the specific terminal window or tab that ran Codex, not unrelated terminals. Open a fresh terminal that does not inherit stale relevant `OPENAI_BASE_URL` or `OPENAI_API_KEY` values. Move to a small or empty directory and start a new Codex session. Enter `/model`, confirm that the model you added or edited appears, and select the model you want to use. Then send a minimal request.
 
 ![Verify a new Codex CLI session with a minimal OK response](/images/guides/cc-switch/en/codex-cli-verify.png)
 
@@ -117,7 +123,7 @@ Open the Codex provider panel in CC Switch, select the provider you want, and ac
 |---|---|
 | Authentication or invalid key error | Re-enter your Flatkey key and confirm that it starts with `sk-fk-`. Unset only stale `OPENAI_API_KEY` values before testing again. |
 | Endpoint or connection error | Set **API Request URL** exactly to `https://router.flatkey.ai/v1`. Check for a stale `OPENAI_BASE_URL` in the new shell. |
-| Model not found or missing from `/model` | Copy the exact ID from the [Model Directory](/reference/model-list). Use **Fetch Models** and **Model Mapping** for `/model` entries only. Mapping does not rename a model or make it compatible. Set the exact ID as the provider **Default Model** or pass it with `codex --model <id>`. |
+| Model not found or missing from `/model` | Copy the exact ID from the [Model Directory](/reference/model-list). In **Model Mapping**, click **Fetch Models** or **Add Model**, set the **Menu Display Name**, and enter the exact ID as the **Actual Request Model**. Save the provider, fully restart Codex, and enter `/model` again. You can also set the exact ID as the provider **Default Model** or pass it temporarily with `codex --model <id>`. |
 | Requests use the wrong provider | Return to the Codex provider panel and activate **Flatkey**. Check that manual `OPENAI_*` values do not point elsewhere. |
 | Changes do not affect the current session | Exit the existing Codex session and end its process. Close the specific terminal window or tab that ran Codex, not unrelated terminals. Open a fresh terminal that does not inherit stale relevant `OPENAI_BASE_URL` or `OPENAI_API_KEY` values, then start a new session. |
 | Insufficient balance | Top up your Flatkey balance, then retry the minimal request. |
