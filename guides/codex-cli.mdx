@@ -17,31 +17,94 @@ Set the following environment variables before running Codex CLI:
 
 ```bash
 export OPENAI_BASE_URL="https://router.flatkey.ai/v1"
-export OPENAI_API_KEY="sk-fk-your-flatkey-key"
+export OPENAI_API_KEY="sk-fk-..."
 ```
 
 Or add them to your shell profile (`~/.bashrc`, `~/.zshrc`) to make the setting permanent:
 
 ```bash ~/.zshrc
 export OPENAI_BASE_URL="https://router.flatkey.ai/v1"
-export OPENAI_API_KEY="sk-fk-your-flatkey-key"
+export OPENAI_API_KEY="sk-fk-..."
 ```
 
 ## Configure with CC Switch
 
-[CC Switch](https://ccswitch.io) is a third-party desktop configuration manager for coding assistants. You can also download it from the [official GitHub repository](https://github.com/farion1231/cc-switch).
+[CC Switch](https://ccswitch.io) is a third-party desktop configuration manager for coding assistants. It is not a Flatkey product, and Flatkey is not a built-in preset. The steps below follow the current CC Switch interface.
 
-1. Open CC Switch and select **Codex**.
-2. Add a **Custom Provider** named `Flatkey`.
-3. Set **Base URL** to `https://router.flatkey.ai/v1`.
-4. Select the **OpenAI Responses** protocol.
-5. Enter your Flatkey API key (`sk-fk-...`) and choose a supported GPT model from the [Model Directory](/reference/model-list).
-6. Activate the provider, fully quit Codex CLI, and start it again.
-7. Run a small command, then confirm the request in [Usage Logs](https://console.flatkey.ai/usage-logs/common).
+The manual `OPENAI_BASE_URL` and `OPENAI_API_KEY` method above and CC Switch are alternative ways to configure Codex. For a clear CC Switch test, unset only stale `OPENAI_BASE_URL` or `OPENAI_API_KEY` values that point to another provider or key. Values inherited by your shell can override or conflict with the provider you activate in CC Switch.
+
+### 1. Install CC Switch
+
+Download CC Switch from [ccswitch.io](https://ccswitch.io) or its [official GitHub repository](https://github.com/farion1231/cc-switch). Install it for your operating system, then open the app.
+
+### 2. Open the Codex provider panel
+
+Select **Codex** in CC Switch. This opens the provider panel that controls the configuration used by new Codex sessions.
+
+![Open the Codex provider panel and select the add-provider button in CC Switch](/images/guides/cc-switch/en/codex-provider-list.png)
+
+### 3. Add Flatkey as a custom provider
+
+Choose **Custom Provider** and add a provider with these values:
+
+| Field | Value |
+|---|---|
+| Provider Name | `flatkey` |
+| API Key | Your Flatkey key, such as `sk-fk-...` |
+| API Request URL | `https://router.flatkey.ai/v1` |
+| Default Model | `gpt-5.6-sol` in the screenshot. Confirm and copy a current exact ID from the Flatkey [Model Directory](/reference/model-list) before use. |
+| Upstream Format | `Responses (native)` |
+
+![Enter the current Flatkey provider fields in CC Switch](/images/guides/cc-switch/en/codex-provider-form.png)
+
+<Warning>
+  Treat your API key as sensitive. Do not include it in screenshots or exported or shared provider configurations. If it is exposed, revoke or rotate the key in Flatkey, then replace it in CC Switch.
+</Warning>
+
+Flatkey natively supports the Responses API. CC Switch **Local Routing** is not required for this setup, so leave it off.
+
+### 4. Configure the model
+
+Use an exact model ID from the Flatkey [Model Directory](/reference/model-list) as the default model. Do not use a display name or guess an ID.
+
+Model mapping affects only the entries shown in the Codex `/model` menu. Click **Fetch Models**, then map the exact IDs you want to show. Even when an exact model ID is not mapped or visible, you can set it as the provider **Default Model** or pass it directly with `codex --model <id>`.
+
+![Choose Responses native and configure the Codex model mapping](/images/guides/cc-switch/en/codex-model-mapping.png)
+
+### 5. Save and activate Flatkey
+
+Save the provider, then activate **Flatkey** in the Codex provider panel. Confirm that Flatkey is the active provider before you start Codex.
+
+![Confirm that the Flatkey Codex provider is in use](/images/guides/cc-switch/en/codex-provider-active.png)
+
+### 6. Restart and verify
+
+Exit the existing Codex session and end its process. Close the specific terminal window or tab that ran Codex, not unrelated terminals. Open a fresh terminal that does not inherit stale relevant `OPENAI_BASE_URL` or `OPENAI_API_KEY` values. Move to a small or empty directory, start a new Codex session, and send a minimal request.
+
+![Verify a new Codex CLI session with a minimal OK response](/images/guides/cc-switch/en/codex-cli-verify.png)
+
+Then open Flatkey [Usage Logs](https://console.flatkey.ai/usage-logs/common) and confirm the actual request. Check its model, input and output tokens, latency, and cost.
 
 <Note>
-  Use **Custom Provider** if your CC Switch version does not include a Flatkey preset. Flatkey supports the Responses route directly, so you do not need CC Switch Local Routing for this setup.
+  An agent request can include system prompts, tool definitions, conversation history, files, and command results. Use a small context for connectivity checks so the token count and cost stay easy to inspect.
 </Note>
+
+### Switch back to another provider
+
+Open the Codex provider panel in CC Switch, select the provider you want, and activate it. End existing Codex sessions and processes, then open a fresh terminal that does not inherit stale relevant `OPENAI_BASE_URL` or `OPENAI_API_KEY` values. Start a new session.
+
+### Troubleshooting CC Switch
+
+| Issue | Fix |
+|---|---|
+| Authentication or invalid key error | Re-enter your Flatkey key and confirm that it starts with `sk-fk-`. Unset only stale `OPENAI_API_KEY` values before testing again. |
+| Endpoint or connection error | Set **API Request URL** exactly to `https://router.flatkey.ai/v1`. Check for a stale `OPENAI_BASE_URL` in the new shell. |
+| Model not found or missing from `/model` | Copy the exact ID from the [Model Directory](/reference/model-list). Use **Fetch Models** and model mapping. Mapping affects only `/model`; set the exact ID as the provider **Default Model** or pass it with `codex --model <id>`. |
+| Requests use the wrong provider | Return to the Codex provider panel and activate **Flatkey**. Check that manual `OPENAI_*` values do not point elsewhere. |
+| Changes do not affect the current session | Exit the existing Codex session and end its process. Close the specific terminal window or tab that ran Codex, not unrelated terminals. Open a fresh terminal that does not inherit stale relevant `OPENAI_BASE_URL` or `OPENAI_API_KEY` values, then start a new session. |
+| Insufficient balance | Top up your Flatkey balance, then retry the minimal request. |
+| **Local Routing** is enabled | Turn **Local Routing** off. Flatkey natively accepts the Responses format. |
+| No request appears in Usage Logs | Send a new minimal request, confirm that **Flatkey** is active, and check the endpoint, key, balance, and new-session steps above. |
 
 ## Running Codex CLI
 
@@ -68,17 +131,19 @@ codex --model gpt-4o "Write unit tests for this module"
 codex --model gpt-4o-mini "Add docstrings to this file"  # cheaper for simple tasks
 ```
 
-Any GPT model available in the [Model Directory](/reference/model-list) works with Codex CLI through Flatkey.
+Choose a Codex-compatible text model currently listed in the [Model Directory](/reference/model-list), and copy its exact ID. After sending a request, confirm the actual model in [Usage Logs](https://console.flatkey.ai/usage-logs/common). Image and audio models are not suitable for Codex CLI.
 
-## Verifying the setup
+## Verify the manual environment-variable setup
 
-After running a Codex command, check [Usage Logs](https://console.flatkey.ai/usage-logs/common) — you should see the request logged with the model and token counts. If no request appears, confirm the active provider and `OPENAI_BASE_URL` in the current shell session.
+This section applies only to the manual `OPENAI_BASE_URL` and `OPENAI_API_KEY` method. If you configured Codex with CC Switch, follow [Restart and verify](#6-restart-and-verify) above instead. For the manual method, run a Codex command and check [Usage Logs](https://console.flatkey.ai/usage-logs/common). You should see the request logged with the model and token counts. If no request appears, confirm both variables are set correctly in the current shell session.
 
 <Tip>
   Use the $200 top-up tier for the best effective rate on sustained Codex usage — the stacked bonus brings costs to as low as 50% of official GPT pricing.
 </Tip>
 
-## Troubleshooting
+## Troubleshoot the manual environment-variable setup
+
+The table below applies only to the manual `OPENAI_BASE_URL` and `OPENAI_API_KEY` method. If you configured Codex with CC Switch, use [Troubleshooting CC Switch](#troubleshooting-cc-switch) above.
 
 | Issue | Fix |
 |---|---|
