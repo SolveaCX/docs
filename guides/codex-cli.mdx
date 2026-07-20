@@ -53,13 +53,17 @@ Choose **Custom Provider** and add a provider with these values:
 | Default model | `gpt-5.4` (example). Confirm and copy the current exact ID from the Flatkey [Model Directory](/reference/model-list) before use. |
 | Upstream format | `Responses (native)` |
 
+<Warning>
+  Treat your API key as sensitive. Do not include it in screenshots or exported or shared provider configurations. If it is exposed, revoke or rotate the key in Flatkey, then replace it in CC Switch.
+</Warning>
+
 Flatkey natively supports the Responses API. CC Switch **Local Routing** is not required for this setup, so leave it off.
 
 ### 4. Configure the model
 
 Use an exact model ID from the Flatkey [Model Directory](/reference/model-list) as the default model. Do not use a display name or guess an ID.
 
-Model mapping controls which entries CC Switch exposes in the Codex `/model` menu. Use **Fetch Models** if your CC Switch version provides it, then map the exact IDs you want to show. A valid default model can still be requested directly even when it is not mapped or visible in the `/model` menu.
+Model mapping affects only the entries shown in the Codex `/model` menu. Use **Fetch Models** if your CC Switch version provides it, then map the exact IDs you want to show. Even when an exact model ID is not mapped or visible, you can set it as the provider **Default Model** or pass it directly with `codex --model <id>`.
 
 ### 5. Save and activate Flatkey
 
@@ -67,7 +71,7 @@ Save the provider, then activate **Flatkey** in the Codex provider panel. Confir
 
 ### 6. Restart and verify
 
-Fully close existing Codex processes and terminals so they cannot reuse an old environment or session. Open a new terminal, move to a small or empty directory, start a new Codex session, and send a minimal request.
+End existing Codex sessions and processes. Open a fresh terminal that does not inherit stale relevant `OPENAI_BASE_URL` or `OPENAI_API_KEY` values. Move to a small or empty directory, start a new Codex session, and send a minimal request.
 
 Then open Flatkey [Usage Logs](https://console.flatkey.ai/usage-logs/common) and confirm the actual request. Check its model, input and output tokens, latency, and cost.
 
@@ -77,7 +81,7 @@ Then open Flatkey [Usage Logs](https://console.flatkey.ai/usage-logs/common) and
 
 ### Switch back to another provider
 
-Open the Codex provider panel in CC Switch, select the provider you want, and activate it. Fully close existing Codex processes and terminals, then start a new session. If you previously set manual `OPENAI_BASE_URL` or `OPENAI_API_KEY` values, make sure they match the provider you intend to use.
+Open the Codex provider panel in CC Switch, select the provider you want, and activate it. End existing Codex sessions and processes, then open a fresh terminal that does not inherit stale relevant `OPENAI_BASE_URL` or `OPENAI_API_KEY` values. Start a new session.
 
 ### Troubleshooting CC Switch
 
@@ -87,7 +91,7 @@ Open the Codex provider panel in CC Switch, select the provider you want, and ac
 | Endpoint or connection error | Set the API endpoint exactly to `https://router.flatkey.ai/v1`. Check for a stale `OPENAI_BASE_URL` in the new shell. |
 | Model not found or missing from `/model` | Copy the exact ID from the [Model Directory](/reference/model-list). Use **Fetch Models** and model mapping when available. You can still request a valid default model directly. |
 | Requests use the wrong provider | Return to the Codex provider panel and activate **Flatkey**. Check that manual `OPENAI_*` values do not point elsewhere. |
-| Changes do not affect the current session | Fully close all Codex processes and terminals, then open a new terminal and start a new session. |
+| Changes do not affect the current session | End existing Codex sessions and processes. Open a fresh terminal that does not inherit stale relevant `OPENAI_BASE_URL` or `OPENAI_API_KEY` values, then start a new session. |
 | Insufficient balance | Top up your Flatkey balance, then retry the minimal request. |
 | **Local Routing** is enabled | Turn **Local Routing** off. Flatkey natively accepts the Responses format. |
 | No request appears in Usage Logs | Send a new minimal request, confirm that **Flatkey** is active, and check the endpoint, key, balance, and new-session steps above. |

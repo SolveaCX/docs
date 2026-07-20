@@ -53,13 +53,17 @@ export OPENAI_API_KEY="sk-fk-your-flatkey-key"
 | 默认模型 | `gpt-5.4`（示例）。使用前请在 Flatkey [模型目录](/zh/reference/model-list)中确认并复制当前准确 ID。 |
 | 上游格式 | `Responses（原生）` |
 
+<Warning>
+  请将 API 密钥视为敏感信息。不要在截图或导出、共享的供应商配置中包含该密钥。如果密钥泄露，请在 Flatkey 中撤销或轮换该密钥，然后在 CC Switch 中替换。
+</Warning>
+
 Flatkey 原生支持 Responses API。此配置不需要 CC Switch **本地路由**，请将其保持关闭。
 
 ### 4. 配置模型
 
 使用 Flatkey [模型目录](/zh/reference/model-list)中的准确模型 ID 作为默认模型。请勿使用显示名称或猜测模型 ID。
 
-模型映射决定 CC Switch 在 Codex `/model` 菜单中显示哪些条目。如果你的 CC Switch 版本提供**获取模型（Fetch Models）**，请使用该功能，然后映射你想显示的准确模型 ID。即使有效的默认模型未被映射或未显示在 `/model` 菜单中，你仍然可以直接请求该模型。
+模型映射只影响 Codex `/model` 菜单中显示的条目。如果你的 CC Switch 版本提供**获取模型（Fetch Models）**，请使用该功能，然后映射你想显示的准确模型 ID。即使准确模型 ID 未被映射或未显示，你仍可将其设为供应商的**默认模型**，或通过 `codex --model <id>` 直接传入。
 
 ### 5. 保存并启用 Flatkey
 
@@ -67,7 +71,7 @@ Flatkey 原生支持 Responses API。此配置不需要 CC Switch **本地路由
 
 ### 6. 重启并验证
 
-完全关闭现有 Codex 进程和终端，避免继续使用旧环境或会话。打开新终端，进入一个较小或空目录，启动新的 Codex 会话，然后发送一个最小请求。
+结束现有 Codex 会话和进程。打开一个不会继承过期相关 `OPENAI_BASE_URL` 或 `OPENAI_API_KEY` 值的新终端。进入一个较小或空目录，启动新的 Codex 会话，然后发送一个最小请求。
 
 随后打开 Flatkey [用量日志](https://console.flatkey.ai/usage-logs/common?lng=zh)，确认实际请求。检查模型、输入和输出 token、延迟及费用。
 
@@ -77,7 +81,7 @@ Flatkey 原生支持 Responses API。此配置不需要 CC Switch **本地路由
 
 ### 切换回其他供应商
 
-在 CC Switch 中打开 Codex 供应商面板，选择并启用你要使用的供应商。完全关闭现有 Codex 进程和终端，然后启动新会话。如果你之前手动设置过 `OPENAI_BASE_URL` 或 `OPENAI_API_KEY`，请确保它们与预期供应商一致。
+在 CC Switch 中打开 Codex 供应商面板，选择并启用你要使用的供应商。结束现有 Codex 会话和进程，然后打开一个不会继承过期相关 `OPENAI_BASE_URL` 或 `OPENAI_API_KEY` 值的新终端。启动新会话。
 
 ### CC Switch 故障排查
 
@@ -87,7 +91,7 @@ Flatkey 原生支持 Responses API。此配置不需要 CC Switch **本地路由
 | API 端点或连接错误 | 将 API 端点准确设置为 `https://router.flatkey.ai/v1`。检查新 shell 中是否存在过期的 `OPENAI_BASE_URL`。 |
 | 找不到模型或 `/model` 中没有模型 | 从[模型目录](/zh/reference/model-list)复制准确 ID。如果可用，请使用**获取模型（Fetch Models）**和模型映射。你仍可直接请求有效的默认模型。 |
 | 请求使用了错误的供应商 | 返回 Codex 供应商面板并启用 **Flatkey**。检查手动设置的 `OPENAI_*` 值是否指向其他供应商。 |
-| 更改未影响当前会话 | 完全关闭所有 Codex 进程和终端，然后打开新终端并启动新会话。 |
+| 更改未影响当前会话 | 结束现有 Codex 会话和进程。打开一个不会继承过期相关 `OPENAI_BASE_URL` 或 `OPENAI_API_KEY` 值的新终端，然后启动新会话。 |
 | 余额不足 | 充值 Flatkey 余额，然后重试最小请求。 |
 | **本地路由**被误启用 | 关闭**本地路由**。Flatkey 原生接受 Responses 格式。 |
 | 用量日志中没有请求 | 发送新的最小请求，确认 **Flatkey** 已启用，并检查上述端点、密钥、余额和新会话步骤。 |
