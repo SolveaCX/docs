@@ -65,11 +65,27 @@ Flatkey 原生支持 Responses API。此配置不需要 CC Switch **本地路由
 
 ### 4. 配置模型
 
-使用 Flatkey [模型目录](/zh/reference/model-list)中的准确模型 ID 作为默认模型。请勿使用显示名称或猜测模型 ID。**默认模型**是你在没有显式指定模型时启动新会话所使用的模型。
+在 CC Switch 的 Codex 供应商面板中找到 **Flatkey**，然后点击**编辑**。要更换 Codex 新会话默认使用的模型，请将**默认模型**改为 Flatkey [模型目录](/zh/reference/model-list)中的准确模型 ID。请勿使用显示名称或猜测模型 ID。
+
+例如，你可以在 CC Switch 的**默认模型**中填写以下任一文本生成模型：
+
+```text
+gpt-5.4
+claude-sonnet-4-6
+gemini-2.5-flash
+```
 
 **模型映射**只影响 Codex `/model` 菜单中显示的条目。它不会重命名模型，也不会让不兼容的模型适用于 Codex。点击**获取模型列表**，然后映射 `claude-sonnet-4-6` 或 `gemini-2.5-flash` 等准确 ID，让它们显示在 `/model` 中。
 
-对单次命令，`codex --model <id>` 会为本次调用传入这个准确 ID。它不需要 `/model` 条目。使用前请从 Flatkey [模型目录](/zh/reference/model-list)复制当前 ID。
+保存并启用 Flatkey 后，新启动的 Codex 会话会使用你在 CC Switch 中设置的**默认模型**。如果只想为单次命令临时指定模型，也可以传入同一个准确 ID：
+
+```bash
+codex --model gpt-5.4 "Review this change"
+codex --model claude-sonnet-4-6 "Review this change"
+codex --model gemini-2.5-flash "Review this change"
+```
+
+请选择 Flatkey 可用且兼容 Codex 请求格式的文本生成模型。不要将图像、音频或嵌入模型用于 Codex CLI。发送请求后，请以 Flatkey [用量日志](https://console.flatkey.ai/usage-logs/common?lng=zh)中记录的实际服务模型为准。
 
 ![选择原生 Responses 上游格式并配置 Codex 模型映射](/images/guides/cc-switch/zh/codex-model-mapping.png)
 
@@ -123,20 +139,6 @@ codex
 ```
 
 所有请求都会通过 Flatkey 路由，并按 Flatkey 优惠价格从预付余额中扣费。
-
-## 选择模型
-
-你可以通过 `--model` 参数指定模型：
-
-```bash
-codex --model gpt-5.4 "Review this change"
-codex --model claude-sonnet-4-6 "Review this change"
-codex --model gemini-2.5-flash "Review this change"
-```
-
-请选择 Flatkey 可用且兼容 Codex 请求格式的文本生成模型，并从当前[模型目录](/zh/reference/model-list)复制准确 ID。不要将图像、音频或嵌入模型用于 Codex CLI。
-
-发送请求后，请以 Flatkey [用量日志](https://console.flatkey.ai/usage-logs/common?lng=zh)为准确认实际服务的模型。
 
 ## 验证手动环境变量配置
 
