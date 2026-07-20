@@ -79,9 +79,9 @@ Flatkey 原生支持 Responses API。此配置不需要 CC Switch **本地路由
 
 ### 6. 重启并验证
 
-退出现有 Codex 会话并结束其进程。关闭运行 Codex 的特定终端窗口或标签页，不要关闭其他无关终端。打开一个不会继承过期相关 `OPENAI_BASE_URL` 或 `OPENAI_API_KEY` 值的新终端。进入一个较小或空目录并启动新的 Codex 会话。如果配置了模型映射，可以先打开 `/model` 确认条目已经出现；这只能验证映射是否加载，不能证明请求已经通过 Flatkey。随后发送一个最小请求。
+退出现有 Codex 会话并结束其进程。关闭运行 Codex 的特定终端窗口或标签页，不要关闭其他无关终端。打开一个不会继承过期相关 `OPENAI_BASE_URL` 或 `OPENAI_API_KEY` 值的新终端。进入一个较小或空目录并启动新的 Codex 会话。确认启动信息显示预期的 Codex 模型，例如 `gpt-5.6-sol`，然后发送一个最小请求。
 
-![在新 Codex CLI 会话中确认 Flatkey 模型出现在模型列表中](/images/guides/cc-switch/zh/codex-cli-verify.png)
+![在新的 Codex CLI 会话中确认 gpt-5.6-sol 并发送最小请求](/images/guides/cc-switch/zh/codex-cli-verify.png)
 
 随后打开 Flatkey [用量日志](https://console.flatkey.ai/usage-logs/common?lng=zh)，确认实际请求。检查模型、输入和输出 token、延迟及费用。
 
