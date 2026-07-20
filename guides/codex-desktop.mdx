@@ -63,7 +63,7 @@ wire_api = "responses"
 `gpt-5.4` is available in the Flatkey Model Directory at the time of writing. Check the directory before switching to a different model ID.
 
 <Warning>
-  Do not replace or paste a Flatkey API key into `auth.json`. That file stores the official ChatGPT or Codex login that the desktop app uses for account access and model-picker state.
+  Official credentials may be stored in `auth.json` or your operating system's credential store. Never edit, replace, overwrite, export, or share either credential store for Flatkey setup. Never paste a Flatkey API key into either one. `config.toml` controls model and provider routing.
 </Warning>
 
 ### 3. Restart and verify
@@ -106,7 +106,7 @@ Open the **Codex** panel in CC Switch and add a **Custom Provider**. Use the fol
 
 Set the provider's **Default Model** to the exact Flatkey model ID you want to use. `gpt-5.4` is an example that is available at the time of writing. Check the [Flatkey Model Directory](/reference/model-list) before using a different ID.
 
-If your CC Switch version provides **Fetch Models**, use it to load current IDs. Add the model to the provider's model mapping when you want it in the Codex `/model` menu. You can also set an exact ID as the provider's **Default Model** or pass it from Codex CLI with `codex --model <id>`. For Codex Desktop, verify the active provider and default model as the actual route even if the picker does not list the custom model.
+If your CC Switch version provides **Fetch Models**, use it to load current IDs. Add the model to the provider's model mapping when you want it in the Codex `/model` menu. You can also set an exact ID as the provider's **Default Model** or pass it from Codex CLI with `codex --model <id>`. For Codex Desktop, treat the active provider and default model as the intended route even if the picker does not list the custom model. Confirm the actual route with Flatkey Usage Logs after sending a request.
 
 Flatkey natively supports the Responses API. Keep **Local Routing** off; it is not required for this setup.
 
@@ -122,7 +122,7 @@ Start a new conversation with a small context and send a minimal prompt. Then op
 
 Keeping the official login does not mean the request uses OpenAI billing. The current provider and model settings in the shared `config.toml` control the route. Flatkey Usage Logs are the authoritative confirmation that the request reached Flatkey.
 
-System prompts, tools, conversation history, attached files, and command output can increase input tokens beyond the text in your visible prompt.
+System prompts, tools, conversation history, attached files, and command output can increase input tokens beyond the text in your visible prompt. Higher input token counts can increase billed cost.
 
 ### If the model is not visible
 
@@ -138,7 +138,7 @@ Codex Desktop may show the official model catalog and omit a custom model from i
 
 ### Switch back to the official provider
 
-Activate the official Codex provider in CC Switch. Fully quit Codex Desktop, make sure no old process remains, and reopen it. Keep `auth.json` and the official login intact. You do not need to delete the Flatkey custom provider.
+Activate the official Codex provider in CC Switch. If you used manual configuration, restore the previous top-level `model` and `model_provider` values in `config.toml`. Preserve unrelated settings and provider tables. Leave the official credentials in `auth.json` or the operating system's credential store untouched. Fully quit Codex Desktop, make sure no old process remains, and reopen it. You do not need to delete the Flatkey custom provider.
 
 ### Troubleshooting CC Switch
 
