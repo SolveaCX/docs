@@ -1,10 +1,10 @@
 ---
 title: "Use Flatkey with the OpenAI Codex CLI Terminal Agent"
 sidebarTitle: "Codex CLI"
-description: "Route OpenAI Codex CLI traffic through Flatkey to access GPT models at up to 50% off official pricing. Set two environment variables to get started."
+description: "Route OpenAI Codex CLI traffic through Flatkey to access compatible GPT, Claude, Gemini, and other text models when available."
 ---
 
-OpenAI's Codex CLI is an AI coding assistant that runs in your terminal. By setting two environment variables, you can route all Codex CLI requests through Flatkey and pay Flatkey's discounted rates — typically 40%+ savings on GPT model usage.
+OpenAI's Codex CLI is an AI coding assistant that runs in your terminal. By setting two environment variables, you can route Codex CLI requests through Flatkey to use compatible GPT, Claude, Gemini, and other text models when they are available through Flatkey.
 
 ## Prerequisites
 
@@ -65,9 +65,11 @@ Flatkey natively supports the Responses API. CC Switch **Local Routing** is not 
 
 ### 4. Configure the model
 
-Use an exact model ID from the Flatkey [Model Directory](/reference/model-list) as the default model. Do not use a display name or guess an ID.
+Use an exact model ID from the Flatkey [Model Directory](/reference/model-list) as the default model. Do not use a display name or guess an ID. **Default Model** is the model Codex uses when you start a new session without an explicit model.
 
-Model mapping affects only the entries shown in the Codex `/model` menu. Click **Fetch Models**, then map the exact IDs you want to show. Even when an exact model ID is not mapped or visible, you can set it as the provider **Default Model** or pass it directly with `codex --model <id>`.
+**Model Mapping** affects only the entries shown in the Codex `/model` menu. It does not rename a model or make an incompatible model work with Codex. Click **Fetch Models**, then map exact IDs such as `claude-sonnet-4-6` or `gemini-2.5-flash` if you want them to appear in `/model`.
+
+For one command, `codex --model <id>` passes the exact ID for that invocation. It does not require a `/model` entry. Copy current IDs from the Flatkey [Model Directory](/reference/model-list) before use.
 
 ![Choose Responses native and configure the Codex model mapping](/images/guides/cc-switch/en/codex-model-mapping.png)
 
@@ -99,7 +101,7 @@ Open the Codex provider panel in CC Switch, select the provider you want, and ac
 |---|---|
 | Authentication or invalid key error | Re-enter your Flatkey key and confirm that it starts with `sk-fk-`. Unset only stale `OPENAI_API_KEY` values before testing again. |
 | Endpoint or connection error | Set **API Request URL** exactly to `https://router.flatkey.ai/v1`. Check for a stale `OPENAI_BASE_URL` in the new shell. |
-| Model not found or missing from `/model` | Copy the exact ID from the [Model Directory](/reference/model-list). Use **Fetch Models** and model mapping. Mapping affects only `/model`; set the exact ID as the provider **Default Model** or pass it with `codex --model <id>`. |
+| Model not found or missing from `/model` | Copy the exact ID from the [Model Directory](/reference/model-list). Use **Fetch Models** and **Model Mapping** for `/model` entries only. Mapping does not rename a model or make it compatible. Set the exact ID as the provider **Default Model** or pass it with `codex --model <id>`. |
 | Requests use the wrong provider | Return to the Codex provider panel and activate **Flatkey**. Check that manual `OPENAI_*` values do not point elsewhere. |
 | Changes do not affect the current session | Exit the existing Codex session and end its process. Close the specific terminal window or tab that ran Codex, not unrelated terminals. Open a fresh terminal that does not inherit stale relevant `OPENAI_BASE_URL` or `OPENAI_API_KEY` values, then start a new session. |
 | Insufficient balance | Top up your Flatkey balance, then retry the minimal request. |
@@ -124,14 +126,17 @@ All requests are routed through Flatkey and billed against your prepaid balance 
 
 ## Choosing a model
 
-By default, Codex CLI uses a GPT model. You can specify a different model with the `--model` flag:
+You can specify a model with the `--model` flag:
 
 ```bash
-codex --model gpt-4o "Write unit tests for this module"
-codex --model gpt-4o-mini "Add docstrings to this file"  # cheaper for simple tasks
+codex --model gpt-5.4 "Review this change"
+codex --model claude-sonnet-4-6 "Review this change"
+codex --model gemini-2.5-flash "Review this change"
 ```
 
-Choose a Codex-compatible text model currently listed in the [Model Directory](/reference/model-list), and copy its exact ID. After sending a request, confirm the actual model in [Usage Logs](https://console.flatkey.ai/usage-logs/common). Image and audio models are not suitable for Codex CLI.
+Choose a text-generation model that is available through Flatkey and compatible with the Codex request format. Copy its exact ID from the current [Model Directory](/reference/model-list). Do not use image, audio, or embedding models with Codex CLI.
+
+After sending a request, treat Flatkey [Usage Logs](https://console.flatkey.ai/usage-logs/common) as authoritative for the actual model served.
 
 ## Verify the manual environment-variable setup
 
