@@ -33,69 +33,18 @@ export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
 
 ## 使用 CC Switch 配置
 
-[CC Switch](https://ccswitch.io) 是面向编程助手的第三方桌面配置管理器，并非 Flatkey 产品。请使用 CC Switch v3.17.0 或更高版本。本教程已在 v3.17.0 中验证；更高版本的界面标签可能不同。
+[CC Switch](https://ccswitch.io) 是面向编程助手的第三方桌面配置管理器，也可以从其[官方 GitHub 仓库](https://github.com/farion1231/cc-switch)下载。
+
+1. 打开 CC Switch 并选择 **Claude Code**。
+2. 添加名为 `Flatkey` 的**自定义供应商**。
+3. 将基础 URL 设为 `https://router.flatkey.ai`，末尾不要添加 `/v1`。
+4. 输入 Flatkey API 密钥（`sk-fk-...`）并启用该供应商。
+5. 完全退出并重新打开 Claude Code，使其重新加载供应商设置。
+6. 发送一条简单请求，然后在 [Flatkey 控制台](https://console.flatkey.ai/usage-logs/common?lng=zh)的**用量日志**中确认记录。
 
 <Note>
-  上述环境变量配置和 CC Switch 是两种可选方法，请选择其中一种。如果你使用 CC Switch，启动 Claude Code 的 shell 中残留的 `ANTHROPIC_BASE_URL` 或 `ANTHROPIC_API_KEY` 可能覆盖 CC Switch 当前选择的供应商，或与其发生冲突。验证 CC Switch 前，请在该 shell 中暂时取消设置这两个变量，并注释掉 shell 配置文件中过期的导出项。不要清除其他无关的 `ANTHROPIC_*` 变量。
+  如果你的 CC Switch 版本没有 Flatkey 预设，请使用**自定义供应商**。CC Switch 不是 Flatkey 产品。
 </Note>
-
-### 1. 安装 CC Switch
-
-从 [CC Switch 网站](https://ccswitch.io)或其[官方 GitHub 仓库](https://github.com/farion1231/cc-switch)下载并安装 v3.17.0 或更高版本。如果你使用的是更高版本，界面标签不同时，请寻找功能相同的控件。
-
-### 2. 打开 Claude Code 供应商面板
-
-打开 CC Switch 并选择 **Claude Code**。确认你正在编辑 Claude Code 的供应商列表，而不是其他编程助手的供应商列表。
-
-### 3. 将 Flatkey 添加为自定义供应商
-
-添加供应商并选择**自定义供应商（Custom Provider）**。你需要手动配置 Flatkey；Flatkey 不是 CC Switch 的内置供应商。
-
-| 字段 | 值 |
-|---|---|
-| 供应商名称 | `Flatkey` |
-| API 密钥 | 你的 Flatkey 密钥，格式为 `sk-fk-...` |
-| 端点 / 基础 URL | `https://router.flatkey.ai` |
-| 模型 ID | 从 [Flatkey 模型目录](/zh/reference/model-list)复制准确的模型 ID |
-
-<Warning>
-  Claude 端点必须准确填写为 `https://router.flatkey.ai`，末尾**不能**添加 `/v1`。
-</Warning>
-
-<Warning>
-  API 密钥属于敏感信息。不要让它出现在截图、导出或分享的供应商配置中。如果密钥已经暴露，请在 Flatkey 中撤销或轮换该密钥，然后在 CC Switch 中替换。
-</Warning>
-
-请按照模型目录完整复制模型 ID，包括其中的连字符和版本后缀。
-
-### 4. 保存并启用 Flatkey
-
-保存自定义供应商，然后选择 **Flatkey** 并将其启用为 Claude Code 供应商。离开 CC Switch 前，确认 Flatkey 是 Claude Code 当前启用的供应商。
-
-### 5. 重启并验证
-
-完全退出 Claude Code，包括仍在运行的 Claude Code 终端会话，然后重新启动。打开一个较小或空白的目录，并发送一条最简提示词，例如 `仅回复 OK。`。
-
-打开 [Flatkey 用量日志](https://console.flatkey.ai/usage-logs/common?lng=zh)，找到刚才发送的请求。确认其中的模型、输入和输出 token 数、延迟及费用。该日志记录可以证明实际请求已到达 Flatkey。
-
-<Tip>
-  智能体请求可能包含系统提示词、工具定义、对话历史、文件和命令输出。请使用较小的验证目录和最简提示词，尽量减少测试消耗的 token。
-</Tip>
-
-### 切换回其他供应商
-
-在 CC Switch 中打开 Claude Code 供应商面板，选择你要使用的供应商并启用它。再次完全退出并重启 Claude Code，使新供应商生效。你可以保留 Flatkey 配置，之后随时切换回来。
-
-### CC Switch 故障排查
-
-| 问题 | 检查方法 |
-|---|---|
-| 身份验证失败 | 重新输入 Flatkey API 密钥。密钥必须以 `sk-fk-` 开头，并且不能包含空格。 |
-| Claude Code 无法连接 | 将端点准确设为 `https://router.flatkey.ai`，移除 `/v1`，并检查网络连接。 |
-| 请求使用了错误的供应商 | 返回 Claude Code 供应商面板，确认已选择并启用 **Flatkey**。 |
-| 修改后没有生效 | 完全退出所有 Claude Code 进程和终端会话，然后重启 Claude Code。 |
-| Flatkey 提示余额不足 | 前往 [Flatkey 控制台](https://console.flatkey.ai?lng=zh)充值后再试。 |
-| 用量日志中没有请求 | 确认 Flatkey 已启用，重启 Claude Code，然后发送一条新的最简提示词。请求如果在到达 Flatkey 前失败，就不会生成日志记录。 |
 
 ## 运行 Claude Code
 
@@ -113,9 +62,9 @@ claude
 
 所有请求都会路由到 Flatkey，并按优惠价格从预付余额中扣费。
 
-## 验证手动环境变量配置
+## 验证配置
 
-本节仅适用于手动设置 `ANTHROPIC_BASE_URL` 和 `ANTHROPIC_API_KEY` 的方法。如果你使用 CC Switch 配置 Claude Code，请改为按照上方的[重启并验证](#5-重启并验证)步骤操作。使用手动方法时，请运行一条简单请求，然后查看 [Flatkey 控制台](https://console.flatkey.ai/usage-logs/common?lng=zh)中的**用量日志**。你应当能看到包含模型 ID、token 数量和费用的 Claude 请求记录。
+运行一条简单请求，然后查看 [Flatkey 控制台](https://console.flatkey.ai/usage-logs/common?lng=zh)中的**用量日志**。你应当能看到包含模型 ID、token 数量和费用的 Claude 请求记录。
 
 ## 节省费用估算
 
@@ -135,9 +84,7 @@ claude
   重度 Claude Code 用户选择 $200 充值档位最为划算。奖励额度相当于在模型折扣之外额外获得约一个月用量。
 </Tip>
 
-## 手动环境变量配置故障排查
-
-下表仅适用于手动设置 `ANTHROPIC_BASE_URL` 和 `ANTHROPIC_API_KEY` 的方法。如果你使用 CC Switch 配置 Claude Code，请查看上方的 [CC Switch 故障排查](#cc-switch-故障排查)。
+## 故障排查
 
 | 问题 | 解决方法 |
 |---|---|

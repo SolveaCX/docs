@@ -33,69 +33,18 @@ export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
 
 ## Configure with CC Switch
 
-[CC Switch](https://ccswitch.io) is a third-party desktop configuration manager for coding assistants. It is not a Flatkey product. Use CC Switch v3.17.0 or later. This tutorial was verified with v3.17.0; labels may differ in newer versions.
+[CC Switch](https://ccswitch.io) is a third-party desktop configuration manager for coding assistants. You can also download it from the [official GitHub repository](https://github.com/farion1231/cc-switch).
+
+1. Open CC Switch and select **Claude Code**.
+2. Add a **Custom Provider** named `Flatkey`.
+3. Set the base URL to `https://router.flatkey.ai` without a trailing `/v1`.
+4. Enter your Flatkey API key (`sk-fk-...`) and activate the provider.
+5. Fully quit and reopen Claude Code so it reloads the provider settings.
+6. Send a small request, then confirm it in **Usage Logs** in the [Flatkey Console](https://console.flatkey.ai/usage-logs/common).
 
 <Note>
-  The environment variables above and CC Switch are alternative configuration methods. Choose one method. If you use CC Switch, stale `ANTHROPIC_BASE_URL` or `ANTHROPIC_API_KEY` values in the shell that launches Claude Code can override or conflict with the provider selected in CC Switch. Before validating CC Switch, temporarily unset those two variables in that shell and comment out any stale exports in your shell profile. Do not clear unrelated `ANTHROPIC_*` variables.
+  If your CC Switch version does not include a Flatkey preset, use **Custom Provider**. CC Switch is not a Flatkey product.
 </Note>
-
-### 1. Install CC Switch
-
-Download CC Switch from the [CC Switch website](https://ccswitch.io) or its [official GitHub repository](https://github.com/farion1231/cc-switch). Install v3.17.0 or later. If you use a newer version, look for the equivalent controls when a label differs.
-
-### 2. Open the Claude Code provider panel
-
-Open CC Switch and select **Claude Code**. Make sure you are editing the Claude Code provider list, not the provider list for another coding assistant.
-
-### 3. Add Flatkey as a custom provider
-
-Add a provider and choose **Custom Provider**. Configure Flatkey yourself; Flatkey is not a built-in CC Switch provider.
-
-| Field | Value |
-|---|---|
-| Provider name | `Flatkey` |
-| API key | Your Flatkey key in the form `sk-fk-...` |
-| Endpoint / Base URL | `https://router.flatkey.ai` |
-| Model ID | Copy the exact model ID from the [Flatkey Model Directory](/reference/model-list) |
-
-<Warning>
-  The Claude endpoint must be exactly `https://router.flatkey.ai`. It must **not** end in `/v1`.
-</Warning>
-
-<Warning>
-  Treat your API key as sensitive. Do not include it in screenshots or exported or shared provider configurations. If it is exposed, revoke or rotate the key in Flatkey, then replace it in CC Switch.
-</Warning>
-
-Copy the model ID exactly as shown in the directory, including any hyphens and version suffixes.
-
-### 4. Save and activate Flatkey
-
-Save the custom provider. Then select **Flatkey** and activate it for Claude Code. Before you leave CC Switch, confirm that Flatkey is the active Claude Code provider.
-
-### 5. Restart and verify
-
-Fully exit Claude Code, including any running Claude Code terminal sessions, and then start it again. Open a small or empty directory and send a minimal prompt, such as `Reply with OK only.`
-
-Open [Flatkey Usage Logs](https://console.flatkey.ai/usage-logs/common) and find the request you just sent. Confirm its model, input and output token counts, latency, and cost. This log entry verifies that the real request reached Flatkey.
-
-<Tip>
-  Agent requests can include system prompts, tool definitions, conversation history, files, and command output. Keep the verification directory and prompt small so your test uses as few tokens as practical.
-</Tip>
-
-### Switch back to another provider
-
-Open the Claude Code provider panel in CC Switch, select the provider you want to use, and activate it. Fully exit and restart Claude Code again so the new provider takes effect. You can keep the Flatkey entry and switch back to it later.
-
-### Troubleshooting CC Switch
-
-| Issue | What to check |
-|---|---|
-| Authentication fails | Re-enter your Flatkey API key. It must start with `sk-fk-` and must not contain spaces. |
-| Claude Code cannot connect | Set the endpoint to exactly `https://router.flatkey.ai`; remove `/v1` and check your network connection. |
-| Requests use the wrong provider | Return to the Claude Code provider panel and confirm that **Flatkey** is selected and active. |
-| Changes do not take effect | Fully exit every Claude Code process and terminal session, then restart Claude Code. |
-| Flatkey reports insufficient balance | Add credit in the [Flatkey Console](https://console.flatkey.ai) before retrying. |
-| The request is missing from Usage Logs | Confirm Flatkey is active, restart Claude Code, and send a new minimal prompt. A request that fails before reaching Flatkey will not create a log entry. |
 
 ## Running Claude Code
 
@@ -113,9 +62,9 @@ claude
 
 All requests are routed to Flatkey and billed from your prepaid balance at discounted rates.
 
-## Verify the manual environment-variable setup
+## Verifying the setup
 
-This section applies only to the manual `ANTHROPIC_BASE_URL` and `ANTHROPIC_API_KEY` method. If you configured Claude Code with CC Switch, follow [Restart and verify](#5-restart-and-verify) above instead. For the manual method, run a simple request and then check **Usage Logs** in your [Flatkey Console](https://console.flatkey.ai/usage-logs/common). You should see the Claude request logged with its model ID, token counts, and cost.
+Run a simple request and then check **Usage Logs** in your [Flatkey Console](https://console.flatkey.ai/usage-logs/common). You should see the Claude request logged with its model ID, token counts, and cost.
 
 ## Savings estimate
 
@@ -134,9 +83,7 @@ On a typical Claude Code session of 50K input tokens, using Sonnet, that is:
   Heavy Claude Code users benefit most from the $200 top-up tier — the bonus credit effectively gives you an extra month of usage on top of the model discount.
 </Tip>
 
-## Troubleshoot the manual environment-variable setup
-
-The table below applies only to the manual `ANTHROPIC_BASE_URL` and `ANTHROPIC_API_KEY` method. If you configured Claude Code with CC Switch, use [Troubleshooting CC Switch](#troubleshooting-cc-switch) above.
+## Troubleshooting
 
 | Issue | Fix |
 |---|---|

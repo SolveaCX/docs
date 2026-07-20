@@ -17,19 +17,19 @@ Set the following environment variables before running Codex CLI:
 
 ```bash
 export OPENAI_BASE_URL="https://router.flatkey.ai/v1"
-export OPENAI_API_KEY="sk-fk-your-flatkey-key"
+export OPENAI_API_KEY="sk-fk-..."
 ```
 
 Or add them to your shell profile (`~/.bashrc`, `~/.zshrc`) to make the setting permanent:
 
 ```bash ~/.zshrc
 export OPENAI_BASE_URL="https://router.flatkey.ai/v1"
-export OPENAI_API_KEY="sk-fk-your-flatkey-key"
+export OPENAI_API_KEY="sk-fk-..."
 ```
 
 ## Configure with CC Switch
 
-[CC Switch](https://ccswitch.io) is a third-party desktop configuration manager for coding assistants. It is not a Flatkey product, and Flatkey is not a built-in preset. This tutorial was verified with CC Switch v3.17.0. Labels may differ in newer versions.
+[CC Switch](https://ccswitch.io) is a third-party desktop configuration manager for coding assistants. It is not a Flatkey product, and Flatkey is not a built-in preset. The steps below follow the current CC Switch interface.
 
 The manual `OPENAI_BASE_URL` and `OPENAI_API_KEY` method above and CC Switch are alternative ways to configure Codex. For a clear CC Switch test, unset only stale `OPENAI_BASE_URL` or `OPENAI_API_KEY` values that point to another provider or key. Values inherited by your shell can override or conflict with the provider you activate in CC Switch.
 
@@ -41,17 +41,21 @@ Download CC Switch from [ccswitch.io](https://ccswitch.io) or its [official GitH
 
 Select **Codex** in CC Switch. This opens the provider panel that controls the configuration used by new Codex sessions.
 
+![Open the Codex provider panel and select the add-provider button in CC Switch](/images/guides/cc-switch/en/codex-provider-list.png)
+
 ### 3. Add Flatkey as a custom provider
 
 Choose **Custom Provider** and add a provider with these values:
 
 | Field | Value |
 |---|---|
-| Provider name | `Flatkey` |
-| API key | Your Flatkey key, such as `sk-fk-...` |
-| API endpoint | `https://router.flatkey.ai/v1` |
-| Default model | `gpt-5.4` (example). Confirm and copy the current exact ID from the Flatkey [Model Directory](/reference/model-list) before use. |
-| Upstream format | `Responses (native)` |
+| Provider Name | `flatkey` |
+| API Key | Your Flatkey key, such as `sk-fk-...` |
+| API Request URL | `https://router.flatkey.ai/v1` |
+| Default Model | `gpt-5.6-sol` in the screenshot. Confirm and copy a current exact ID from the Flatkey [Model Directory](/reference/model-list) before use. |
+| Upstream Format | `Responses (native)` |
+
+![Enter the current Flatkey provider fields in CC Switch](/images/guides/cc-switch/en/codex-provider-form.png)
 
 <Warning>
   Treat your API key as sensitive. Do not include it in screenshots or exported or shared provider configurations. If it is exposed, revoke or rotate the key in Flatkey, then replace it in CC Switch.
@@ -63,15 +67,21 @@ Flatkey natively supports the Responses API. CC Switch **Local Routing** is not 
 
 Use an exact model ID from the Flatkey [Model Directory](/reference/model-list) as the default model. Do not use a display name or guess an ID.
 
-Model mapping affects only the entries shown in the Codex `/model` menu. Use **Fetch Models** if your CC Switch version provides it, then map the exact IDs you want to show. Even when an exact model ID is not mapped or visible, you can set it as the provider **Default Model** or pass it directly with `codex --model <id>`.
+Model mapping affects only the entries shown in the Codex `/model` menu. Click **Fetch Models**, then map the exact IDs you want to show. Even when an exact model ID is not mapped or visible, you can set it as the provider **Default Model** or pass it directly with `codex --model <id>`.
+
+![Choose Responses native and configure the Codex model mapping](/images/guides/cc-switch/en/codex-model-mapping.png)
 
 ### 5. Save and activate Flatkey
 
 Save the provider, then activate **Flatkey** in the Codex provider panel. Confirm that Flatkey is the active provider before you start Codex.
 
+![Confirm that the Flatkey Codex provider is in use](/images/guides/cc-switch/en/codex-provider-active.png)
+
 ### 6. Restart and verify
 
 Exit the existing Codex session and end its process. Close the specific terminal window or tab that ran Codex, not unrelated terminals. Open a fresh terminal that does not inherit stale relevant `OPENAI_BASE_URL` or `OPENAI_API_KEY` values. Move to a small or empty directory, start a new Codex session, and send a minimal request.
+
+![Verify a new Codex CLI session with a minimal OK response](/images/guides/cc-switch/en/codex-cli-verify.png)
 
 Then open Flatkey [Usage Logs](https://console.flatkey.ai/usage-logs/common) and confirm the actual request. Check its model, input and output tokens, latency, and cost.
 
@@ -88,8 +98,8 @@ Open the Codex provider panel in CC Switch, select the provider you want, and ac
 | Issue | Fix |
 |---|---|
 | Authentication or invalid key error | Re-enter your Flatkey key and confirm that it starts with `sk-fk-`. Unset only stale `OPENAI_API_KEY` values before testing again. |
-| Endpoint or connection error | Set the API endpoint exactly to `https://router.flatkey.ai/v1`. Check for a stale `OPENAI_BASE_URL` in the new shell. |
-| Model not found or missing from `/model` | Copy the exact ID from the [Model Directory](/reference/model-list). Use **Fetch Models** and model mapping when available. Mapping affects only `/model`; set the exact ID as the provider **Default Model** or pass it with `codex --model <id>`. |
+| Endpoint or connection error | Set **API Request URL** exactly to `https://router.flatkey.ai/v1`. Check for a stale `OPENAI_BASE_URL` in the new shell. |
+| Model not found or missing from `/model` | Copy the exact ID from the [Model Directory](/reference/model-list). Use **Fetch Models** and model mapping. Mapping affects only `/model`; set the exact ID as the provider **Default Model** or pass it with `codex --model <id>`. |
 | Requests use the wrong provider | Return to the Codex provider panel and activate **Flatkey**. Check that manual `OPENAI_*` values do not point elsewhere. |
 | Changes do not affect the current session | Exit the existing Codex session and end its process. Close the specific terminal window or tab that ran Codex, not unrelated terminals. Open a fresh terminal that does not inherit stale relevant `OPENAI_BASE_URL` or `OPENAI_API_KEY` values, then start a new session. |
 | Insufficient balance | Top up your Flatkey balance, then retry the minimal request. |
