@@ -89,7 +89,7 @@ Open the Codex provider panel in CC Switch, select the provider you want, and ac
 |---|---|
 | Authentication or invalid key error | Re-enter your Flatkey key and confirm that it starts with `sk-fk-`. Unset only stale `OPENAI_API_KEY` values before testing again. |
 | Endpoint or connection error | Set the API endpoint exactly to `https://router.flatkey.ai/v1`. Check for a stale `OPENAI_BASE_URL` in the new shell. |
-| Model not found or missing from `/model` | Copy the exact ID from the [Model Directory](/reference/model-list). Use **Fetch Models** and model mapping when available. You can still request a valid default model directly. |
+| Model not found or missing from `/model` | Copy the exact ID from the [Model Directory](/reference/model-list). Use **Fetch Models** and model mapping when available. Mapping affects only `/model`; set the exact ID as the provider **Default Model** or pass it with `codex --model <id>`. |
 | Requests use the wrong provider | Return to the Codex provider panel and activate **Flatkey**. Check that manual `OPENAI_*` values do not point elsewhere. |
 | Changes do not affect the current session | Exit the existing Codex session and end its process. Close the specific terminal window or tab that ran Codex, not unrelated terminals. Open a fresh terminal that does not inherit stale relevant `OPENAI_BASE_URL` or `OPENAI_API_KEY` values, then start a new session. |
 | Insufficient balance | Top up your Flatkey balance, then retry the minimal request. |

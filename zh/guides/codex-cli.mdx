@@ -89,7 +89,7 @@ Flatkey 原生支持 Responses API。此配置不需要 CC Switch **本地路由
 |---|---|
 | 身份验证失败或密钥无效 | 重新输入 Flatkey 密钥，并确认它以 `sk-fk-` 开头。再次测试前，只清除过期的 `OPENAI_API_KEY` 值。 |
 | API 端点或连接错误 | 将 API 端点准确设置为 `https://router.flatkey.ai/v1`。检查新 shell 中是否存在过期的 `OPENAI_BASE_URL`。 |
-| 找不到模型或 `/model` 中没有模型 | 从[模型目录](/zh/reference/model-list)复制准确 ID。如果可用，请使用**获取模型（Fetch Models）**和模型映射。你仍可直接请求有效的默认模型。 |
+| 找不到模型或 `/model` 中没有模型 | 从[模型目录](/zh/reference/model-list)复制准确 ID。如果可用，请使用**获取模型（Fetch Models）**和模型映射。映射只影响 `/model`；请将准确 ID 设为供应商的**默认模型**，或通过 `codex --model <id>` 传入。 |
 | 请求使用了错误的供应商 | 返回 Codex 供应商面板并启用 **Flatkey**。检查手动设置的 `OPENAI_*` 值是否指向其他供应商。 |
 | 更改未影响当前会话 | 退出现有 Codex 会话并结束其进程。关闭运行 Codex 的特定终端窗口或标签页，不要关闭其他无关终端。打开一个不会继承过期相关 `OPENAI_BASE_URL` 或 `OPENAI_API_KEY` 值的新终端，然后启动新会话。 |
 | 余额不足 | 充值 Flatkey 余额，然后重试最小请求。 |
