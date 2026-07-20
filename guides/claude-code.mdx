@@ -62,6 +62,10 @@ Add a provider and choose **Custom Provider**. Configure Flatkey yourself; Flatk
   The Claude endpoint must be exactly `https://router.flatkey.ai`. It must **not** end in `/v1`.
 </Warning>
 
+<Warning>
+  Treat your API key as sensitive. Do not include it in screenshots or exported or shared provider configurations. If it is exposed, revoke or rotate the key in Flatkey, then replace it in CC Switch.
+</Warning>
+
 Copy the model ID exactly as shown in the directory, including any hyphens and version suffixes.
 
 ### 4. Save and activate Flatkey
@@ -109,9 +113,9 @@ claude
 
 All requests are routed to Flatkey and billed from your prepaid balance at discounted rates.
 
-## Verifying the setup
+## Verify the manual environment-variable setup
 
-Run a simple request and then check **Usage Logs** in your [Flatkey Console](https://console.flatkey.ai/usage-logs/common). You should see the Claude request logged with its model ID, token counts, and cost.
+This section applies only to the manual `ANTHROPIC_BASE_URL` and `ANTHROPIC_API_KEY` method. If you configured Claude Code with CC Switch, follow [Restart and verify](#5-restart-and-verify) above instead. For the manual method, run a simple request and then check **Usage Logs** in your [Flatkey Console](https://console.flatkey.ai/usage-logs/common). You should see the Claude request logged with its model ID, token counts, and cost.
 
 ## Savings estimate
 
@@ -130,7 +134,9 @@ On a typical Claude Code session of 50K input tokens, using Sonnet, that is:
   Heavy Claude Code users benefit most from the $200 top-up tier — the bonus credit effectively gives you an extra month of usage on top of the model discount.
 </Tip>
 
-## Troubleshooting
+## Troubleshoot the manual environment-variable setup
+
+The table below applies only to the manual `ANTHROPIC_BASE_URL` and `ANTHROPIC_API_KEY` method. If you configured Claude Code with CC Switch, use [Troubleshooting CC Switch](#troubleshooting-cc-switch) above.
 
 | Issue | Fix |
 |---|---|

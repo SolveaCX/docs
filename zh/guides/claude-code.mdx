@@ -62,6 +62,10 @@ export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
   Claude 端点必须准确填写为 `https://router.flatkey.ai`，末尾**不能**添加 `/v1`。
 </Warning>
 
+<Warning>
+  API 密钥属于敏感信息。不要让它出现在截图、导出或分享的供应商配置中。如果密钥已经暴露，请在 Flatkey 中撤销或轮换该密钥，然后在 CC Switch 中替换。
+</Warning>
+
 请按照模型目录完整复制模型 ID，包括其中的连字符和版本后缀。
 
 ### 4. 保存并启用 Flatkey
@@ -109,9 +113,9 @@ claude
 
 所有请求都会路由到 Flatkey，并按优惠价格从预付余额中扣费。
 
-## 验证配置
+## 验证手动环境变量配置
 
-运行一条简单请求，然后查看 [Flatkey 控制台](https://console.flatkey.ai/usage-logs/common?lng=zh)中的**用量日志**。你应当能看到包含模型 ID、token 数量和费用的 Claude 请求记录。
+本节仅适用于手动设置 `ANTHROPIC_BASE_URL` 和 `ANTHROPIC_API_KEY` 的方法。如果你使用 CC Switch 配置 Claude Code，请改为按照上方的[重启并验证](#5-重启并验证)步骤操作。使用手动方法时，请运行一条简单请求，然后查看 [Flatkey 控制台](https://console.flatkey.ai/usage-logs/common?lng=zh)中的**用量日志**。你应当能看到包含模型 ID、token 数量和费用的 Claude 请求记录。
 
 ## 节省费用估算
 
@@ -131,7 +135,9 @@ claude
   重度 Claude Code 用户选择 $200 充值档位最为划算。奖励额度相当于在模型折扣之外额外获得约一个月用量。
 </Tip>
 
-## 故障排查
+## 手动环境变量配置故障排查
+
+下表仅适用于手动设置 `ANTHROPIC_BASE_URL` 和 `ANTHROPIC_API_KEY` 的方法。如果你使用 CC Switch 配置 Claude Code，请查看上方的 [CC Switch 故障排查](#cc-switch-故障排查)。
 
 | 问题 | 解决方法 |
 |---|---|

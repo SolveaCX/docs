@@ -47,7 +47,7 @@ export FLATKEY_API_KEY="sk-fk-..."
 | Windows | `%USERPROFILE%\.codex\config.toml` |
 | macOS 和 Linux | `~/.codex/config.toml` |
 
-更新顶层的 `model` 和 `model_provider` 设置。如果其中任一键已存在，请替换它的值，不要追加重复键。保留所有无关设置。然后添加下方供应商配置表；如果 `[model_providers.flatkey]` 已存在，请更新该表，不要重复创建：
+替换顶层的 `model` 和 `model_provider` 设置前，请先记录它们当前的值，以便之后恢复。然后更新这两项设置。如果其中任一键已存在，请替换它的值，不要追加重复键。保留所有无关设置。添加下方供应商配置表；如果 `[model_providers.flatkey]` 已存在，请更新该表，不要重复创建：
 
 ```toml
 model = "gpt-5.4"

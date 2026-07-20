@@ -47,7 +47,7 @@ Open the user-level Codex configuration file:
 | Windows | `%USERPROFILE%\.codex\config.toml` |
 | macOS and Linux | `~/.codex/config.toml` |
 
-Update the top-level `model` and `model_provider` settings. If either key already exists, replace its value instead of appending a duplicate key. Preserve all unrelated settings. Then add the provider table below; if `[model_providers.flatkey]` already exists, update that table instead of creating a duplicate:
+Before replacing the top-level `model` and `model_provider` settings, record their current values so you can restore them later. Then update both settings. If either key already exists, replace its value instead of appending a duplicate key. Preserve all unrelated settings. Add the provider table below; if `[model_providers.flatkey]` already exists, update that table instead of creating a duplicate:
 
 ```toml
 model = "gpt-5.4"

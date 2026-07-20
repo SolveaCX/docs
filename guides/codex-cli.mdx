@@ -121,17 +121,19 @@ codex --model gpt-4o "Write unit tests for this module"
 codex --model gpt-4o-mini "Add docstrings to this file"  # cheaper for simple tasks
 ```
 
-Any GPT model available in the [Model Directory](/reference/model-list) works with Codex CLI through Flatkey.
+Choose a Codex-compatible text model currently listed in the [Model Directory](/reference/model-list), and copy its exact ID. After sending a request, confirm the actual model in [Usage Logs](https://console.flatkey.ai/usage-logs/common). Image and audio models are not suitable for Codex CLI.
 
-## Verifying the setup
+## Verify the manual environment-variable setup
 
-After running a Codex command, check [Usage Logs](https://console.flatkey.ai/usage-logs/common) — you should see the request logged with the model and token counts. If no request appears, confirm the active provider and `OPENAI_BASE_URL` in the current shell session.
+This section applies only to the manual `OPENAI_BASE_URL` and `OPENAI_API_KEY` method. If you configured Codex with CC Switch, follow [Restart and verify](#6-restart-and-verify) above instead. For the manual method, run a Codex command and check [Usage Logs](https://console.flatkey.ai/usage-logs/common). You should see the request logged with the model and token counts. If no request appears, confirm both variables are set correctly in the current shell session.
 
 <Tip>
   Use the $200 top-up tier for the best effective rate on sustained Codex usage — the stacked bonus brings costs to as low as 50% of official GPT pricing.
 </Tip>
 
-## Troubleshooting
+## Troubleshoot the manual environment-variable setup
+
+The table below applies only to the manual `OPENAI_BASE_URL` and `OPENAI_API_KEY` method. If you configured Codex with CC Switch, use [Troubleshooting CC Switch](#troubleshooting-cc-switch) above.
 
 | Issue | Fix |
 |---|---|
