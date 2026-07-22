@@ -1,10 +1,14 @@
 ---
 title: "Image Generation — POST /v1/images/generations"
 sidebarTitle: "Image Generation"
-description: "Generate images from text prompts using POST /v1/images/generations. Supports gpt-image-2 and Gemini image models, returning URLs or base64-encoded image data."
+description: "Generate images from text prompts with POST /v1/images/generations and OpenAI Images-compatible models, returning URLs or base64-encoded image data."
 ---
 
-The `/v1/images/generations` endpoint generates images from text prompts. It is compatible with the OpenAI Images API and supports models including `gpt-image-2` and Gemini image generation models available through Flatkey.
+The `/v1/images/generations` endpoint generates images from text prompts. It is compatible with the OpenAI Images API and supports compatible models such as `gpt-image-2`.
+
+<Warning>
+  Gemini image models use the native Gemini `generateContent` endpoint and cannot be called through this endpoint. See the [Gemini image model guide](/guides/image-generation#use-gemini-image-models).
+</Warning>
 
 ## Endpoint
 
@@ -24,7 +28,7 @@ POST https://router.flatkey.ai/v1/images/generations
 ### Body parameters
 
 <ParamField body="model" type="string" required>
-  Image model ID. Example: `"gpt-image-2"`, `"gemini-3-pro-image"`, `"gemini-2.5-flash-image"`.
+  An OpenAI Images-compatible model ID, such as `"gpt-image-2"`.
 </ParamField>
 
 <ParamField body="prompt" type="string" required>

@@ -1,22 +1,31 @@
 ---
-title: "Generate Images via Flatkey Using gpt-image-2 and More"
+title: "Generate Images with GPT and Gemini Models via Flatkey"
 sidebarTitle: "Image Generation"
-description: "Use Flatkey's image generation endpoint with gpt-image-2 and other image models. Compatible with the OpenAI images SDK and direct REST calls."
+description: "Generate images through Flatkey with gpt-image-2 and Gemini image models, using either the OpenAI Images API or the native Gemini generateContent API."
 ---
 
-Generate images from text prompts at up to 50% off official pricing using Flatkey's `/v1/images/generations` endpoint. It is fully compatible with the OpenAI images API, so you can use `gpt-image-2` and other supported models with the OpenAI SDK or a direct REST call.
+Flatkey provides two ways to generate images. Use the OpenAI-compatible `/v1/images/generations` endpoint for `gpt-image-2`. Use the native Gemini `generateContent` endpoint for Gemini image models.
+
+<Warning>
+  You cannot call Gemini image models with the OpenAI Images SDK or `/v1/images/generations`. Use the native Gemini API examples on this page. Otherwise, the request may return `get_channel_failed`.
+</Warning>
 
 ## Supported image models
 
-| Model | Official price | After-bonus price |
-|---|---|---|
-| `gpt-image-2` | $6.65 / 1M tokens | ~$3.99 / 1M tokens |
-| `gemini-3-pro-image` | $2.00 / 1M tokens | ~$1.20 / 1M tokens |
-| `gemini-2.5-flash-image` | $0.30 / 1M tokens | ~$0.18 / 1M tokens |
+| Model | API | Official price | After-bonus price |
+|---|---|---|---|
+| `gpt-image-2` | OpenAI Images API | $6.65 / 1M tokens | ~$3.99 / 1M tokens |
+| `gemini-3-pro-image` | Native Gemini API | $2.00 / 1M tokens | ~$1.20 / 1M tokens |
+| `gemini-2.5-flash-image` | Native Gemini API | $0.30 / 1M tokens | ~$0.18 / 1M tokens |
+| `gemini-3.1-flash-image` | Native Gemini API | See the dashboard | See the dashboard |
+| `gemini-3.1-flash-lite-image` | Native Gemini API | See the dashboard | See the dashboard |
+| `nano-banana-pro-preview` | Native Gemini API | See the dashboard | See the dashboard |
 
-See the [Model Directory](/reference/model-list) for the full image model list.
+See the [Model Directory](/reference/model-list) for the complete model list and current pricing.
 
-## Quick start with the OpenAI SDK
+## Use gpt-image-2
+
+### Use the OpenAI SDK
 
 <CodeGroup>
 ```python python
@@ -56,7 +65,7 @@ console.log(response.data[0].url);
 ```
 </CodeGroup>
 
-## With curl
+### Use curl
 
 ```bash
 curl https://router.flatkey.ai/v1/images/generations \
@@ -70,49 +79,177 @@ curl https://router.flatkey.ai/v1/images/generations \
   }'
 ```
 
-## Parameters
+This endpoint returns a temporary image URL, or base64 image data when `response_format` is `b64_json`. See the [Image Generation API reference](/api-reference/image-generation) for all fields.
+
+## Use Gemini image models
+
+Gemini image models use the following endpoint. Replace `{model}` with a model ID:
+
+```text
+POST https://router.flatkey.ai/v1beta/models/{model}:generateContent
+```
+
+The request must include `"IMAGE"` in `generationConfig.responseModalities`. Generated images are returned in `candidates[].content.parts[].inlineData`.
+
+### Use curl
+
+```bash
+curl https://router.flatkey.ai/v1beta/models/gemini-2.5-flash-image:generateContent \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contents": [{
+      "parts": [{
+        "text": "A product photo of a translucent purple glass bottle on a white background"
+      }]
+    }],
+    "generationConfig": {
+      "responseModalities": ["TEXT", "IMAGE"]
+    }
+  }'
+```
+
+### Use Python and save the image
+
+Install an HTTP client:
+
+```bash
+pip install requests
+```
+
+```python
+import base64
+import os
+from pathlib import Path
+
+import requests
+
+model = "gemini-2.5-flash-image"
+response = requests.post(
+    f"https://router.flatkey.ai/v1beta/models/{model}:generateContent",
+    headers={
+        "Authorization": f"Bearer {os.environ['FLATKEY_API_KEY']}",
+        "Content-Type": "application/json",
+    },
+    json={
+        "contents": [{
+            "parts": [{
+                "text": "A product photo of a translucent purple glass bottle on a white background"
+            }]
+        }],
+        "generationConfig": {
+            "responseModalities": ["TEXT", "IMAGE"]
+        },
+    },
+    timeout=180,
+)
+response.raise_for_status()
+
+parts = response.json()["candidates"][0]["content"]["parts"]
+image = next(part["inlineData"] for part in parts if "inlineData" in part)
+suffix = ".jpg" if image["mimeType"] == "image/jpeg" else ".png"
+output = Path(f"generated{suffix}")
+output.write_bytes(base64.b64decode(image["data"]))
+print(output)
+```
+
+### Use Node.js and save the image
+
+```javascript
+import { writeFileSync } from "node:fs";
+
+const model = "gemini-2.5-flash-image";
+const response = await fetch(
+  `https://router.flatkey.ai/v1beta/models/${model}:generateContent`,
+  {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.FLATKEY_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      contents: [{
+        parts: [{
+          text: "A product photo of a translucent purple glass bottle on a white background",
+        }],
+      }],
+      generationConfig: {
+        responseModalities: ["TEXT", "IMAGE"],
+      },
+    }),
+  },
+);
+
+if (!response.ok) {
+  throw new Error(`${response.status}: ${await response.text()}`);
+}
+
+const result = await response.json();
+const image = result.candidates[0].content.parts.find(
+  (part) => part.inlineData,
+).inlineData;
+const suffix = image.mimeType === "image/jpeg" ? "jpg" : "png";
+writeFileSync(`generated.${suffix}`, Buffer.from(image.data, "base64"));
+```
+
+## Gemini request fields
+
+<ParamField body="contents" type="array" required>
+  Conversation content. For text-to-image generation, put the image description in `parts[].text`.
+</ParamField>
+
+<ParamField body="generationConfig.responseModalities" type="array" required>
+  Response modalities. Use `["TEXT", "IMAGE"]` for text and images, or `["IMAGE"]` to request images only.
+</ParamField>
 
 <ParamField body="model" type="string" required>
-  The image model to use. E.g. `gpt-image-2`, `gemini-3-pro-image`.
+  The model ID appears in the URL path, not in the request body. For example, `gemini-3-pro-image`.
 </ParamField>
 
-<ParamField body="prompt" type="string" required>
-  A text description of the image to generate. More detailed prompts produce better results.
-</ParamField>
-
-<ParamField body="n" type="integer">
-  Number of images to generate (default: 1). Maximum depends on the model.
-</ParamField>
-
-<ParamField body="size" type="string">
-  Image dimensions. Common values: `"256x256"`, `"512x512"`, `"1024x1024"`, `"1792x1024"`, `"1024x1792"`. Support varies by model.
-</ParamField>
-
-<ParamField body="response_format" type="string">
-  `"url"` (default) returns a temporary URL. `"b64_json"` returns base64-encoded image data.
-</ParamField>
-
-## Response format
+## Gemini response format
 
 ```json
 {
-  "created": 1710000000,
-  "data": [
+  "candidates": [
     {
-      "url": "https://...",
-      "revised_prompt": "A serene mountain lake at sunset..."
+      "content": {
+        "parts": [
+          {
+            "text": "Here is the generated image."
+          },
+          {
+            "inlineData": {
+              "mimeType": "image/png",
+              "data": "iVBORw0KGgoAAA..."
+            }
+          }
+        ]
+      }
     }
   ]
 }
 ```
 
 <Note>
-  URLs returned from image generation are temporary and expire after a short period. Download and store images you want to keep.
+  `inlineData.data` contains the base64-encoded image. A response can contain text and multiple image parts. Iterate through `parts` instead of assuming that the image is always the first item.
 </Note>
 
-## Writing effective prompts
+## Troubleshooting
 
-- Be specific about style: *photorealistic, oil painting, watercolor, 3D render*
+### The API returns get_channel_failed
+
+Make sure the endpoint matches the model:
+
+- Use `/v1/images/generations` for `gpt-image-2`.
+- Use `/v1beta/models/{model}:generateContent` for Gemini image models.
+
+### The Gemini response does not contain an image
+
+Make sure `generationConfig.responseModalities` contains `"IMAGE"`. Also check the response for an error or safety block.
+
+## Write effective prompts
+
+- Specify the style: *photorealistic, oil painting, watercolor, 3D render*
 - Include lighting details: *golden hour, studio lighting, dramatic shadows*
-- Specify composition: *close-up, wide angle, bird's eye view, portrait orientation*
+- Specify the composition: *close-up, wide angle, bird's-eye view, portrait orientation*
 - Add quality modifiers: *highly detailed, 4K, professional photography*
