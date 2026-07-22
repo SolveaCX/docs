@@ -1,10 +1,14 @@
 ---
 title: "图片生成 — POST /v1/images/generations"
 sidebarTitle: "图片生成"
-description: "使用 POST /v1/images/generations 根据文本提示词生成图片。支持 gpt-image-2 和 Gemini 图片模型，可返回 URL 或 Base64 编码的图片数据。"
+description: "使用 POST /v1/images/generations 和兼容 OpenAI Images API 的模型生成图片，可返回 URL 或 Base64 编码的图片数据。"
 ---
 
-`/v1/images/generations` 端点根据文本提示词生成图片。它兼容 OpenAI Images API，并支持 `gpt-image-2` 以及 Flatkey 提供的 Gemini 图片生成模型。
+`/v1/images/generations` 端点根据文本提示词生成图片。它兼容 OpenAI Images API，并支持 `gpt-image-2` 等兼容该接口的图片模型。
+
+<Warning>
+  Gemini 图片模型使用 Gemini 原生 `generateContent` 端点，不能通过本端点调用。请参阅 [Gemini 图片模型操作手册](/zh/guides/image-generation#使用-gemini-图片模型)。
+</Warning>
 
 ## 端点
 
@@ -24,7 +28,7 @@ POST https://router.flatkey.ai/v1/images/generations
 ### 请求体参数
 
 <ParamField body="model" type="string" required>
-  图片模型 ID。例如：`"gpt-image-2"`、`"gemini-3-pro-image"`、`"gemini-2.5-flash-image"`。
+  与 OpenAI Images API 兼容的图片模型 ID，例如 `"gpt-image-2"`。
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
