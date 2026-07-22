@@ -27,10 +27,10 @@ assert.equal(config.styling.codeblocks, "dark");
 const navigationPages = config.navigation.languages.flatMap((language) =>
   language.tabs.flatMap((tab) => tab.groups.flatMap((group) => group.pages)),
 );
-assert.equal(navigationPages.length, 54);
+assert.equal(navigationPages.length, 56);
 const pages = ["index", "zh/index", ...navigationPages];
-assert.equal(pages.length, 56);
-assert.equal(new Set(pages).size, 56);
+assert.equal(pages.length, 58);
+assert.equal(new Set(pages).size, 58);
 for (const page of pages) {
   assert.ok(existsSync(resolve(root, `${page}.mdx`)), page);
 }
@@ -139,4 +139,4 @@ assert.match(
   css,
   /#mobile-nav \[role="group"\] button\[aria-pressed\]\s*\{[^}]*min-width:\s*44px[^}]*min-height:\s*44px/s,
 );
-console.log("Reference style contract validated for 56 routes.");
+console.log("Reference style contract validated for 58 routes.");

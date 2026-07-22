@@ -106,6 +106,7 @@
                   "api-reference/responses",
                   "api-reference/embeddings",
                   "api-reference/image-generation",
+                  "api-reference/seedance-video-generation",
                   "api-reference/models"
                 ]
               }
@@ -190,6 +191,7 @@
                   "zh/api-reference/responses",
                   "zh/api-reference/embeddings",
                   "zh/api-reference/image-generation",
+                  "zh/api-reference/seedance-video-generation",
                   "zh/api-reference/models"
                 ]
               }
