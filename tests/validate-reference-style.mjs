@@ -38,13 +38,16 @@ for (const page of pages) {
 for (const path of ["logo/light.svg", "logo/dark.svg", "favicon.svg"]) {
   const svg = read(path);
   assert.match(svg, /^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
-  assert.ok(svg.includes("#5B21B6"), path);
+  assert.ok(svg.includes("#A855F7"), path);
+  assert.ok(svg.includes("#6D28D9"), path);
+  assert.ok(svg.includes("M32 5.5C39 8.5"), path);
+  assert.ok(svg.includes('cx="32" cy="22.5"'), path);
 }
 
 for (const logo of ["logo/light.svg", "logo/dark.svg"]) {
   const svg = read(logo);
   assert.ok(svg.includes("flatkey"), logo);
-  assert.ok(svg.includes("DOCS"), logo);
+  assert.ok(!svg.includes("DOCS"), logo);
 }
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

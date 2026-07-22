@@ -42,11 +42,11 @@
 ## Visual language
 
 - Color: 浅色背景 `#FFFFFF`，正文 `#0B0B0F`；主紫 `#5B21B6`，高亮紫 `#7C3AED`，浅紫 `#F0EBFA`；深色背景 `#0A0A10`，表面 `#12121A`，正文 `#F5F5F2`，次级文字 `#8E8E9C`；代码重点绿色 `#A7F3C8`。
-- Typography: Public Sans 用于标题和正文；JetBrains Mono 用于代码、侧栏分组标签和 `DOCS` 标识。
-- Spacing/layout rhythm: 64px 桌面页头，约 260px 左侧栏；侧栏分组紧凑，正文维持清晰的 8px 倍数间距节奏。
+- Typography: Public Sans 用于标题、正文与官网一致的小写 `flatkey` 字标；JetBrains Mono 用于代码和侧栏分组标签。
+- Spacing/layout rhythm: 72px 桌面页头，约 260px 左侧栏；侧栏分组紧凑，正文维持清晰的 8px 倍数间距节奏。
 - Shape/radius/elevation: 导航选中态约 7px 圆角；卡片、提示和代码容器 12–16px 圆角；使用低对比边框，不使用明显投影。
 - Motion: 仅保留 Mintlify 原生必要状态过渡，并尊重 reduced-motion；不增加装饰动画。
-- Imagery/iconography: 使用紫色像素图标、小写 `flatkey` 与等宽 `DOCS` 组合；现有教程截图保持原内容与尺寸规则。
+- Imagery/iconography: 使用与官网一致的紫色渐变盾牌钥匙图标和小写 `flatkey` 字标，不附加独立的 `DOCS` 标识；现有教程截图保持原内容与尺寸规则。
 
 ## Components
 

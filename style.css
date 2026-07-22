@@ -78,12 +78,16 @@ a:hover {
 
 /* Top navigation */
 #navbar {
-  min-height: 64px;
-  padding-inline: 28px;
-  background: color-mix(in srgb, var(--fk-paper) 96%, transparent);
+  min-height: 72px;
+  padding-inline: 14px;
+  background: rgba(255, 255, 255, 0.95);
   border-bottom: 1px solid var(--fk-border);
   box-shadow: none;
   backdrop-filter: blur(14px);
+}
+
+.dark #navbar {
+  background: rgba(10, 10, 16, 0.95);
 }
 
 nav-logo {
@@ -95,14 +99,14 @@ nav-logo {
 nav-logo img,
 nav-logo svg {
   display: block;
-  width: 156px;
-  height: 28px;
+  width: 136px;
+  height: auto;
   max-width: none;
 }
 
 .nav-logo {
-  width: 156px;
-  height: 28px;
+  width: 136px;
+  height: 44px;
   max-width: none;
 }
 
@@ -610,19 +614,19 @@ api-parameter code {
 
 @media (max-width: 1023px) {
   #navbar {
-    min-height: 60px;
+    min-height: 64px;
     padding-inline: 16px;
   }
 
   nav-logo img,
   nav-logo svg {
-    width: 140px;
+    width: 108px;
     height: auto;
   }
 
   .nav-logo {
-    width: 140px;
-    height: auto;
+    width: 108px;
+    height: 44px;
   }
 
   #sidebar-content {

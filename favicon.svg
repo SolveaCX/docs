@@ -1,6 +1,15 @@
-<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title">
-  <title id="title">Flatkey</title>
-  <path d="M2 6H5V3H24V5H29V26H26V29H5V26H2V6Z" fill="#5B21B6"/>
-  <path d="M5 6H26V10H5V6Z" fill="#7C3AED"/>
-  <path d="M7 11H21V15H7V11ZM7 17H12V21H7V17ZM14 17H25V21H14V17ZM21 23H25V25H21V23Z" fill="white"/>
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="flatkey-favicon-title">
+  <title id="flatkey-favicon-title">Flatkey</title>
+  <defs>
+    <linearGradient id="flatkey-favicon-gradient" x1="7.5" y1="5.5" x2="56.5" y2="58.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A855F7"/>
+      <stop offset="1" stop-color="#6D28D9"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 5.5C39 8.5 46 10.3 52.5 11.2C55 11.6 56.5 13.4 56.5 15.9V29.5C56.5 44 46 53.5 32 58.5C18 53.5 7.5 44 7.5 29.5V15.9C7.5 13.4 9 11.6 11.5 11.2C18 10.3 25 8.5 32 5.5Z" fill="url(#flatkey-favicon-gradient)"/>
+  <circle cx="32" cy="22.5" r="6.8" fill="#FFFFFF"/>
+  <circle cx="32" cy="22.5" r="2.7" fill="#6D28D9"/>
+  <rect x="29.6" y="26" width="4.8" height="20" rx="2.4" fill="#FFFFFF"/>
+  <rect x="33.2" y="36.5" width="7.6" height="3.6" rx="1.8" fill="#FFFFFF"/>
+  <rect x="33.2" y="42" width="5.8" height="3.6" rx="1.8" fill="#FFFFFF"/>
 </svg>
