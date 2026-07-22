@@ -1,0 +1,417 @@
+---
+title: "Seedance 视频生成 — POST /v1/videos"
+sidebarTitle: "Seedance 视频生成"
+description: "通过 Flatkey 使用文本和多模态输入创建 Seedance 视频任务，轮询任务状态并下载生成结果。"
+---
+
+使用 `POST /v1/videos` 创建异步 Seedance 视频生成任务。轮询任务直至完成，然后通过返回的 Flatkey 地址下载视频。
+
+支持的模型包括 `seedance-2.0` 和 `seedance-2.0-fast`。模型可用性取决于你的账户，请使用 [`GET /v1/models`](/zh/api-reference/models) 获取当前模型列表。
+
+## 端点
+
+```http
+POST https://router.flatkey.ai/v1/videos
+```
+
+<Note>
+  Flatkey 也支持 `POST /v1/video/generations` 和 `GET /v1/video/generations/{task_id}`。推荐使用 `/v1/videos`，以获得标准响应结构和原生 `usage` 数据。
+</Note>
+
+## 请求
+
+### 请求头
+
+| 请求头 | 值 |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### 请求体参数
+
+<ParamField body="model" type="string" required>
+  Seedance 模型 ID。可使用 `"seedance-2.0"` 或 `"seedance-2.0-fast"`。
+</ParamField>
+
+<ParamField body="content" type="array" required>
+  多模态输入数组。至少包含一条非空文本、一张图片或一段视频。
+</ParamField>
+
+<ParamField body="resolution" type="string">
+  输出分辨率：`"480p"`、`"720p"` 或 `"1080p"`。
+</ParamField>
+
+<ParamField body="ratio" type="string">
+  输出画面比例：`"16:9"`、`"4:3"`、`"1:1"`、`"3:4"`、`"9:16"`、`"21:9"` 或 `"adaptive"`。
+</ParamField>
+
+<ParamField body="duration" type="integer">
+  视频时长，范围为 4 至 15 秒。传入 `-1` 时由模型决定。
+</ParamField>
+
+<ParamField body="seed" type="integer">
+  随机种子。不传时使用随机种子。
+</ParamField>
+
+<ParamField body="watermark" type="boolean">
+  是否添加水印。默认值：`false`。
+</ParamField>
+
+<ParamField body="generate_audio" type="boolean">
+  是否生成同步音频。
+</ParamField>
+
+### `content` 元素
+
+| `type` | 值字段 | 支持的 `role` | 用途 |
+|---|---|---|---|
+| `text` | `text` | — | 文本提示词。多条文本会按顺序拼接。 |
+| `image_url` | `image_url.url` | `first_frame`、`last_frame`、`reference_image` | 输入图或参考图，最多 9 张。 |
+| `video_url` | `video_url.url` | `reference_video` | 参考视频，最多 3 段。 |
+| `audio_url` | `audio_url.url` | `reference_audio` | 参考音频，最多 3 段。 |
+
+当图片使用 `first_frame` 或 `last_frame` 角色时，API 会采用首尾帧模式；其他图片会作为参考图处理。
+
+### 进阶参数
+
+<ParamField body="input_type" type="string">
+  显式指定输入模式：`"reference"` 或 `"first_last_frame"`。不传时根据 `content` 自动推断。
+</ParamField>
+
+<ParamField body="web_search" type="boolean">
+  为任务启用联网搜索增强。
+</ParamField>
+
+<ParamField body="super_resolution_config" type="object">
+  对生成视频进行超分，同时保留同一个公开任务 ID。
+
+  <Expandable title="super_resolution_config 字段">
+    <ParamField body="resolution" type="string">
+      目标分辨率：`"720p"`、`"1080p"`、`"2k"` 或 `"4k"`。目标必须高于原始分辨率，且不能与 `resolution_limit` 同时使用。
+    </ParamField>
+    <ParamField body="resolution_limit" type="integer">
+      自定义短边像素限制，范围为 64 至 2160。不能与 `resolution` 同时使用。
+    </ParamField>
+    <ParamField body="scene" type="string">
+      超分场景：`"aigc"`、`"short_series"`、`"ugc"` 或 `"old_film"`。
+    </ParamField>
+    <ParamField body="tool_version" type="string">
+      超分模式：`"standard"`（默认）或 `"professional"`。
+    </ParamField>
+    <ParamField body="fps" type="integer">
+      输出帧率，范围为 1 至 120。高于源帧率时会启用智能插帧。
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<Warning>
+  `camera_fixed`、`frames`、`callback_url` 和 `return_last_frame` 为兼容目的而接受，但当前不会生效。
+</Warning>
+
+## 请求示例
+
+<CodeGroup>
+```python python
+import os
+import requests
+
+response = requests.post(
+    "https://router.flatkey.ai/v1/videos",
+    headers={
+        "Authorization": f"Bearer {os.environ['FLATKEY_API_KEY']}",
+        "Content-Type": "application/json",
+    },
+    json={
+        "model": "seedance-2.0",
+        "content": [
+            {
+                "type": "text",
+                "text": "宇航员在月球漫步，电影感，镜头缓慢推近",
+            }
+        ],
+        "resolution": "1080p",
+        "ratio": "16:9",
+        "duration": 5,
+    },
+)
+response.raise_for_status()
+print(response.json())
+```
+```javascript node
+const response = await fetch("https://router.flatkey.ai/v1/videos", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${process.env.FLATKEY_API_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    model: "seedance-2.0",
+    content: [
+      {
+        type: "text",
+        text: "宇航员在月球漫步，电影感，镜头缓慢推近",
+      },
+    ],
+    resolution: "1080p",
+    ratio: "16:9",
+    duration: 5,
+  }),
+});
+
+if (!response.ok) throw new Error(await response.text());
+console.log(await response.json());
+```
+```bash curl
+curl https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "宇航员在月球漫步，电影感，镜头缓慢推近"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
+
+### 首尾帧输入
+
+```json
+{
+  "model": "seedance-2.0",
+  "content": [
+    { "type": "text", "text": "镜头缓缓向前推进" },
+    {
+      "type": "image_url",
+      "image_url": { "url": "https://example.com/first.jpg" },
+      "role": "first_frame"
+    },
+    {
+      "type": "image_url",
+      "image_url": { "url": "https://example.com/last.jpg" },
+      "role": "last_frame"
+    }
+  ],
+  "resolution": "720p",
+  "ratio": "16:9",
+  "duration": 5
+}
+```
+
+### 多模态参考与画质超分
+
+```json
+{
+  "model": "seedance-2.0",
+  "content": [
+    { "type": "text", "text": "女孩对着镜头微笑，背景是海边日落" },
+    {
+      "type": "image_url",
+      "image_url": { "url": "https://example.com/reference.jpg" },
+      "role": "reference_image"
+    }
+  ],
+  "resolution": "1080p",
+  "ratio": "16:9",
+  "duration": 5,
+  "watermark": false,
+  "super_resolution_config": {
+    "resolution": "4k",
+    "scene": "aigc",
+    "tool_version": "professional",
+    "fps": 60
+  }
+}
+```
+
+## 响应
+
+```json
+{
+  "id": "task_3f9a00000000000000000000000000e2",
+  "task_id": "task_3f9a00000000000000000000000000e2",
+  "object": "video",
+  "model": "seedance-2.0",
+  "status": "queued",
+  "progress": 0,
+  "created_at": 1780306574
+}
+```
+
+### 响应字段
+
+<ResponseField name="id" type="string">
+  用于轮询任务和下载完成视频的公开任务 ID。`task_id` 包含相同的值。
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  任务状态：`queued`、`in_progress`、`completed` 或 `failed`。
+</ResponseField>
+
+<ResponseField name="progress" type="integer">
+  生成进度，范围为 0 至 100。
+</ResponseField>
+
+<ResponseField name="created_at" type="integer">
+  任务创建时的 Unix 时间戳。
+</ResponseField>
+
+## 查询任务状态
+
+```http
+GET https://router.flatkey.ai/v1/videos/{task_id}
+```
+
+```bash
+curl https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2 \
+  -H "Authorization: Bearer $FLATKEY_API_KEY"
+```
+
+任务生成过程中，响应会包含当前进度：
+
+```json
+{
+  "id": "task_3f9a00000000000000000000000000e2",
+  "object": "video",
+  "status": "in_progress",
+  "progress": 50,
+  "model": "seedance-2.0",
+  "created_at": 1780306574
+}
+```
+
+任务完成后，响应会包含视频地址和 token 用量：
+
+```json
+{
+  "id": "task_3f9a00000000000000000000000000e2",
+  "object": "video",
+  "status": "completed",
+  "progress": 100,
+  "model": "seedance-2.0",
+  "usage": {
+    "completion_tokens": 120,
+    "total_tokens": 120
+  },
+  "metadata": {
+    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content"
+  },
+  "created_at": 1780306574,
+  "completed_at": 1780306750
+}
+```
+
+失败任务会在任务响应中返回错误详情：
+
+```json
+{
+  "id": "task_3f9a00000000000000000000000000e2",
+  "object": "video",
+  "status": "failed",
+  "error": {
+    "message": "视频生成任务失败。",
+    "code": "video_generation_failed"
+  }
+}
+```
+
+已预扣的余额会自动退还。
+
+### 状态值
+
+| 状态 | 含义 |
+|---|---|
+| `queued` | 任务正在排队等待。 |
+| `in_progress` | 视频正在生成，`progress` 范围为 0 至 100。 |
+| `completed` | 视频已生成，地址位于 `metadata.url`，token 用量位于 `usage`。 |
+| `failed` | 生成失败，详情位于 `error.message`，已预扣的余额会自动退还。 |
+
+## 下载视频
+
+```http
+GET https://router.flatkey.ai/v1/videos/{task_id}/content
+```
+
+```bash
+curl -L "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content" \
+  -o output.mp4
+```
+
+内容端点以流式方式返回 `video/mp4` 数据。该端点不需要 Bearer token，也可以直接作为 `<video>` 的资源地址。
+
+<Warning>
+  只有任务完成后才能访问内容端点，且该端点会按客户端 IP 限流。任何获得该 URL 的人都可以下载视频，请将它视为敏感信息。
+</Warning>
+
+## 错误
+
+请求阶段的错误使用 Flatkey 标准错误结构：
+
+```json
+{
+  "error": {
+    "message": "...",
+    "type": "...",
+    "code": "..."
+  }
+}
+```
+
+| 场景 | 行为 |
+|---|---|
+| `content` 为空 | 请求会被拒绝。请提供非空文本、图片或视频。 |
+| 模型不可用 | 请求的 `model` 未对当前路由开放。 |
+| 余额不足 | 任务不会创建。 |
+| 服务暂时不可用 | 请按常规退避策略稍后重试。 |
+
+## 端到端示例
+
+下面的示例会创建任务、每五秒轮询一次，并在任务完成后下载视频。运行前需要安装 [`jq`](https://jqlang.github.io/jq/)。
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+BASE="https://router.flatkey.ai"
+: "${FLATKEY_API_KEY:?请先设置 FLATKEY_API_KEY}"
+
+RESPONSE=$(curl -sS "$BASE/v1/videos" \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      { "type": "text", "text": "宇航员在月球漫步，电影感" }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }')
+
+TASK_ID=$(echo "$RESPONSE" | jq -r '.id')
+echo "task: $TASK_ID"
+
+while true; do
+  RESULT=$(curl -sS "$BASE/v1/videos/$TASK_ID" \
+    -H "Authorization: Bearer $FLATKEY_API_KEY")
+  STATUS=$(echo "$RESULT" | jq -r '.status')
+  echo "status: $STATUS"
+
+  [ "$STATUS" = "completed" ] && break
+  if [ "$STATUS" = "failed" ]; then
+    echo "failed: $(echo "$RESULT" | jq -r '.error.message')" >&2
+    exit 1
+  fi
+  sleep 5
+done
+
+VIDEO_URL=$(echo "$RESULT" | jq -r '.metadata.url')
+curl -L "$VIDEO_URL" -o output.mp4
+echo "saved -> output.mp4"
+```

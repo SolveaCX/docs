@@ -1,10 +1,10 @@
 ---
 title: "Flatkey REST API: Endpoints, Auth, and Request Format"
 sidebarTitle: "Overview"
-description: "Flatkey exposes an OpenAI-compatible REST API at https://router.flatkey.ai/v1. All requests require a Bearer token and target JSON over HTTPS."
+description: "Flatkey exposes an OpenAI-compatible REST API at https://router.flatkey.ai/v1. API requests use Bearer authentication, with anonymous access only for completed video content URLs."
 ---
 
-The Flatkey API is a REST API that is fully compatible with the OpenAI API specification. Every request goes to `https://router.flatkey.ai/v1` — the same base URL for all endpoints, providers, and models. Authentication uses a Bearer token in the `Authorization` header.
+The Flatkey API is a REST API that is fully compatible with the OpenAI API specification. API requests go to `https://router.flatkey.ai/v1` — the same base URL for all endpoints, providers, and models. Authentication uses a Bearer token in the `Authorization` header, except for completed video content URLs.
 
 ## Base URL
 
@@ -14,7 +14,7 @@ https://router.flatkey.ai/v1
 
 ## Authentication
 
-All requests must include your Flatkey API key as a Bearer token:
+API requests must include your Flatkey API key as a Bearer token:
 
 ```
 Authorization: Bearer sk-fk-your-api-key
@@ -22,11 +22,13 @@ Authorization: Bearer sk-fk-your-api-key
 
 Generate your API key in the [console](https://console.flatkey.ai/keys). See [Authentication](/api-reference/authentication) for full details.
 
+The anonymous `GET /v1/videos/{task_id}/content` URL is an exception. Treat it as sensitive because possession of the task URL grants access to the completed video.
+
 ## Request format
 
 - All requests use **HTTPS**
 - Request bodies must be **JSON** (`Content-Type: application/json`)
-- Responses are JSON (or SSE for streaming)
+- Responses are JSON, SSE for streaming, or `video/mp4` for completed video content
 
 ## Available endpoints
 
@@ -36,6 +38,9 @@ Generate your API key in the [console](https://console.flatkey.ai/keys). See [Au
 | `/v1/responses` | POST | OpenAI Responses API (stateful multi-turn) |
 | `/v1/embeddings` | POST | Text embeddings |
 | `/v1/images/generations` | POST | Image generation |
+| `/v1/videos` | POST | Create a Seedance video-generation task |
+| `/v1/videos/{task_id}` | GET | Retrieve Seedance task status and result |
+| `/v1/videos/{task_id}/content` | GET | Download a completed video without Bearer authentication |
 | `/v1/models` | GET | List available models |
 
 ## OpenAI SDK compatibility
@@ -73,5 +78,6 @@ Rate limits are applied per API key. If you exceed the limit, you receive a `429
 
 | Content type | Used for |
 |---|---|
-| `application/json` | All request bodies and responses |
+| `application/json` | JSON request bodies and API responses |
 | `text/event-stream` | Streaming responses (when `stream: true`) |
+| `video/mp4` | Completed video content |

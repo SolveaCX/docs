@@ -1,10 +1,10 @@
 ---
 title: "Flatkey REST API：端点、认证与请求格式"
 sidebarTitle: "概览"
-description: "Flatkey 在 https://router.flatkey.ai/v1 提供兼容 OpenAI 的 REST API。所有请求都需要 Bearer token，并通过 HTTPS 发送 JSON。"
+description: "Flatkey 在 https://router.flatkey.ai/v1 提供兼容 OpenAI 的 REST API。API 请求使用 Bearer 认证，只有已完成视频的内容 URL 支持匿名访问。"
 ---
 
-Flatkey API 是完全兼容 OpenAI API 规范的 REST API。所有请求都发送到 `https://router.flatkey.ai/v1`，所有端点、供应商和模型共用同一个基础 URL。认证方式是在 `Authorization` 请求头中传入 Bearer token。
+Flatkey API 是完全兼容 OpenAI API 规范的 REST API。API 请求发送到 `https://router.flatkey.ai/v1`，所有端点、供应商和模型共用同一个基础 URL。除已完成视频的内容 URL 外，认证方式是在 `Authorization` 请求头中传入 Bearer token。
 
 ## 基础 URL
 
@@ -14,7 +14,7 @@ https://router.flatkey.ai/v1
 
 ## 认证
 
-所有请求都必须将 Flatkey API 密钥作为 Bearer token 传入：
+API 请求必须将 Flatkey API 密钥作为 Bearer token 传入：
 
 ```
 Authorization: Bearer sk-fk-your-api-key
@@ -22,11 +22,13 @@ Authorization: Bearer sk-fk-your-api-key
 
 请在[控制台](https://console.flatkey.ai/keys?lng=zh)中生成 API 密钥。完整说明请参阅[认证](/zh/api-reference/authentication)。
 
+匿名的 `GET /v1/videos/{task_id}/content` URL 是例外。任何获得该任务 URL 的人都可以访问已完成的视频，请将它视为敏感信息。
+
 ## 请求格式
 
 - 所有请求都使用 **HTTPS**
 - 请求体必须为 **JSON**（`Content-Type: application/json`）
-- 响应为 JSON，流式传输时为 SSE
+- 响应为 JSON，流式传输时为 SSE，已完成的视频内容为 `video/mp4`
 
 ## 可用端点
 
@@ -36,6 +38,9 @@ Authorization: Bearer sk-fk-your-api-key
 | `/v1/responses` | POST | OpenAI Responses API（有状态多轮对话） |
 | `/v1/embeddings` | POST | 文本嵌入 |
 | `/v1/images/generations` | POST | 图片生成 |
+| `/v1/videos` | POST | 创建 Seedance 视频生成任务 |
+| `/v1/videos/{task_id}` | GET | 获取 Seedance 任务状态和结果 |
+| `/v1/videos/{task_id}/content` | GET | 无需 Bearer 认证即可下载已完成的视频 |
 | `/v1/models` | GET | 列出可用模型 |
 
 ## OpenAI SDK 兼容性
@@ -73,5 +78,6 @@ Flatkey 使用与 OpenAI API 相同的版本管理方案。`/v1` 路径前缀保
 
 | 内容类型 | 用途 |
 |---|---|
-| `application/json` | 所有请求体和响应 |
+| `application/json` | JSON 请求体和 API 响应 |
 | `text/event-stream` | 流式响应（`stream: true` 时） |
+| `video/mp4` | 已完成的视频内容 |
