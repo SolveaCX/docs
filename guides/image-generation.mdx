@@ -1,13 +1,13 @@
 ---
-title: "Generate Images with GPT and Gemini Models via Flatkey"
-sidebarTitle: "Image Generation"
-description: "Generate images through Flatkey with gpt-image-2 and Gemini image models, using either the OpenAI Images API or the native Gemini generateContent API."
+title: "Generate and Edit Images with GPT and Gemini Models via Flatkey"
+sidebarTitle: "Image Generation & Editing"
+description: "Generate and edit images through Flatkey with gpt-image-2 and Gemini image models, using OpenAI Images-compatible or native Gemini APIs."
 ---
 
-Flatkey provides two ways to generate images. Use the OpenAI-compatible `/v1/images/generations` endpoint for `gpt-image-2`. Use the native Gemini `generateContent` endpoint for Gemini image models.
+Flatkey provides two image API families. Use the OpenAI-compatible `/v1/images/generations` and `/v1/images/edits` endpoints for `gpt-image-2`. Use the native Gemini `generateContent` endpoint for Gemini image models.
 
 <Warning>
-  You cannot call Gemini image models with the OpenAI Images SDK or `/v1/images/generations`. Use the native Gemini API examples on this page. Otherwise, the request may return `get_channel_failed`.
+  You cannot call Gemini image models with the OpenAI Images SDK, `/v1/images/generations`, or `/v1/images/edits`. Use the native Gemini API examples on this page. Otherwise, the request may return `get_channel_failed`.
 </Warning>
 
 ## Supported image models
@@ -29,7 +29,10 @@ See the [Model Directory](/reference/model-list) for the complete model list and
 
 <CodeGroup>
 ```python python
+import base64
 import os
+from pathlib import Path
+
 from openai import OpenAI
 
 client = OpenAI(
@@ -41,12 +44,14 @@ response = client.images.generate(
     model="gpt-image-2",
     prompt="A serene mountain lake at sunset, photorealistic",
     size="1024x1024",
-    n=1,
 )
 
-print(response.data[0].url)
+Path("generated.png").write_bytes(
+    base64.b64decode(response.data[0].b64_json)
+)
 ```
 ```javascript node
+import { writeFileSync } from "node:fs";
 import OpenAI from "openai";
 
 const client = new OpenAI({
@@ -58,14 +63,16 @@ const response = await client.images.generate({
   model: "gpt-image-2",
   prompt: "A serene mountain lake at sunset, photorealistic",
   size: "1024x1024",
-  n: 1,
 });
 
-console.log(response.data[0].url);
+writeFileSync(
+  "generated.png",
+  Buffer.from(response.data[0].b64_json, "base64"),
+);
 ```
 </CodeGroup>
 
-### Use curl
+### Generate an image with curl
 
 ```bash
 curl https://router.flatkey.ai/v1/images/generations \
@@ -74,12 +81,26 @@ curl https://router.flatkey.ai/v1/images/generations \
   -d '{
     "model": "gpt-image-2",
     "prompt": "A futuristic cityscape at night, neon lights, wide angle",
-    "size": "1024x1024",
-    "n": 1
+    "size": "1024x1024"
   }'
 ```
 
-This endpoint returns a temporary image URL, or base64 image data when `response_format` is `b64_json`. See the [Image Generation API reference](/api-reference/image-generation) for all fields.
+This endpoint returns the generated image in `data[0].b64_json`; `gpt-image-2` does not provide a hosted image URL. See the [Images API reference](/api-reference/image-generation#generate-an-image) for all fields.
+
+### Edit an image with curl
+
+Use `/v1/images/edits` to upload an input image together with editing instructions. This endpoint uses `multipart/form-data`; `image` is required and `mask` is optional.
+
+```bash
+curl https://router.flatkey.ai/v1/images/edits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -F "model=gpt-image-2" \
+  -F "prompt=add a small yellow star in the center" \
+  -F "image=@input.png" \
+  -F "mask=@mask.png"
+```
+
+`image` supports PNG, JPEG, and WebP. Omit `mask` to edit the whole image based on the prompt. When a mask is provided, its transparent areas identify the regions to redraw. The edited image is returned in `data[0].b64_json`. See the [edit API reference](/api-reference/image-generation#edit-an-image) for all fields.
 
 ## Use Gemini image models
 
@@ -240,7 +261,8 @@ writeFileSync(`generated.${suffix}`, Buffer.from(image.data, "base64"));
 
 Make sure the endpoint matches the model:
 
-- Use `/v1/images/generations` for `gpt-image-2`.
+- Use `/v1/images/generations` to generate with `gpt-image-2`.
+- Use `/v1/images/edits` to edit with `gpt-image-2`.
 - Use `/v1beta/models/{model}:generateContent` for Gemini image models.
 
 ### The Gemini response does not contain an image

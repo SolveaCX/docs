@@ -1,13 +1,13 @@
 ---
-title: "通过 Flatkey 使用 GPT 和 Gemini 模型生成图片"
-sidebarTitle: "图片生成"
-description: "通过 Flatkey 使用 gpt-image-2 和 Gemini 图片模型生成图片，包含 OpenAI Images API 与 Gemini 原生 generateContent API 示例。"
+title: "通过 Flatkey 使用 GPT 和 Gemini 模型生成和编辑图片"
+sidebarTitle: "图片生成与编辑"
+description: "通过 Flatkey 使用 gpt-image-2 和 Gemini 图片模型生成和编辑图片，包含兼容 OpenAI Images API 与 Gemini 原生 API 的示例。"
 ---
 
-Flatkey 提供两种图片生成调用方式。`gpt-image-2` 使用兼容 OpenAI Images API 的 `/v1/images/generations` 端点；Gemini 图片模型使用 Gemini 原生 `generateContent` 端点。
+Flatkey 提供两类图片 API。`gpt-image-2` 使用兼容 OpenAI Images API 的 `/v1/images/generations` 和 `/v1/images/edits` 端点；Gemini 图片模型使用 Gemini 原生 `generateContent` 端点。
 
 <Warning>
-  Gemini 图片模型不能通过 OpenAI Images SDK 或 `/v1/images/generations` 调用。请使用本页的 Gemini 原生 API 示例，否则可能收到 `get_channel_failed` 错误。
+  Gemini 图片模型不能通过 OpenAI Images SDK、`/v1/images/generations` 或 `/v1/images/edits` 调用。请使用本页的 Gemini 原生 API 示例，否则可能收到 `get_channel_failed` 错误。
 </Warning>
 
 ## 支持的图片模型
@@ -29,7 +29,10 @@ Flatkey 提供两种图片生成调用方式。`gpt-image-2` 使用兼容 OpenAI
 
 <CodeGroup>
 ```python python
+import base64
 import os
+from pathlib import Path
+
 from openai import OpenAI
 
 client = OpenAI(
@@ -41,12 +44,14 @@ response = client.images.generate(
     model="gpt-image-2",
     prompt="A serene mountain lake at sunset, photorealistic",
     size="1024x1024",
-    n=1,
 )
 
-print(response.data[0].url)
+Path("generated.png").write_bytes(
+    base64.b64decode(response.data[0].b64_json)
+)
 ```
 ```javascript node
+import { writeFileSync } from "node:fs";
 import OpenAI from "openai";
 
 const client = new OpenAI({
@@ -58,14 +63,16 @@ const response = await client.images.generate({
   model: "gpt-image-2",
   prompt: "A serene mountain lake at sunset, photorealistic",
   size: "1024x1024",
-  n: 1,
 });
 
-console.log(response.data[0].url);
+writeFileSync(
+  "generated.png",
+  Buffer.from(response.data[0].b64_json, "base64"),
+);
 ```
 </CodeGroup>
 
-### 使用 curl
+### 使用 curl 生成图片
 
 ```bash
 curl https://router.flatkey.ai/v1/images/generations \
@@ -74,12 +81,26 @@ curl https://router.flatkey.ai/v1/images/generations \
   -d '{
     "model": "gpt-image-2",
     "prompt": "A futuristic cityscape at night, neon lights, wide angle",
-    "size": "1024x1024",
-    "n": 1
+    "size": "1024x1024"
   }'
 ```
 
-该端点返回临时图片 URL，或在 `response_format` 为 `b64_json` 时返回 Base64 图片数据。完整字段请参阅[图片生成 API 参考](/zh/api-reference/image-generation)。
+该端点在 `data[0].b64_json` 中返回生成结果；`gpt-image-2` 不提供托管图片 URL。完整字段请参阅[图片 API 参考](/zh/api-reference/image-generation#生成图片)。
+
+### 使用 curl 编辑图片
+
+通过 `/v1/images/edits` 上传待编辑图片和编辑指令。该端点使用 `multipart/form-data`；`image` 为必填图片文件，`mask` 为可选蒙版文件。
+
+```bash
+curl https://router.flatkey.ai/v1/images/edits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -F "model=gpt-image-2" \
+  -F "prompt=在图片中央添加一颗黄色的小星星" \
+  -F "image=@input.png" \
+  -F "mask=@mask.png"
+```
+
+`image` 支持 PNG、JPEG 和 WebP。省略 `mask` 时会根据提示词编辑整张图片；提供 `mask` 时，蒙版的透明区域是需要重绘的区域。编辑结果位于响应的 `data[0].b64_json` 中。完整字段请参阅[编辑图片 API 参考](/zh/api-reference/image-generation#编辑图片)。
 
 ## 使用 Gemini 图片模型
 
@@ -240,7 +261,8 @@ writeFileSync(`generated.${suffix}`, Buffer.from(image.data, "base64"));
 
 确认端点与模型匹配：
 
-- `gpt-image-2` 使用 `/v1/images/generations`。
+- `gpt-image-2` 生成图片使用 `/v1/images/generations`。
+- `gpt-image-2` 编辑图片使用 `/v1/images/edits`。
 - Gemini 图片模型使用 `/v1beta/models/{model}:generateContent`。
 
 ### Gemini 响应中没有图片

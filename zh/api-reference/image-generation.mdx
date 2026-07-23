@@ -1,22 +1,22 @@
 ---
-title: "图片生成 — POST /v1/images/generations"
-sidebarTitle: "图片生成"
-description: "使用 POST /v1/images/generations 和兼容 OpenAI Images API 的模型生成图片，可返回 URL 或 Base64 编码的图片数据。"
+title: "图片生成与编辑 API"
+sidebarTitle: "图片 API"
+description: "使用兼容 OpenAI Images API 的 /v1/images/generations 和 /v1/images/edits 端点生成或编辑图片。"
 ---
 
-`/v1/images/generations` 端点根据文本提示词生成图片。它兼容 OpenAI Images API，并支持 `gpt-image-2` 等兼容该接口的图片模型。
+使用 `/v1/images/generations` 根据文本提示词生成图片，使用 `/v1/images/edits` 根据输入图片和提示词编辑图片。两个端点均采用兼容 OpenAI Images API 的请求格式；具体可用能力取决于 Flatkey 服务实际开放的模型和渠道。
 
 <Warning>
-  Gemini 图片模型使用 Gemini 原生 `generateContent` 端点，不能通过本端点调用。请参阅 [Gemini 图片模型操作手册](/zh/guides/image-generation#使用-gemini-图片模型)。
+  Gemini 图片模型使用 Gemini 原生 `generateContent` 端点，不能通过这些 OpenAI Images 端点调用。请参阅 [Gemini 图片模型操作手册](/zh/guides/image-generation#使用-gemini-图片模型)。
 </Warning>
 
-## 端点
+## 生成图片
+
+### 端点
 
 ```
 POST https://router.flatkey.ai/v1/images/generations
 ```
-
-## 请求
 
 ### 请求头
 
@@ -25,37 +25,60 @@ POST https://router.flatkey.ai/v1/images/generations
 | `Authorization` | `Bearer $FLATKEY_API_KEY` |
 | `Content-Type` | `application/json` |
 
-### 请求体参数
+### JSON 请求体参数
 
 <ParamField body="model" type="string" required>
-  与 OpenAI Images API 兼容的图片模型 ID，例如 `"gpt-image-2"`。
+  Flatkey 服务实际开放的图片模型 ID，例如 `"gpt-image-2"`。
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
-  对要生成图片的文本描述。提示词越详细，通常生成效果越好。
-</ParamField>
-
-<ParamField body="n" type="integer">
-  要生成的图片数量。默认值：1。最大值因模型而异。
+  对要生成图片的文本描述。
 </ParamField>
 
 <ParamField body="size" type="string">
-  图片尺寸。常用值包括 `"256x256"`、`"512x512"`、`"1024x1024"`、`"1792x1024"`、`"1024x1792"`。支持情况因模型而异。
+  输出尺寸，例如 `"1024x1024"`。支持值取决于模型。
 </ParamField>
 
 <ParamField body="quality" type="string">
-  图片质量设置。可选值：`"standard"` 或 `"hd"`。默认值：`"standard"`。仅部分模型支持。
+  输出质量：`"low"`、`"medium"` 或 `"high"`。省略时使用上游默认值；质量越高，耗时和用量越大。
+</ParamField>
+
+<ParamField body="background" type="string">
+  背景处理，例如 `"transparent"` 或 `"opaque"`，是否支持取决于模型。
+</ParamField>
+
+<ParamField body="output_format" type="string">
+  输出格式，例如 `"png"`、`"jpeg"` 或 `"webp"`，是否支持取决于模型。
+</ParamField>
+
+<ParamField body="output_compression" type="integer">
+  输出压缩级别，是否支持取决于模型。
+</ParamField>
+
+<ParamField body="moderation" type="string">
+  内容审核档位，是否支持取决于模型。
 </ParamField>
 
 <ParamField body="response_format" type="string">
-  `"url"`（默认）返回图片的临时 URL；`"b64_json"` 返回 Base64 编码的图片数据。
+  `gpt-image-2` 的结果固定返回在 `data[].b64_json` 中，不提供托管图片 URL，也不支持 `response_format: "url"`。
 </ParamField>
 
-## 请求示例
+<ParamField body="n" type="integer">
+  请求的图片数量。`gpt-image-2` 的上游图片工具目前不接受 `n`，因此每次请求固定返回一张图片；如需多张，请发起多次请求。
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  设置为 `true` 时返回 SSE 流；省略时返回同步响应。
+</ParamField>
+
+### 请求示例
 
 <CodeGroup>
 ```python python
+import base64
 import os
+from pathlib import Path
+
 from openai import OpenAI
 
 client = OpenAI(
@@ -65,14 +88,17 @@ client = OpenAI(
 
 response = client.images.generate(
     model="gpt-image-2",
-    prompt="A futuristic city skyline at dusk, neon lights reflecting on wet streets, cyberpunk style",
+    prompt="A futuristic city skyline at dusk, cyberpunk style",
     size="1024x1024",
-    n=1,
+    quality="high",
 )
 
-print(response.data[0].url)
+Path("generated.png").write_bytes(
+    base64.b64decode(response.data[0].b64_json)
+)
 ```
 ```javascript node
+import { writeFileSync } from "node:fs";
 import OpenAI from "openai";
 
 const client = new OpenAI({
@@ -82,12 +108,15 @@ const client = new OpenAI({
 
 const response = await client.images.generate({
   model: "gpt-image-2",
-  prompt: "A futuristic city skyline at dusk, neon lights reflecting on wet streets, cyberpunk style",
+  prompt: "A futuristic city skyline at dusk, cyberpunk style",
   size: "1024x1024",
-  n: 1,
+  quality: "high",
 });
 
-console.log(response.data[0].url);
+writeFileSync(
+  "generated.png",
+  Buffer.from(response.data[0].b64_json, "base64"),
+);
 ```
 ```bash curl
 curl https://router.flatkey.ai/v1/images/generations \
@@ -97,20 +126,69 @@ curl https://router.flatkey.ai/v1/images/generations \
     "model": "gpt-image-2",
     "prompt": "A serene forest clearing with morning mist and sunbeams",
     "size": "1024x1024",
-    "n": 1
+    "quality": "high"
   }'
 ```
 </CodeGroup>
 
+## 编辑图片
+
+`/v1/images/edits` 使用 `multipart/form-data` 上传待编辑图片和编辑指令。
+
+### 端点
+
+```
+POST https://router.flatkey.ai/v1/images/edits
+```
+
+### 请求头
+
+| 请求头 | 值 |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `multipart/form-data`；使用 curl 时由 `-F` 自动生成并附带 boundary |
+
+### 表单参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| `model` | string | 是 | Flatkey 服务实际开放的图片模型 ID，例如 `gpt-image-2`。 |
+| `prompt` | string | 是 | 对图片的编辑指令。 |
+| `image` | file | 是 | 待编辑图片，支持 PNG、JPEG 和 WebP。多图可使用 `image[]` 或 `image[0]`、`image[1]`。 |
+| `mask` | file | 否 | 用于局部重绘的蒙版；透明区域是需要重绘的区域。 |
+| `size` | string | 否 | 输出尺寸，支持值取决于模型。 |
+| `quality` | string | 否 | 输出质量：`low`、`medium` 或 `high`。 |
+| `stream` | boolean | 否 | 设置为 `true` 时返回 SSE 流。 |
+
+### 请求示例
+
+```bash
+curl https://router.flatkey.ai/v1/images/edits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -F "model=gpt-image-2" \
+  -F "prompt=在图片中央添加一颗黄色的小星星" \
+  -F "image=@input.png" \
+  -F "mask=@mask.png"
+```
+
+`mask` 是可选参数。省略它即可根据提示词编辑整张图片。不要手动添加 `Content-Type` 请求头；curl 会根据 `-F` 参数自动设置正确的 multipart boundary。
+
+<Warning>
+  如果提供的蒙版已损坏、无法读取或超过服务限制，请求会直接失败，不会退化为整图编辑。
+</Warning>
+
 ## 响应
+
+同步生成和编辑请求返回相同的响应结构。Flatkey 以 Base64 数据返回图片；`gpt-image-2` 不提供托管图片 URL。
 
 ```json
 {
   "created": 1710000000,
   "data": [
     {
-      "url": "https://cdn.openai.com/...",
-      "revised_prompt": "A futuristic city skyline at dusk..."
+      "b64_json": "iVBORw0KGgoAAA...",
+      "revised_prompt": "Add a small yellow five-pointed star in the center...",
+      "url": ""
     }
   ]
 }
@@ -123,14 +201,24 @@ curl https://router.flatkey.ai/v1/images/generations \
 </ResponseField>
 
 <ResponseField name="data" type="array">
-  生成的图片对象数组。
+  图片对象数组。
   <Expandable title="图片对象">
-    <ResponseField name="url" type="string">生成图片的临时 URL。请及时下载，URL 会过期。</ResponseField>
-    <ResponseField name="b64_json" type="string">Base64 编码的图片数据，仅当 `response_format` 为 `"b64_json"` 时提供。</ResponseField>
-    <ResponseField name="revised_prompt" type="string">经过安全修订后实际发送给模型的提示词。</ResponseField>
+    <ResponseField name="b64_json" type="string">Base64 编码的图片数据。</ResponseField>
+    <ResponseField name="revised_prompt" type="string">模型改写后实际使用的提示词。</ResponseField>
+    <ResponseField name="url" type="string">`gpt-image-2` 固定为空；本接口不提供托管 URL。</ResponseField>
   </Expandable>
 </ResponseField>
 
-<Warning>
-  图片 URL 是临时地址，会在短时间后过期。请下载并保存需要长期保留的图片。
-</Warning>
+编辑请求的输入图片也会计入模型用量，因此图片编辑通常比纯文本生成图片消耗更多用量。
+
+## 流式响应
+
+在生成请求的 JSON 请求体中设置 `stream: true`，或在编辑请求中添加 `-F "stream=true"`，即可接收 `text/event-stream` 响应。最终事件包含图片结果，随后返回 `data: [DONE]`。
+
+| 事件 | 含义 |
+|---|---|
+| `image_generation.completed` | 图片生成完成。 |
+| `image_edit.completed` | 图片编辑完成。 |
+| `[DONE]` | 响应流结束。 |
+
+流式支持情况取决于所选模型和渠道。对于同步的高质量请求，建议将客户端超时设置为至少 150 秒。
