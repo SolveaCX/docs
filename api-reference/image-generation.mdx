@@ -1,22 +1,22 @@
 ---
 title: "Image Generation and Editing API"
-sidebarTitle: "Image Generation"
+sidebarTitle: "Images API"
 description: "Generate or edit images through the OpenAI Images-compatible /v1/images/generations and /v1/images/edits endpoints."
 ---
 
-`/v1/images/generations` generates images from text prompts, while `/v1/images/edits` edits an input image according to a prompt. Both endpoints are compatible with the OpenAI Images API and support compatible models such as `gpt-image-2`.
+Use `/v1/images/generations` to generate an image from a text prompt and `/v1/images/edits` to edit an input image. Both endpoints use OpenAI Images-compatible request shapes. Available operations depend on the model and channel exposed by your Flatkey service.
 
 <Warning>
-  Gemini image models use the native Gemini `generateContent` endpoint and cannot be called through this endpoint. See the [Gemini image model guide](/guides/image-generation#use-gemini-image-models).
+  Gemini image models use the native Gemini `generateContent` endpoint and cannot be called through these OpenAI Images endpoints. See the [Gemini image model guide](/guides/image-generation#use-gemini-image-models).
 </Warning>
 
-## Endpoint
+## Generate an image
+
+### Endpoint
 
 ```
 POST https://router.flatkey.ai/v1/images/generations
 ```
-
-## Request
 
 ### Headers
 
@@ -25,37 +25,60 @@ POST https://router.flatkey.ai/v1/images/generations
 | `Authorization` | `Bearer $FLATKEY_API_KEY` |
 | `Content-Type` | `application/json` |
 
-### Body parameters
+### JSON body parameters
 
 <ParamField body="model" type="string" required>
-  An OpenAI Images-compatible model ID, such as `"gpt-image-2"`.
+  Image model ID exposed by your Flatkey service, such as `"gpt-image-2"`.
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
-  Text description of the image to generate. More detailed prompts produce better results.
-</ParamField>
-
-<ParamField body="n" type="integer">
-  Number of images to generate. Default: 1. Maximum varies by model.
+  Text description of the image to generate.
 </ParamField>
 
 <ParamField body="size" type="string">
-  Image dimensions. Common values: `"256x256"`, `"512x512"`, `"1024x1024"`, `"1792x1024"`, `"1024x1792"`. Support varies by model.
+  Output dimensions, such as `"1024x1024"`. Supported values depend on the model.
 </ParamField>
 
 <ParamField body="quality" type="string">
-  Image quality setting. Values: `"standard"` or `"hd"`. Default: `"standard"`. Only supported by some models.
+  Output quality: `"low"`, `"medium"`, or `"high"`. If omitted, the upstream default is used. Higher quality increases latency and usage.
+</ParamField>
+
+<ParamField body="background" type="string">
+  Background handling, such as `"transparent"` or `"opaque"`, when supported by the model.
+</ParamField>
+
+<ParamField body="output_format" type="string">
+  Output format, such as `"png"`, `"jpeg"`, or `"webp"`, when supported by the model.
+</ParamField>
+
+<ParamField body="output_compression" type="integer">
+  Output compression level, when supported by the model.
+</ParamField>
+
+<ParamField body="moderation" type="string">
+  Content moderation level, when supported by the model.
 </ParamField>
 
 <ParamField body="response_format" type="string">
-  `"url"` (default) — returns a temporary URL to the image. `"b64_json"` — returns base64-encoded image data.
+  `gpt-image-2` results are returned in `data[].b64_json`. Hosted image URLs are not provided, and `response_format: "url"` is unsupported.
 </ParamField>
 
-## Example requests
+<ParamField body="n" type="integer">
+  Requested image count. `gpt-image-2` currently returns one image per request because its upstream image tool does not accept `n`. Send multiple requests if you need multiple images.
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  Set to `true` to receive an SSE response. Omit it for a synchronous response.
+</ParamField>
+
+### Example requests
 
 <CodeGroup>
 ```python python
+import base64
 import os
+from pathlib import Path
+
 from openai import OpenAI
 
 client = OpenAI(
@@ -65,14 +88,17 @@ client = OpenAI(
 
 response = client.images.generate(
     model="gpt-image-2",
-    prompt="A futuristic city skyline at dusk, neon lights reflecting on wet streets, cyberpunk style",
+    prompt="A futuristic city skyline at dusk, cyberpunk style",
     size="1024x1024",
-    n=1,
+    quality="high",
 )
 
-print(response.data[0].url)
+Path("generated.png").write_bytes(
+    base64.b64decode(response.data[0].b64_json)
+)
 ```
 ```javascript node
+import { writeFileSync } from "node:fs";
 import OpenAI from "openai";
 
 const client = new OpenAI({
@@ -82,12 +108,15 @@ const client = new OpenAI({
 
 const response = await client.images.generate({
   model: "gpt-image-2",
-  prompt: "A futuristic city skyline at dusk, neon lights reflecting on wet streets, cyberpunk style",
+  prompt: "A futuristic city skyline at dusk, cyberpunk style",
   size: "1024x1024",
-  n: 1,
+  quality: "high",
 });
 
-console.log(response.data[0].url);
+writeFileSync(
+  "generated.png",
+  Buffer.from(response.data[0].b64_json, "base64"),
+);
 ```
 ```bash curl
 curl https://router.flatkey.ai/v1/images/generations \
@@ -97,47 +126,14 @@ curl https://router.flatkey.ai/v1/images/generations \
     "model": "gpt-image-2",
     "prompt": "A serene forest clearing with morning mist and sunbeams",
     "size": "1024x1024",
-    "n": 1
+    "quality": "high"
   }'
 ```
 </CodeGroup>
 
-## Response
-
-```json
-{
-  "created": 1710000000,
-  "data": [
-    {
-      "url": "https://cdn.openai.com/...",
-      "revised_prompt": "A futuristic city skyline at dusk..."
-    }
-  ]
-}
-```
-
-### Response fields
-
-<ResponseField name="created" type="integer">
-  Unix timestamp of when the request was fulfilled.
-</ResponseField>
-
-<ResponseField name="data" type="array">
-  Array of generated image objects.
-  <Expandable title="image object">
-    <ResponseField name="url" type="string">Temporary URL to the generated image. Download it promptly — URLs expire.</ResponseField>
-    <ResponseField name="b64_json" type="string">Base64-encoded image data (only present when `response_format` is `"b64_json"`).</ResponseField>
-    <ResponseField name="revised_prompt" type="string">The prompt actually sent to the model after any safety revision.</ResponseField>
-  </Expandable>
-</ResponseField>
-
-<Warning>
-  Image URLs are temporary and expire after a short period. Download and store images you want to keep.
-</Warning>
-
 ## Edit an image
 
-`/v1/images/edits` accepts the input image and editing instructions as `multipart/form-data`.
+`/v1/images/edits` accepts an input image and editing instructions as `multipart/form-data`.
 
 ### Endpoint
 
@@ -156,12 +152,13 @@ POST https://router.flatkey.ai/v1/images/edits
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `model` | string | Yes | Image model ID, such as `gpt-image-2`. |
+| `model` | string | Yes | Image model ID exposed by your Flatkey service, such as `gpt-image-2`. |
 | `prompt` | string | Yes | Instructions describing how to edit the image. |
 | `image` | file | Yes | Input image in PNG, JPEG, or WebP format. For multiple images, use `image[]` or indexed fields such as `image[0]` and `image[1]`. |
 | `mask` | file | No | Mask for inpainting. Transparent areas identify the regions to redraw. |
-| `size` | string | No | Output image dimensions. Supported values vary by model. |
-| `quality` | string | No | Output quality level. Supported values vary by model. |
+| `size` | string | No | Output dimensions. Supported values depend on the model. |
+| `quality` | string | No | Output quality: `low`, `medium`, or `high`. |
+| `stream` | boolean | No | Set to `true` to receive an SSE response. |
 
 ### Example request
 
@@ -176,7 +173,13 @@ curl https://router.flatkey.ai/v1/images/edits \
 
 The `mask` field is optional. Omit it to edit the whole image based on the prompt. Do not set the `Content-Type` header manually; curl derives the correct multipart boundary from the `-F` fields.
 
-### Example response
+<Warning>
+  If a supplied mask is damaged, unreadable, or exceeds the service limit, the request fails instead of falling back to a whole-image edit.
+</Warning>
+
+## Response
+
+Synchronous generation and editing requests return the same response shape. Flatkey returns the image as base64 data; it does not provide a hosted image URL for `gpt-image-2`.
 
 ```json
 {
@@ -184,11 +187,38 @@ The `mask` field is optional. Omit it to edit the whole image based on the promp
   "data": [
     {
       "b64_json": "iVBORw0KGgoAAA...",
-      "revised_prompt": "Edit the provided image: add a small yellow star in the center...",
+      "revised_prompt": "Add a small yellow five-pointed star in the center...",
       "url": ""
     }
   ]
 }
 ```
 
-The edited image is returned as base64-encoded data in `data[0].b64_json`. The input image also counts toward model usage, so image edits typically consume more usage than text-only image generation.
+### Response fields
+
+<ResponseField name="created" type="integer">
+  Unix timestamp of when the request completed.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of image objects.
+  <Expandable title="image object">
+    <ResponseField name="b64_json" type="string">Base64-encoded image data.</ResponseField>
+    <ResponseField name="revised_prompt" type="string">The prompt actually used by the model after rewriting.</ResponseField>
+    <ResponseField name="url" type="string">Empty for `gpt-image-2`; hosted URLs are not provided.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+For edits, the input image also counts toward model usage, so an edit typically consumes more usage than text-only image generation.
+
+## Streaming
+
+Set `stream` to `true` in a generation JSON body or add `-F "stream=true"` to an edit request to receive `text/event-stream` output. The final event contains the image result, followed by `data: [DONE]`.
+
+| Event | Meaning |
+|---|---|
+| `image_generation.completed` | Image generation completed. |
+| `image_edit.completed` | Image editing completed. |
+| `[DONE]` | The stream has ended. |
+
+Streaming support can depend on the selected model and channel. For synchronous high-quality requests, configure a client timeout of at least 150 seconds.
