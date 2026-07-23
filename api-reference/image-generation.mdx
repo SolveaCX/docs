@@ -1,10 +1,10 @@
 ---
-title: "Image Generation — POST /v1/images/generations"
+title: "Image Generation and Editing API"
 sidebarTitle: "Image Generation"
-description: "Generate images from text prompts with POST /v1/images/generations and OpenAI Images-compatible models, returning URLs or base64-encoded image data."
+description: "Generate or edit images through the OpenAI Images-compatible /v1/images/generations and /v1/images/edits endpoints."
 ---
 
-The `/v1/images/generations` endpoint generates images from text prompts. It is compatible with the OpenAI Images API and supports compatible models such as `gpt-image-2`.
+`/v1/images/generations` generates images from text prompts, while `/v1/images/edits` edits an input image according to a prompt. Both endpoints are compatible with the OpenAI Images API and support compatible models such as `gpt-image-2`.
 
 <Warning>
   Gemini image models use the native Gemini `generateContent` endpoint and cannot be called through this endpoint. See the [Gemini image model guide](/guides/image-generation#use-gemini-image-models).
@@ -134,3 +134,61 @@ curl https://router.flatkey.ai/v1/images/generations \
 <Warning>
   Image URLs are temporary and expire after a short period. Download and store images you want to keep.
 </Warning>
+
+## Edit an image
+
+`/v1/images/edits` accepts the input image and editing instructions as `multipart/form-data`.
+
+### Endpoint
+
+```
+POST https://router.flatkey.ai/v1/images/edits
+```
+
+### Headers
+
+| Header | Value |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `multipart/form-data`; curl adds the boundary automatically when you use `-F` |
+
+### Form fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `model` | string | Yes | Image model ID, such as `gpt-image-2`. |
+| `prompt` | string | Yes | Instructions describing how to edit the image. |
+| `image` | file | Yes | Input image in PNG, JPEG, or WebP format. For multiple images, use `image[]` or indexed fields such as `image[0]` and `image[1]`. |
+| `mask` | file | No | Mask for inpainting. Transparent areas identify the regions to redraw. |
+| `size` | string | No | Output image dimensions. Supported values vary by model. |
+| `quality` | string | No | Output quality level. Supported values vary by model. |
+
+### Example request
+
+```bash
+curl https://router.flatkey.ai/v1/images/edits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -F "model=gpt-image-2" \
+  -F "prompt=add a small yellow star in the center" \
+  -F "image=@input.png" \
+  -F "mask=@mask.png"
+```
+
+The `mask` field is optional. Omit it to edit the whole image based on the prompt. Do not set the `Content-Type` header manually; curl derives the correct multipart boundary from the `-F` fields.
+
+### Example response
+
+```json
+{
+  "created": 1710000000,
+  "data": [
+    {
+      "b64_json": "iVBORw0KGgoAAA...",
+      "revised_prompt": "Edit the provided image: add a small yellow star in the center...",
+      "url": ""
+    }
+  ]
+}
+```
+
+The edited image is returned as base64-encoded data in `data[0].b64_json`. The input image also counts toward model usage, so image edits typically consume more usage than text-only image generation.

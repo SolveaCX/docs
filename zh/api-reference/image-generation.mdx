@@ -1,10 +1,10 @@
 ---
-title: "图片生成 — POST /v1/images/generations"
+title: "图片生成与编辑 API"
 sidebarTitle: "图片生成"
-description: "使用 POST /v1/images/generations 和兼容 OpenAI Images API 的模型生成图片，可返回 URL 或 Base64 编码的图片数据。"
+description: "使用兼容 OpenAI Images API 的 /v1/images/generations 和 /v1/images/edits 端点生成或编辑图片。"
 ---
 
-`/v1/images/generations` 端点根据文本提示词生成图片。它兼容 OpenAI Images API，并支持 `gpt-image-2` 等兼容该接口的图片模型。
+`/v1/images/generations` 根据文本提示词生成图片，`/v1/images/edits` 根据输入图片和提示词编辑图片。两个端点均兼容 OpenAI Images API，并支持 `gpt-image-2` 等兼容模型。
 
 <Warning>
   Gemini 图片模型使用 Gemini 原生 `generateContent` 端点，不能通过本端点调用。请参阅 [Gemini 图片模型操作手册](/zh/guides/image-generation#使用-gemini-图片模型)。
@@ -134,3 +134,61 @@ curl https://router.flatkey.ai/v1/images/generations \
 <Warning>
   图片 URL 是临时地址，会在短时间后过期。请下载并保存需要长期保留的图片。
 </Warning>
+
+## 编辑图片
+
+`/v1/images/edits` 使用 `multipart/form-data` 上传待编辑图片和编辑指令。
+
+### 端点
+
+```
+POST https://router.flatkey.ai/v1/images/edits
+```
+
+### 请求头
+
+| 请求头 | 值 |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `multipart/form-data`；使用 curl 时由 `-F` 自动生成并附带 boundary |
+
+### 表单参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| `model` | string | 是 | 图片模型 ID，例如 `gpt-image-2`。 |
+| `prompt` | string | 是 | 对图片的编辑指令。 |
+| `image` | file | 是 | 待编辑图片，支持 PNG、JPEG 和 WebP。多图可使用 `image[]` 或 `image[0]`、`image[1]`。 |
+| `mask` | file | 否 | 用于局部重绘的蒙版；透明区域是需要重绘的区域。 |
+| `size` | string | 否 | 输出图片尺寸，支持值因模型而异。 |
+| `quality` | string | 否 | 输出画质档位，支持值因模型而异。 |
+
+### 请求示例
+
+```bash
+curl https://router.flatkey.ai/v1/images/edits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -F "model=gpt-image-2" \
+  -F "prompt=在图片中央添加一颗黄色的小星星" \
+  -F "image=@input.png" \
+  -F "mask=@mask.png"
+```
+
+`mask` 是可选参数。省略它即可根据提示词编辑整张图片。不要手动添加 `Content-Type` 请求头；curl 会根据 `-F` 参数自动设置正确的 multipart boundary。
+
+### 响应示例
+
+```json
+{
+  "created": 1710000000,
+  "data": [
+    {
+      "b64_json": "iVBORw0KGgoAAA...",
+      "revised_prompt": "Edit the provided image: add a small yellow star in the center...",
+      "url": ""
+    }
+  ]
+}
+```
+
+编辑后的图片位于 `data[0].b64_json`，内容为 Base64 编码的图片数据。输入图片也会计入模型用量，因此图片编辑通常比纯文本生成图片消耗更多用量。

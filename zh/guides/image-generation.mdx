@@ -65,7 +65,7 @@ console.log(response.data[0].url);
 ```
 </CodeGroup>
 
-### 使用 curl
+### 使用 curl 生成图片
 
 ```bash
 curl https://router.flatkey.ai/v1/images/generations \
@@ -80,6 +80,21 @@ curl https://router.flatkey.ai/v1/images/generations \
 ```
 
 该端点返回临时图片 URL，或在 `response_format` 为 `b64_json` 时返回 Base64 图片数据。完整字段请参阅[图片生成 API 参考](/zh/api-reference/image-generation)。
+
+### 使用 curl 编辑图片
+
+通过 `/v1/images/edits` 上传待编辑图片和编辑指令。该端点使用 `multipart/form-data`；`image` 为必填图片文件，`mask` 为可选蒙版文件。
+
+```bash
+curl https://router.flatkey.ai/v1/images/edits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -F "model=gpt-image-2" \
+  -F "prompt=在图片中央添加一颗黄色的小星星" \
+  -F "image=@input.png" \
+  -F "mask=@mask.png"
+```
+
+`image` 支持 PNG、JPEG 和 WebP。省略 `mask` 时会根据提示词编辑整张图片；提供 `mask` 时，蒙版的透明区域是需要重绘的区域。编辑结果位于响应的 `data[0].b64_json` 中。
 
 ## 使用 Gemini 图片模型
 

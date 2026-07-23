@@ -65,7 +65,7 @@ console.log(response.data[0].url);
 ```
 </CodeGroup>
 
-### Use curl
+### Generate an image with curl
 
 ```bash
 curl https://router.flatkey.ai/v1/images/generations \
@@ -80,6 +80,21 @@ curl https://router.flatkey.ai/v1/images/generations \
 ```
 
 This endpoint returns a temporary image URL, or base64 image data when `response_format` is `b64_json`. See the [Image Generation API reference](/api-reference/image-generation) for all fields.
+
+### Edit an image with curl
+
+Use `/v1/images/edits` to upload an input image together with editing instructions. This endpoint uses `multipart/form-data`; `image` is required and `mask` is optional.
+
+```bash
+curl https://router.flatkey.ai/v1/images/edits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -F "model=gpt-image-2" \
+  -F "prompt=add a small yellow star in the center" \
+  -F "image=@input.png" \
+  -F "mask=@mask.png"
+```
+
+`image` supports PNG, JPEG, and WebP. Omit `mask` to edit the whole image based on the prompt. When a mask is provided, its transparent areas identify the regions to redraw. The edited image is returned in `data[0].b64_json`.
 
 ## Use Gemini image models
 
