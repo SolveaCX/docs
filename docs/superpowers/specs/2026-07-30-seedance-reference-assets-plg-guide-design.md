@@ -40,7 +40,7 @@
 
 ## 示例规则
 
-- API Key 使用 `$FLATKEY_API_KEY`，不放置真实凭据。
+- API Key 使用 `YOUR_FLATKEY_API_KEY`，不放置真实凭据。
 - 素材 ID 使用 `ast_xxx`，视频任务 ID 使用 `task_xxx`。
 - 素材链接使用 `https://example.com/...`。
 - 视频示例固定使用 `seedance-2.0`，避免让用户在多个模型间选择。

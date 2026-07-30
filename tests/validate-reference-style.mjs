@@ -53,7 +53,7 @@ for (const route of seedanceAssetGuides) {
   }
   assert.doesNotMatch(
     guide,
-    /BytePlus|Access Key|Secret Access Key|projectName|endpoint ID|端点 ID|项目名|渠道|签名|租约|幂等/i,
+    /BytePlus|Access Key|Secret Access Key|projectName|endpoint ID|provider|internal|configuration|routing|端点 ID|项目名|渠道|签名|租约|幂等|内部|配置|路由/i,
     route,
   );
   assert.doesNotMatch(
