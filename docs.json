@@ -66,7 +66,8 @@
                   "guides/codex-cli",
                   "guides/codex-desktop",
                   "guides/claude-code",
-                  "guides/image-generation"
+                  "guides/image-generation",
+                  "guides/seedance-reference-assets"
                 ]
               },
               {
@@ -151,7 +152,8 @@
                   "zh/guides/codex-cli",
                   "zh/guides/codex-desktop",
                   "zh/guides/claude-code",
-                  "zh/guides/image-generation"
+                  "zh/guides/image-generation",
+                  "zh/guides/seedance-reference-assets"
                 ]
               },
               {
