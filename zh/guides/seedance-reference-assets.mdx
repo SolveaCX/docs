@@ -1,0 +1,103 @@
+---
+title: "用参考素材生成 Seedance 视频"
+sidebarTitle: "Seedance 参考素材"
+description: "只用四步创建可重复使用的参考素材，通过 Seedance 2.0 生成视频并下载结果。"
+---
+
+你可以用一张图片或一段视频作为 Seedance 的参考素材。开始前只需要准备：
+
+- Flatkey API Key
+- 一个可以直接打开的公网 HTTPS 图片或视频链接
+
+本页使用视频作为示例。请把示例中的 `YOUR_FLATKEY_API_KEY` 替换成 Flatkey 控制台里的 API Key。
+
+## 第 1 步：创建参考素材
+
+把你的视频链接填入 `url`，然后运行：
+
+```bash
+curl https://router.flatkey.ai/v1/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/reference.mp4",
+    "asset_type": "Video"
+  }'
+```
+
+返回内容中会有一个以 `ast_` 开头的 `id`：
+
+```json
+{
+  "id": "ast_1234567890abcdefABCDEF1234567890",
+  "status": "Processing"
+}
+```
+
+复制这个 `id`，后面几步会用到。
+
+## 第 2 步：等待素材可用
+
+把素材 ID 放到地址末尾，然后运行：
+
+```bash
+curl https://router.flatkey.ai/v1/assets/ast_1234567890abcdefABCDEF1234567890 \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+
+看到 `"status": "Active"` 后，就可以进入第 3 步。如果还是 `Processing`，等几秒后再运行一次相同命令。
+
+## 第 3 步：创建 Seedance 视频
+
+在素材 ID 前加上 `asset://`，写好你想生成的视频内容，然后运行：
+
+```bash
+curl https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "video_url",
+        "video_url": {
+          "url": "asset://ast_1234567890abcdefABCDEF1234567890"
+        },
+        "role": "reference_video"
+      },
+      {
+        "type": "text",
+        "text": "生成一段有电影质感的产品视频，镜头平滑移动"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+
+复制返回内容中以 `task_` 开头的视频任务 `id`。
+
+<Tip>
+  如果使用图片：第 1 步把 `Video` 改成 `Image`；第 3 步把两个 `video_url` 都改成 `image_url`，再把 `reference_video` 改成 `reference_image`。
+</Tip>
+
+## 第 4 步：获取生成的视频
+
+把视频任务 ID 放到地址末尾，然后运行：
+
+```bash
+curl https://router.flatkey.ai/v1/videos/task_1234567890abcdefABCDEF1234567890 \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+
+如果状态是 `queued` 或 `in_progress`，等几秒后再运行一次相同命令。状态变成 `completed` 后，打开 `metadata.url` 中的链接即可下载视频。
+
+## 遇到问题时
+
+- 确认参考素材链接以 `https://` 开头，而且不需要登录就能打开。
+- 等素材状态变成 `Active` 后再创建视频。
+- 确认完整复制了 `ast_...` 或 `task_...` ID。
+- 每一步都使用同一个 Flatkey API Key。
+
+需要查看全部可选参数？请打开 [Seedance API 参考](/zh/api-reference/seedance-video-generation)。

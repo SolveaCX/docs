@@ -27,12 +27,40 @@ assert.equal(config.styling.codeblocks, "dark");
 const navigationPages = config.navigation.languages.flatMap((language) =>
   language.tabs.flatMap((tab) => tab.groups.flatMap((group) => group.pages)),
 );
-assert.equal(navigationPages.length, 56);
+assert.equal(navigationPages.length, 58);
 const pages = ["index", "zh/index", ...navigationPages];
-assert.equal(pages.length, 58);
-assert.equal(new Set(pages).size, 58);
+assert.equal(pages.length, 60);
+assert.equal(new Set(pages).size, 60);
 for (const page of pages) {
   assert.ok(existsSync(resolve(root, `${page}.mdx`)), page);
+}
+
+const seedanceAssetGuides = [
+  "guides/seedance-reference-assets",
+  "zh/guides/seedance-reference-assets",
+];
+for (const route of seedanceAssetGuides) {
+  assert.ok(navigationPages.includes(route), route);
+  const guide = read(`${route}.mdx`);
+  for (const required of [
+    "https://router.flatkey.ai/v1/assets",
+    "https://router.flatkey.ai/v1/videos",
+    "asset://ast_",
+    "seedance-2.0",
+    "YOUR_FLATKEY_API_KEY",
+  ]) {
+    assert.ok(guide.includes(required), `${route}: ${required}`);
+  }
+  assert.doesNotMatch(
+    guide,
+    /BytePlus|Access Key|Secret Access Key|projectName|endpoint ID|provider|internal|configuration|routing|端点 ID|项目名|渠道|签名|租约|幂等|内部|配置|路由/i,
+    route,
+  );
+  assert.doesNotMatch(
+    guide,
+    /\b(?:(?:ark|sk)-[A-Za-z0-9_-]{20,}|AK[A-Za-z0-9]{20,})\b/,
+    route,
+  );
 }
 
 for (const path of ["logo/light.svg", "logo/dark.svg", "favicon.svg"]) {
@@ -142,4 +170,4 @@ assert.match(
   css,
   /#mobile-nav \[role="group"\] button\[aria-pressed\]\s*\{[^}]*min-width:\s*44px[^}]*min-height:\s*44px/s,
 );
-console.log("Reference style contract validated for 58 routes.");
+console.log("Reference style contract validated for 60 routes.");

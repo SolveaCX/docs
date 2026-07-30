@@ -1,0 +1,103 @@
+---
+title: "Generate a Seedance video from a reference"
+sidebarTitle: "Seedance reference video"
+description: "Create a reusable reference asset, use it with Seedance 2.0, and download the finished video in four steps."
+---
+
+Use a public image or video as a reference for your Seedance video. You only need:
+
+- Your Flatkey API Key
+- A public HTTPS link to the image or video
+
+This page uses a video as the example. Replace `YOUR_FLATKEY_API_KEY` with the API Key from your Flatkey console.
+
+## 1. Create the reference asset
+
+Paste your public video link into `url` and run:
+
+```bash
+curl https://router.flatkey.ai/v1/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/reference.mp4",
+    "asset_type": "Video"
+  }'
+```
+
+The response contains an `id` that starts with `ast_`:
+
+```json
+{
+  "id": "ast_1234567890abcdefABCDEF1234567890",
+  "status": "Processing"
+}
+```
+
+Copy this `id`. You will use it in the next steps.
+
+## 2. Wait until the asset is ready
+
+Put your asset ID at the end of the URL and run:
+
+```bash
+curl https://router.flatkey.ai/v1/assets/ast_1234567890abcdefABCDEF1234567890 \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+
+When you see `"status": "Active"`, continue to step 3. If you still see `Processing`, wait a few seconds and run the same command again.
+
+## 3. Create the Seedance video
+
+Add `asset://` before the asset ID, describe the video you want, and run:
+
+```bash
+curl https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "video_url",
+        "video_url": {
+          "url": "asset://ast_1234567890abcdefABCDEF1234567890"
+        },
+        "role": "reference_video"
+      },
+      {
+        "type": "text",
+        "text": "Create a cinematic product video with smooth camera movement"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+
+Copy the returned video task `id`, which starts with `task_`.
+
+<Tip>
+  Using an image instead? In step 1, change `Video` to `Image`. In step 3, change both `video_url` values to `image_url`, and change `reference_video` to `reference_image`.
+</Tip>
+
+## 4. Get the finished video
+
+Put your video task ID at the end of the URL and run:
+
+```bash
+curl https://router.flatkey.ai/v1/videos/task_1234567890abcdefABCDEF1234567890 \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+
+If the status is `queued` or `in_progress`, wait a few seconds and run the same command again. When the status is `completed`, open the link in `metadata.url` to download the video.
+
+## If something does not work
+
+- Make sure the reference link starts with `https://` and opens without signing in.
+- Wait until the asset status is `Active` before creating the video.
+- Make sure you copied the full `ast_...` or `task_...` ID.
+- Use the same Flatkey API Key for every step.
+
+Need every available option? See the [Seedance API Reference](/api-reference/seedance-video-generation).
