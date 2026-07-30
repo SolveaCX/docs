@@ -56,7 +56,11 @@ for (const route of seedanceAssetGuides) {
     /BytePlus|Access Key|Secret Access Key|projectName|endpoint ID|端点 ID|项目名|渠道|签名|租约|幂等/i,
     route,
   );
-  assert.doesNotMatch(guide, /\b(?:ark|sk)-[A-Za-z0-9_-]{20,}\b/, route);
+  assert.doesNotMatch(
+    guide,
+    /\b(?:(?:ark|sk)-[A-Za-z0-9_-]{20,}|AK[A-Za-z0-9]{20,})\b/,
+    route,
+  );
 }
 
 for (const path of ["logo/light.svg", "logo/dark.svg", "favicon.svg"]) {
