@@ -61,6 +61,15 @@ const seedanceGuideContracts = {
     "< 30 MiB",
     "<= 50 MiB",
     "<= 15 MiB",
+    "GET /v1/videos/{task_id}",
+    "metadata.url",
+    "failed",
+    "curl -L \"$VIDEO_URL\" -o output.mp4",
+    "Public HTTPS URL ingestion",
+    "Local multipart ingestion",
+    "TOS-first, GCS fallback",
+    "do not choose the storage provider",
+    "backend availability dependent",
   ],
   "zh/guides/seedance-reference-assets": [
     "## 虚拟素材库",
@@ -83,7 +92,24 @@ const seedanceGuideContracts = {
     "< 30 MiB",
     "<= 50 MiB",
     "<= 15 MiB",
+    "GET /v1/videos/{task_id}",
+    "metadata.url",
+    "failed",
+    "curl -L \"$VIDEO_URL\" -o output.mp4",
+    "公网 HTTPS URL 摄取",
+    "本地 multipart 摄取",
+    "TOS 优先，GCS fallback",
+    "无需选择 provider",
+    "取决于后台可用性",
   ],
+};
+const assertOrderedIncludes = (text, route, label, required) => {
+  let index = -1;
+  for (const item of required) {
+    const next = text.indexOf(item, index + 1);
+    assert.ok(next > index, `${route}: ${label}: ${item}`);
+    index = next;
+  }
 };
 for (const route of seedanceAssetGuides) {
   assert.ok(navigationPages.includes(route), route);
@@ -100,11 +126,46 @@ for (const route of seedanceAssetGuides) {
   for (const required of seedanceGuideContracts[route]) {
     assert.ok(guide.includes(required), `${route}: ${required}`);
   }
+  if (route.startsWith("zh/")) {
+    assertOrderedIncludes(guide, route, "video result workflow", [
+      "复制返回的 `task_...`",
+      "GET /v1/videos/{task_id}",
+      "`completed`",
+      "`metadata.url`",
+      "curl -L \"$VIDEO_URL\" -o output.mp4",
+      "`failed`",
+    ]);
+    assertOrderedIncludes(guide, route, "asset ingestion paths", [
+      "三种后台素材摄取",
+      "公网 HTTPS URL 摄取",
+      "本地 multipart 摄取",
+      "TOS 优先，GCS fallback",
+      "无需选择 provider",
+      "不会返回临时 URL、bucket 或 BytePlus 凭证",
+    ]);
+  } else {
+    assertOrderedIncludes(guide, route, "video result workflow", [
+      "Copy the returned `task_...`",
+      "GET /v1/videos/{task_id}",
+      "`completed`",
+      "`metadata.url`",
+      "curl -L \"$VIDEO_URL\" -o output.mp4",
+      "`failed`",
+    ]);
+    assertOrderedIncludes(guide, route, "asset ingestion paths", [
+      "Three backend asset ingestion paths",
+      "Public HTTPS URL ingestion",
+      "Local multipart ingestion",
+      "TOS-first, GCS fallback",
+      "do not choose the storage provider",
+      "temporary URL, bucket, or BytePlus credentials",
+    ]);
+  }
   assert.doesNotMatch(guide, /\|\s*`Deleted`\s*\|/, `${route}: no pollable Deleted status`);
   assert.doesNotMatch(guide, /usually does not return `asset_uri`|通常不返回 `asset_uri`/, `${route}: virtual asset_uri wording`);
   assert.doesNotMatch(
     guide,
-    /Access Key|Secret Access Key|projectName|endpoint ID|provider|internal|configuration|routing|端点 ID|项目名|上游 AssetId|签名 URL|对象 key|租约|内部|配置|路由/i,
+    /Access Key|Secret Access Key|projectName|endpoint ID|internal|configuration|端点 ID|项目名|上游 AssetId|签名 URL|对象 key|租约|内部|配置/i,
     route,
   );
   assert.doesNotMatch(

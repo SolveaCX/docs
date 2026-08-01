@@ -127,7 +127,60 @@ curl.exe -sS https://router.flatkey.ai/v1/videos `
 ```
 </CodeGroup>
 
-### 4. Delete the asset
+Copy the returned `task_...` value. Use the public result step below for every Seedance task, whether it uses virtual assets or real-person assets.
+
+### 4. Get and save the finished video
+
+Use this endpoint to poll the task:
+
+```http
+GET /v1/videos/{task_id}
+```
+
+Poll until `status` is `completed`, then copy the download URL from `metadata.url`. If the status is `failed`, read `error.message`, fix the request or source asset, and create a new task. The Bash example uses `jq` to read JSON fields.
+
+<CodeGroup>
+```bash Bash
+TASK_ID="task_3f9a00000000000000000000000000e2"
+
+while true; do
+  RESULT=$(curl -sS "https://router.flatkey.ai/v1/videos/$TASK_ID" \
+    -H "Authorization: Bearer YOUR_FLATKEY_API_KEY")
+  STATUS=$(echo "$RESULT" | jq -r '.status')
+  echo "status: $STATUS"
+
+  [ "$STATUS" = "completed" ] && break
+  if [ "$STATUS" = "failed" ]; then
+    echo "$RESULT" | jq -r '.error.message'
+    exit 1
+  fi
+  sleep 5
+done
+
+VIDEO_URL=$(echo "$RESULT" | jq -r '.metadata.url')
+curl -L "$VIDEO_URL" -o output.mp4
+```
+```powershell Windows PowerShell
+$taskId = "task_3f9a00000000000000000000000000e2"
+
+while ($true) {
+  $result = curl.exe -sS "https://router.flatkey.ai/v1/videos/$taskId" `
+    -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" | ConvertFrom-Json
+  Write-Host "status: $($result.status)"
+
+  if ($result.status -eq "completed") { break }
+  if ($result.status -eq "failed") { throw $result.error.message }
+  Start-Sleep -Seconds 5
+}
+
+$videoUrl = $result.metadata.url
+Invoke-WebRequest -Uri $videoUrl -OutFile output.mp4
+```
+</CodeGroup>
+
+`metadata.url` points to `GET /v1/videos/{task_id}/content`. It streams `video/mp4` after the task completes. Treat the URL as sensitive because anyone with it can download the video.
+
+### 5. Delete the asset
 
 <CodeGroup>
 ```bash Bash
@@ -159,6 +212,16 @@ Real-person endpoints:
 | `GET /v1/real-persons/{person_id}` | Poll profile status. |
 | `POST /v1/real-persons/{person_id}/assets` | Create an asset from a public URL or local file. |
 | `GET /v1/real-persons/{person_id}/assets` | List assets under one profile. |
+
+Three backend asset ingestion paths:
+
+| Path | What you send | What Flatkey does |
+| --- | --- | --- |
+| Public HTTPS URL ingestion | JSON with `url` and `asset_type` | The server passes the public HTTPS URL to BytePlus asset creation. |
+| Local multipart ingestion | `multipart/form-data` with one `file` | The server stores the file in private temporary object storage before handing it to BytePlus. |
+| TOS-first, GCS fallback | The same multipart request | When complete TOS support is available, the backend uses TOS first; otherwise it uses the existing private GCS fallback. This is backend availability dependent. |
+
+You do not choose the storage provider. The customer-facing request format stays the same, and responses do not return a temporary URL, bucket, or BytePlus credentials.
 
 ### 1. Create a real-person profile
 
