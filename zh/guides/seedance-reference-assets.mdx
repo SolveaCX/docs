@@ -1,73 +1,99 @@
 ---
-title: "用参考素材生成 Seedance 视频"
-sidebarTitle: "Seedance 参考素材"
-description: "只用四步创建可重复使用的参考素材，通过 Seedance 2.0 生成视频并下载结果。"
+title: "Seedance 素材库"
+sidebarTitle: "Seedance 素材库"
+description: "通过 Flatkey 创建可复用的虚拟素材和真人素材，并在 Seedance 2.0 视频请求中引用。"
 ---
 
-你可以用一张图片或一段视频作为 Seedance 的参考素材。开始前只需要准备：
+Base URL: `https://router.flatkey.ai`
 
-- Flatkey API Key
-- 一个可以直接打开的公网 HTTPS 图片或视频链接
+素材库适合把参考图片、视频或音频先登记成可复用素材，再放入 `seedance-2.0` 视频生成请求。请把示例里的 `YOUR_FLATKEY_API_KEY`、`ast_1234567890abcdef1234567890abcdef` 和 `rph_1234567890abcdef` 换成你自己的值。
 
-本页使用视频作为示例。请把示例中的 `YOUR_FLATKEY_API_KEY` 替换成 Flatkey 控制台里的 API Key。
+你只需要发送 Flatkey API Key：
 
-## 第 1 步：创建参考素材
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
 
-把你的视频链接填入 `url`，然后运行：
+`asset://ast_...` 是 Flatkey 公共 URI，供客户在 Seedance 请求中使用。BytePlus 文档里的上游形式是 `asset://<Asset_Id>`；不要把那个上游 ID 传给 Flatkey。Flatkey 会在服务端调用 BytePlus 前改写 `asset://ast_...`。
 
-```bash
-curl https://router.flatkey.ai/v1/assets \
+## 虚拟素材库
+
+虚拟素材适合普通参考图片、视频或音频，例如商品图、背景视频和非真人参考素材。它不需要真人核验。
+
+### 1. 用公网 HTTPS URL 创建
+
+虚拟素材当前只接受带公网 `https://` URL 的 JSON 请求，不支持本地 `multipart/form-data` 上传。
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets \
   -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "url": "https://example.com/reference.mp4",
-    "asset_type": "Video"
+    "url": "https://cdn.example.com/reference/product.png",
+    "asset_type": "Image",
+    "moderation": {
+      "strategy": "Default"
+    }
   }'
 ```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "url": "https://cdn.example.com/reference/product.png",
+    "asset_type": "Image",
+    "moderation": {
+      "strategy": "Default"
+    }
+  }'
+```
+</CodeGroup>
 
-返回内容中会有一个以 `ast_` 开头的 `id`：
+响应会包含 `id`，例如 `ast_1234567890abcdef1234567890abcdef`，以及 `Processing` 等状态。虚拟素材响应当前不返回 `asset_uri`；你可以在 `id` 前加 `asset://` 自己拼出 URI。
 
-```json
-{
-  "id": "ast_1234567890abcdefABCDEF1234567890",
-  "status": "Processing"
-}
+```text
+asset://ast_1234567890abcdef1234567890abcdef
 ```
 
-复制这个 `id`，后面几步会用到。
+### 2. 轮询到 Active
 
-## 第 2 步：等待素材可用
-
-把素材 ID 放到地址末尾，然后运行：
-
-```bash
-curl https://router.flatkey.ai/v1/assets/ast_1234567890abcdefABCDEF1234567890 \
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef \
   -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
 ```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
 
-看到 `"status": "Active"` 后，就可以进入第 3 步。如果还是 `Processing`，等几秒后再运行一次相同命令。
+只有 `Active` 素材可以用于视频生成。`Creating`、`Processing` 和 `Deleting` 都还不能用。删除完成后，`GET /v1/assets/{asset_id}` 返回 `404 asset_not_found`；不要等待一个可轮询的 `Deleted` 状态。
 
-## 第 3 步：创建 Seedance 视频
+### 3. 在 Seedance 中引用
 
-在素材 ID 前加上 `asset://`，写好你想生成的视频内容，然后运行：
+把 `asset://ast_...` 放入和素材类型匹配的媒体字段：`Image` 用 `image_url.url`，`Video` 用 `video_url.url`，`Audio` 用 `audio_url.url`。Seedance 请求需要文本，或至少一张图片/一个视频；只有音频不够。
 
-```bash
-curl https://router.flatkey.ai/v1/videos \
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
   -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "seedance-2.0",
     "content": [
       {
-        "type": "video_url",
-        "video_url": {
-          "url": "asset://ast_1234567890abcdefABCDEF1234567890"
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_1234567890abcdef1234567890abcdef"
         },
-        "role": "reference_video"
+        "role": "reference_image"
       },
       {
         "type": "text",
-        "text": "生成一段有电影质感的产品视频，镜头平滑移动"
+        "text": "让画面保持产品主体一致，生成干净的工作室展示视频"
       }
     ],
     "resolution": "1080p",
@@ -75,29 +101,349 @@ curl https://router.flatkey.ai/v1/videos \
     "duration": 5
   }'
 ```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_1234567890abcdef1234567890abcdef"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "text",
+        "text": "让画面保持产品主体一致，生成干净的工作室展示视频"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
 
-复制返回内容中以 `task_` 开头的视频任务 `id`。
+复制返回的 `task_...`。无论使用虚拟素材还是真人素材，所有 Seedance 任务都使用下面的公共结果步骤。
 
-<Tip>
-  如果使用图片：第 1 步把 `Video` 改成 `Image`；第 3 步把两个 `video_url` 都改成 `image_url`，再把 `reference_video` 改成 `reference_image`。
-</Tip>
+### 4. 获取并保存完成视频
 
-## 第 4 步：获取生成的视频
+用这个接口轮询任务：
 
-把视频任务 ID 放到地址末尾，然后运行：
-
-```bash
-curl https://router.flatkey.ai/v1/videos/task_1234567890abcdefABCDEF1234567890 \
-  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```http
+GET /v1/videos/{task_id}
 ```
 
-如果状态是 `queued` 或 `in_progress`，等几秒后再运行一次相同命令。状态变成 `completed` 后，打开 `metadata.url` 中的链接即可下载视频。
+轮询到 `status` 变成 `completed` 后，从 `metadata.url` 读取下载 URL。如果状态是 `failed`，读取 `error.message`，修正请求或源素材后重新创建任务。Bash 示例用 `jq` 读取 JSON 字段。
 
-## 遇到问题时
+<CodeGroup>
+```bash Bash
+TASK_ID="task_3f9a00000000000000000000000000e2"
 
-- 确认参考素材链接以 `https://` 开头，而且不需要登录就能打开。
-- 等素材状态变成 `Active` 后再创建视频。
-- 确认完整复制了 `ast_...` 或 `task_...` ID。
-- 每一步都使用同一个 Flatkey API Key。
+while true; do
+  RESULT=$(curl -sS "https://router.flatkey.ai/v1/videos/$TASK_ID" \
+    -H "Authorization: Bearer YOUR_FLATKEY_API_KEY")
+  STATUS=$(echo "$RESULT" | jq -r '.status')
+  echo "status: $STATUS"
 
-需要查看全部可选参数？请打开 [Seedance API 参考](/zh/api-reference/seedance-video-generation)。
+  [ "$STATUS" = "completed" ] && break
+  if [ "$STATUS" = "failed" ]; then
+    echo "$RESULT" | jq -r '.error.message'
+    exit 1
+  fi
+  sleep 5
+done
+
+VIDEO_URL=$(echo "$RESULT" | jq -r '.metadata.url')
+curl -L "$VIDEO_URL" -o output.mp4
+```
+```powershell Windows PowerShell
+$taskId = "task_3f9a00000000000000000000000000e2"
+
+while ($true) {
+  $result = curl.exe -sS "https://router.flatkey.ai/v1/videos/$taskId" `
+    -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" | ConvertFrom-Json
+  Write-Host "status: $($result.status)"
+
+  if ($result.status -eq "completed") { break }
+  if ($result.status -eq "failed") { throw $result.error.message }
+  Start-Sleep -Seconds 5
+}
+
+$videoUrl = $result.metadata.url
+Invoke-WebRequest -Uri $videoUrl -OutFile output.mp4
+```
+</CodeGroup>
+
+`metadata.url` 指向 `GET /v1/videos/{task_id}/content`。任务完成后，该地址会返回 `video/mp4`。请把这个 URL 视为敏感信息，因为拿到它的人都可以下载视频。
+
+### 5. 删除素材
+
+<CodeGroup>
+```bash Bash
+curl -sS -X DELETE https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -i
+```
+```powershell Windows PowerShell
+curl.exe -sS -X DELETE https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -i
+```
+</CodeGroup>
+
+删除成功返回空 `204`。重复删除同一个已删除素材也返回 `204`。素材不存在或不属于当前 API Key 时返回 `404 asset_not_found`。
+
+## 真人素材库
+
+真人素材用于某个真实人物的肖像、声音或视频。此能力受邀开放，只有开通后的账号可以使用。
+
+真人本人必须先完成 BytePlus 核验，然后你才能创建可用的真人素材。请把 `verification_url` 只发给本人，不要公开展示。
+
+真人相关端点：
+
+| Endpoint | 用途 |
+| --- | --- |
+| `POST /v1/real-persons` | 创建真人档案和核验链接。 |
+| `POST /v1/real-persons/{person_id}/verification-sessions` | 创建新的核验链接。 |
+| `GET /v1/real-persons/{person_id}` | 轮询真人档案状态。 |
+| `POST /v1/real-persons/{person_id}/assets` | 用公网 URL 或本地文件创建素材。 |
+| `GET /v1/real-persons/{person_id}/assets` | 列出某个真人档案下的素材。 |
+
+三种后台素材摄取：
+
+| 路径 | 你发送什么 | Flatkey 做什么 |
+| --- | --- | --- |
+| 公网 HTTPS URL 摄取 | 包含 `url` 和 `asset_type` 的 JSON | 服务端把公网 HTTPS URL 交给 BytePlus 创建素材。 |
+| 本地 multipart 摄取 | 带一个 `file` 的 `multipart/form-data` | 服务端先把文件写入私有临时对象存储，再转交 BytePlus。 |
+| TOS 优先，GCS fallback | 同一个 multipart 请求 | 当完整 TOS 支持可用时，后台优先使用 TOS；否则使用既有私有 GCS fallback。具体路径取决于后台可用性。 |
+
+客户无需选择 provider。客户调用格式保持不变，响应也不会返回临时 URL、bucket 或 BytePlus 凭证。
+
+### 1. 创建真人档案
+
+真人写入接口必须带 `Idempotency-Key`。只有在重试完全相同的请求时，才复用同一个 key。
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: person-create-20260802-001" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Ava Chen"}'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: person-create-20260802-001" `
+  -H "Content-Type: application/json" `
+  -d '{"name":"Ava Chen"}'
+```
+</CodeGroup>
+
+响应会包含真人档案 `id`、`status` 和一次性 `verification_url`。档案状态可能是 `pending_verification`、`verifying`、`active`、`failed` 或 `expired`。
+
+把 `verification_url` 发给真人本人，让本人打开并完成核验。`GET /v1/real-persons` 和 `GET /v1/real-persons/{person_id}` 不会再次返回这个链接。
+
+如果链接过期或核验失败，重新发起核验：
+
+<CodeGroup>
+```bash Bash
+curl -sS -X POST https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/verification-sessions \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: person-reverify-20260802-001"
+```
+```powershell Windows PowerShell
+curl.exe -sS -X POST https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/verification-sessions `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: person-reverify-20260802-001"
+```
+</CodeGroup>
+
+BytePlus 上游文档没有限定 callback 请求方法。Flatkey 兼容 GET 和 POST callback，并且只把它当作唤醒信号；权威状态仍由服务端向 BytePlus 查询。
+
+### 2. 轮询真人档案
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+等档案状态变成 `active` 后再创建素材。如果还是 `pending_verification` 或 `verifying`，稍后继续查。如果是 `failed` 或 `expired`，重新发起核验。
+
+### 3. 用公网 URL 创建真人素材
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: real-person-asset-url-20260802-001" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://cdn.example.com/reference/ava-front.mp4",
+    "asset_type": "Video",
+    "name": "front-facing intro"
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: real-person-asset-url-20260802-001" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "url": "https://cdn.example.com/reference/ava-front.mp4",
+    "asset_type": "Video",
+    "name": "front-facing intro"
+  }'
+```
+</CodeGroup>
+
+### 4. 用本地文件创建真人素材
+
+本地上传使用 `multipart/form-data`，只用于真人素材。客户不选择 TOS 或 GCS，也不会看到存储路径。Flatkey 会把本地文件临时放入私有存储，转交 BytePlus 创建素材；BytePlus 入库后，Flatkey 会清理临时对象。
+
+BytePlus 官方限制使用 MB 表达。Flatkey 当前本地校验使用二进制上限：Image `< 30 MiB`，Video `<= 50 MiB`，Audio `<= 15 MiB`。为了最稳妥，建议文件低于官方 MB 限制。
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: real-person-asset-file-20260802-001" \
+  -F "asset_type=Image" \
+  -F "name=portrait" \
+  -F "file=@./portrait.png"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: real-person-asset-file-20260802-001" `
+  -F "asset_type=Image" `
+  -F "name=portrait" `
+  -F "file=@.\portrait.png"
+```
+</CodeGroup>
+
+响应会包含 `asset_uri`，例如 `asset://ast_1234567890abcdef1234567890abcdef`。
+
+### 5. 轮询并用于 Seedance
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+也可以列出某个真人档案下的素材：
+
+<CodeGroup>
+```bash Bash
+curl -sS "https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets?limit=20" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS "https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets?limit=20" `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+素材状态为 `Active` 后，把 `asset_uri` 放入 Seedance：
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "让已核验真人在办公室介绍新产品"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_1234567890abcdef1234567890abcdef"
+        },
+        "role": "reference_image"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "让已核验真人在办公室介绍新产品"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_1234567890abcdef1234567890abcdef"
+        },
+        "role": "reference_image"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
+
+### 6. 删除、隐私和常见错误
+
+真人素材和虚拟素材使用同一个删除接口：
+
+<CodeGroup>
+```bash Bash
+curl -sS -X DELETE https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -i
+```
+```powershell Windows PowerShell
+curl.exe -sS -X DELETE https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -i
+```
+</CodeGroup>
+
+不要在日志、页面或工单里公开 `verification_url`、真人素材、BytePlus 凭证、TOS/GCS 路径或临时转交 URL。
+
+常见响应：
+
+| HTTP | Code | 处理方式 |
+| ---: | --- | --- |
+| 400 | `invalid_asset_request` | 修正 JSON、URL、`asset_type`、multipart 字段或素材/媒体类型不匹配。 |
+| 403 | `access_denied` | 确认 API Key 可以使用 `seedance-2.0` 和真人能力。 |
+| 404 | `asset_not_found` | 素材不存在、已删除，或不属于当前 API Key。 |
+| 409 | `asset_not_ready` | 等素材处理完成后继续轮询。 |
+| 409 | `real_person_not_active` | 等真人档案变成 `active`。 |
+| 409 | `idempotency_conflict` | 不同请求请使用新的 `Idempotency-Key`。 |
+| 413 | `asset_file_too_large` | 压缩本地文件到支持大小以内。 |
+| 415 | `asset_media_unsupported` | 换成支持的图片、视频或音频格式。 |
+| 422 | `asset_failed` | 用修正后的源文件重新创建素材。 |
+
+需要查看 Seedance 的全部参数？请打开 [Seedance API 参考](/zh/api-reference/seedance-video-generation)。
