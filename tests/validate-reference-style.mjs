@@ -39,6 +39,52 @@ const seedanceAssetGuides = [
   "guides/seedance-reference-assets",
   "zh/guides/seedance-reference-assets",
 ];
+const seedanceGuideContracts = {
+  "guides/seedance-reference-assets": [
+    "## Virtual asset library",
+    "## Real-person asset library",
+    "limited access",
+    "Base URL: `https://router.flatkey.ai`",
+    "POST /v1/real-persons",
+    "POST /v1/real-persons/{person_id}/verification-sessions",
+    "POST /v1/real-persons/{person_id}/assets",
+    "GET /v1/real-persons/{person_id}/assets",
+    "multipart/form-data",
+    "Idempotency-Key",
+    "Deleting",
+    "404 asset_not_found",
+    "asset://<Asset_Id>",
+    "asset://ast_",
+    "Flatkey public URI",
+    "GET and POST",
+    "wake-up signal",
+    "< 30 MiB",
+    "<= 50 MiB",
+    "<= 15 MiB",
+  ],
+  "zh/guides/seedance-reference-assets": [
+    "## 虚拟素材库",
+    "## 真人素材库",
+    "受邀开放",
+    "Base URL: `https://router.flatkey.ai`",
+    "POST /v1/real-persons",
+    "POST /v1/real-persons/{person_id}/verification-sessions",
+    "POST /v1/real-persons/{person_id}/assets",
+    "GET /v1/real-persons/{person_id}/assets",
+    "multipart/form-data",
+    "Idempotency-Key",
+    "Deleting",
+    "404 asset_not_found",
+    "asset://<Asset_Id>",
+    "asset://ast_",
+    "Flatkey 公共 URI",
+    "GET 和 POST",
+    "唤醒信号",
+    "< 30 MiB",
+    "<= 50 MiB",
+    "<= 15 MiB",
+  ],
+};
 for (const route of seedanceAssetGuides) {
   assert.ok(navigationPages.includes(route), route);
   const guide = read(`${route}.mdx`);
@@ -51,9 +97,14 @@ for (const route of seedanceAssetGuides) {
   ]) {
     assert.ok(guide.includes(required), `${route}: ${required}`);
   }
+  for (const required of seedanceGuideContracts[route]) {
+    assert.ok(guide.includes(required), `${route}: ${required}`);
+  }
+  assert.doesNotMatch(guide, /\|\s*`Deleted`\s*\|/, `${route}: no pollable Deleted status`);
+  assert.doesNotMatch(guide, /usually does not return `asset_uri`|通常不返回 `asset_uri`/, `${route}: virtual asset_uri wording`);
   assert.doesNotMatch(
     guide,
-    /BytePlus|Access Key|Secret Access Key|projectName|endpoint ID|provider|internal|configuration|routing|端点 ID|项目名|渠道|签名|租约|幂等|内部|配置|路由/i,
+    /Access Key|Secret Access Key|projectName|endpoint ID|provider|internal|configuration|routing|端点 ID|项目名|上游 AssetId|签名 URL|对象 key|租约|内部|配置|路由/i,
     route,
   );
   assert.doesNotMatch(
