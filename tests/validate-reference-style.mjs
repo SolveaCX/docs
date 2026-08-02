@@ -35,14 +35,21 @@ for (const page of pages) {
   assert.ok(existsSync(resolve(root, `${page}.mdx`)), page);
 }
 
-const seedanceAssetGuides = [
-  "guides/seedance-reference-assets",
-  "zh/guides/seedance-reference-assets",
+const seedanceAssetGuides = ["guides/seedance", "zh/guides/seedance"];
+const requiredRedirects = [
+  {
+    source: "/guides/seedance-reference-assets",
+    destination: "/guides/seedance",
+    permanent: true,
+  },
+  {
+    source: "/zh/guides/seedance-reference-assets",
+    destination: "/zh/guides/seedance",
+    permanent: true,
+  },
 ];
 const seedanceGuideContracts = {
-  "guides/seedance-reference-assets": [
-    "## Virtual asset library",
-    "## Real-person asset library",
+  "guides/seedance": [
     "limited access",
     "Base URL: `https://router.flatkey.ai`",
     "POST /v1/real-persons",
@@ -51,13 +58,14 @@ const seedanceGuideContracts = {
     "GET /v1/real-persons/{person_id}/assets",
     "multipart/form-data",
     "Idempotency-Key",
+    "YOUR_UNIQUE_KEY_FOR_THIS_PROFILE",
+    '"name": "My first real-person profile"',
+    '"name": "Front-facing reference"',
+    '-F "name=Front-facing reference"',
     "Deleting",
+    "204 No Content",
     "404 asset_not_found",
-    "asset://<Asset_Id>",
     "asset://ast_",
-    "Flatkey public URI",
-    "GET and POST",
-    "wake-up signal",
     "< 30 MiB",
     "<= 50 MiB",
     "<= 15 MiB",
@@ -65,15 +73,11 @@ const seedanceGuideContracts = {
     "metadata.url",
     "failed",
     "curl -L \"$VIDEO_URL\" -o output.mp4",
-    "Public HTTPS URL ingestion",
-    "Local multipart ingestion",
-    "TOS-first, GCS fallback",
-    "do not choose the storage provider",
-    "backend availability dependent",
+    "without an authorization header",
+    "Create a virtual asset from a public HTTPS URL",
+    "Upload a local file",
   ],
-  "zh/guides/seedance-reference-assets": [
-    "## 虚拟素材库",
-    "## 真人素材库",
+  "zh/guides/seedance": [
     "受邀开放",
     "Base URL: `https://router.flatkey.ai`",
     "POST /v1/real-persons",
@@ -82,13 +86,14 @@ const seedanceGuideContracts = {
     "GET /v1/real-persons/{person_id}/assets",
     "multipart/form-data",
     "Idempotency-Key",
+    "YOUR_UNIQUE_KEY_FOR_THIS_PROFILE",
+    '"name": "我的第一个真人档案"',
+    '"name": "正面参考素材"',
+    '-F "name=正面参考素材"',
     "Deleting",
+    "204 No Content",
     "404 asset_not_found",
-    "asset://<Asset_Id>",
     "asset://ast_",
-    "Flatkey 公共 URI",
-    "GET 和 POST",
-    "唤醒信号",
     "< 30 MiB",
     "<= 50 MiB",
     "<= 15 MiB",
@@ -96,13 +101,71 @@ const seedanceGuideContracts = {
     "metadata.url",
     "failed",
     "curl -L \"$VIDEO_URL\" -o output.mp4",
-    "公网 HTTPS URL 摄取",
-    "本地 multipart 摄取",
-    "TOS 优先，GCS fallback",
-    "无需选择 provider",
-    "取决于后台可用性",
+    "不需要鉴权头",
+    "用公网 HTTPS URL 创建虚拟素材",
+    "上传本地文件",
   ],
 };
+const seedanceOrderedStructure = {
+  "guides/seedance": [
+    "## Call Seedance",
+    "## Use the asset library",
+    "### Virtual assets",
+    "### Real-person assets",
+  ],
+  "zh/guides/seedance": [
+    "## 调用 Seedance",
+    "## 使用素材库",
+    "### 虚拟素材",
+    "### 真人素材",
+  ],
+};
+const seedanceCustomerLanguageContracts = {
+  "guides/seedance": [
+    "Create a virtual asset from a public HTTPS URL",
+    "Upload a local file",
+  ],
+  "zh/guides/seedance": ["用公网 HTTPS URL 创建虚拟素材", "上传本地文件"],
+};
+const seedanceMetadataContracts = {
+  "guides/seedance": {
+    title: 'title: "Seedance call guide"',
+    sidebarTitle: 'sidebarTitle: "Seedance"',
+    description: /description:\s*"[^"]*call Seedance/i,
+  },
+  "zh/guides/seedance": {
+    title: 'title: "Seedance 调用指南"',
+    sidebarTitle: 'sidebarTitle: "Seedance"',
+    description: /description:\s*"[^"]*调用 Seedance/,
+  },
+};
+const customerFacingForbiddenTerms = [
+  /\bTOS\b/i,
+  /\bGCS\b/i,
+  /backend/i,
+  /upstream/i,
+  /private storage/i,
+  /BytePlus/i,
+  /storage provider/i,
+  /bucket/i,
+  /backend availability/i,
+  /temporary object/i,
+  /upstream asset ID/i,
+  /rewrite before calling/i,
+  /BytePlus credentials/i,
+  /后台/i,
+  /上游/i,
+  /私有存储/i,
+  /存储提供商/i,
+  /存储桶/i,
+  /后台可用性/i,
+  /临时对象/i,
+  /上游素材 ID/i,
+  /调用前改写/i,
+  /BytePlus 凭证/i,
+  /verification callback can arrive/i,
+  /认证回调可以通过/i,
+];
 const assertOrderedIncludes = (text, route, label, required) => {
   let index = -1;
   for (const item of required) {
@@ -114,6 +177,14 @@ const assertOrderedIncludes = (text, route, label, required) => {
 for (const route of seedanceAssetGuides) {
   assert.ok(navigationPages.includes(route), route);
   const guide = read(`${route}.mdx`);
+  const metadata = seedanceMetadataContracts[route];
+  assert.ok(guide.includes(metadata.title), `${route}: title`);
+  assert.ok(guide.includes(metadata.sidebarTitle), `${route}: sidebarTitle`);
+  assert.match(guide, metadata.description, `${route}: description`);
+  assertOrderedIncludes(guide, route, "top-level structure", seedanceOrderedStructure[route]);
+  for (const required of seedanceCustomerLanguageContracts[route]) {
+    assert.ok(guide.includes(required), `${route}: customer language: ${required}`);
+  }
   for (const required of [
     "https://router.flatkey.ai/v1/assets",
     "https://router.flatkey.ai/v1/videos",
@@ -135,14 +206,6 @@ for (const route of seedanceAssetGuides) {
       "curl -L \"$VIDEO_URL\" -o output.mp4",
       "`failed`",
     ]);
-    assertOrderedIncludes(guide, route, "asset ingestion paths", [
-      "三种后台素材摄取",
-      "公网 HTTPS URL 摄取",
-      "本地 multipart 摄取",
-      "TOS 优先，GCS fallback",
-      "无需选择 provider",
-      "不会返回临时 URL、bucket 或 BytePlus 凭证",
-    ]);
   } else {
     assertOrderedIncludes(guide, route, "video result workflow", [
       "Copy the returned `task_...`",
@@ -152,15 +215,13 @@ for (const route of seedanceAssetGuides) {
       "curl -L \"$VIDEO_URL\" -o output.mp4",
       "`failed`",
     ]);
-    assertOrderedIncludes(guide, route, "asset ingestion paths", [
-      "Three backend asset ingestion paths",
-      "Public HTTPS URL ingestion",
-      "Local multipart ingestion",
-      "TOS-first, GCS fallback",
-      "do not choose the storage provider",
-      "temporary URL, bucket, or BytePlus credentials",
-    ]);
   }
+  for (const forbidden of customerFacingForbiddenTerms) {
+    assert.doesNotMatch(guide, forbidden, `${route}: internal implementation term ${forbidden}`);
+  }
+  assert.doesNotMatch(guide, /\bjq\b/, `${route}: copyable examples must not require jq`);
+  assert.doesNotMatch(guide, /<Asset_Id>/, `${route}: no provider-specific asset URI example`);
+  assert.doesNotMatch(guide, /person-create-\d|person-reverify-\d|real-person-asset-(?:url|file)-\d/, `${route}: no reusable fixed idempotency examples`);
   assert.doesNotMatch(guide, /\|\s*`Deleted`\s*\|/, `${route}: no pollable Deleted status`);
   assert.doesNotMatch(guide, /usually does not return `asset_uri`|通常不返回 `asset_uri`/, `${route}: virtual asset_uri wording`);
   assert.doesNotMatch(
@@ -172,6 +233,17 @@ for (const route of seedanceAssetGuides) {
     guide,
     /\b(?:(?:ark|sk)-[A-Za-z0-9_-]{20,}|AK[A-Za-z0-9]{20,})\b/,
     route,
+  );
+}
+for (const redirect of requiredRedirects) {
+  assert.ok(
+    config.redirects?.some(
+      (entry) =>
+        entry.source === redirect.source &&
+        entry.destination === redirect.destination &&
+        entry.permanent === redirect.permanent,
+    ),
+    `docs.json redirect: ${redirect.source} -> ${redirect.destination}`,
   );
 }
 

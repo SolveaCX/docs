@@ -27,6 +27,18 @@
   "styling": {
     "codeblocks": "dark"
   },
+  "redirects": [
+    {
+      "source": "/guides/seedance-reference-assets",
+      "destination": "/guides/seedance",
+      "permanent": true
+    },
+    {
+      "source": "/zh/guides/seedance-reference-assets",
+      "destination": "/zh/guides/seedance",
+      "permanent": true
+    }
+  ],
   "navigation": {
     "languages": [
       {
@@ -67,7 +79,7 @@
                   "guides/codex-desktop",
                   "guides/claude-code",
                   "guides/image-generation",
-                  "guides/seedance-reference-assets"
+                  "guides/seedance"
                 ]
               },
               {
@@ -153,7 +165,7 @@
                   "zh/guides/codex-desktop",
                   "zh/guides/claude-code",
                   "zh/guides/image-generation",
-                  "zh/guides/seedance-reference-assets"
+                  "zh/guides/seedance"
                 ]
               },
               {
