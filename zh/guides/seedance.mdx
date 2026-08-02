@@ -251,9 +251,9 @@ curl.exe -sS https://router.flatkey.ai/v1/videos `
 
 | 文件类型 | 限制 |
 | --- | --- |
-| 图片 | < 30 MiB |
-| 视频 | <= 50 MiB |
-| 音频 | <= 15 MiB |
+| 图片 | &lt; 30 MiB |
+| 视频 | &lt;= 50 MiB |
+| 音频 | &lt;= 15 MiB |
 
 本节的写入请求必须带 `Idempotency-Key`。每次新建数据时，都要把示例里的 `YOUR_UNIQUE_KEY_...` 换成一个新的 UUID。只有重试完全相同的请求时，才复用同一个 key。
 
