@@ -1,14 +1,23 @@
 ---
-title: "Seedance call guide"
+title: "Generate Seedance videos with Flatkey"
 sidebarTitle: "Seedance"
-description: "Learn how to call Seedance, check video results, and reuse virtual or real-person assets."
+description: "Create Seedance video tasks, poll results, download the final MP4, and reuse virtual or real-person assets through Flatkey."
 ---
 
 Base URL: `https://router.flatkey.ai`
 
-This guide shows the shortest working path for calling Seedance through Flatkey. Copy the examples, replace `YOUR_FLATKEY_API_KEY`, `task_...`, `ast_...`, and `rph_...` with your own values, then run the commands.
+This guide gives you a copy-ready path for using Seedance through Flatkey. Start with a text-to-video task, poll the task until it completes, then download the generated MP4. If you need reusable product, background, audio, or real-person references, continue to the asset library sections.
 
-Use this authorization header on every API request in this guide. The video download URL returned in `metadata.url` is the only exception:
+<CardGroup cols={2}>
+  <Card title="Copy-ready examples" icon="copy">
+    Use the copy icon on any command block, then replace `YOUR_FLATKEY_API_KEY`, `task_...`, `ast_...`, and `rph_...` with your own values.
+  </Card>
+  <Card title="One async workflow" icon="video">
+    Create the task with `POST /v1/videos`, poll it with `GET /v1/videos/{task_id}`, and download the MP4 from `metadata.url`.
+  </Card>
+</CardGroup>
+
+Use this authorization header on every API request in this guide. The video download URL returned in `metadata.url` is the only exception.
 
 ```http
 Authorization: Bearer YOUR_FLATKEY_API_KEY
