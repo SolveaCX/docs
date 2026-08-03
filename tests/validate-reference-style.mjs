@@ -129,9 +129,9 @@ const seedanceCustomerLanguageContracts = {
 };
 const seedanceMetadataContracts = {
   "guides/seedance": {
-    title: 'title: "Seedance call guide"',
+    title: 'title: "Generate Seedance videos with Flatkey"',
     sidebarTitle: 'sidebarTitle: "Seedance"',
-    description: /description:\s*"[^"]*call Seedance/i,
+    description: /description:\s*"[^"]*Create Seedance video tasks/i,
   },
   "zh/guides/seedance": {
     title: 'title: "Seedance 调用指南"',
@@ -333,14 +333,24 @@ assertDeclaration(
   "#F5F5F2",
 );
 assertDeclaration(
+  '#content [data-testid="copy-code-button"]',
+  "background",
+  "rgba(245, 245, 242, 0.08)",
+);
+assertDeclaration(
   '#content .code-group [data-testid="copy-code-button"]',
   "background",
-  "transparent",
+  "rgba(245, 245, 242, 0.08)",
 );
 assertDeclaration(
   '#content [data-component-part="code-group-tab-bar"] [data-testid="copy-code-button"]',
   "background",
-  "transparent",
+  "rgba(245, 245, 242, 0.08)",
+);
+assertDeclaration(
+  '#content [data-testid="copy-code-button"] svg',
+  "color",
+  "currentColor",
 );
 assert.match(
   css,

@@ -562,15 +562,23 @@ code-block [role="tab"][aria-selected="true"],
   color: #0B0B0F;
 }
 
+#content [data-testid="copy-code-button"],
 #content .code-group [data-testid="copy-code-button"],
 #content [data-component-part="code-group-tab-bar"] [data-testid="copy-code-button"] {
   border-color: transparent;
-  background: transparent;
+  background: rgba(245, 245, 242, 0.08);
   color: #B9B9C5;
 }
 
+#content [data-testid="copy-code-button"] svg {
+  color: currentColor;
+  stroke: currentColor;
+}
+
+#content [data-testid="copy-code-button"]:hover,
 #content .code-group [data-testid="copy-code-button"]:hover,
 #content [data-component-part="code-group-tab-bar"] [data-testid="copy-code-button"]:hover {
+  background: rgba(167, 243, 200, 0.12);
   color: var(--fk-code-accent);
 }
 
