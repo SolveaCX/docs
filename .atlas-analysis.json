@@ -1,7 +1,7 @@
 {
   "projectType": "api-service",
   "projectName": "Flatkey",
-  "projectDescription": "Flatkey is an AI API gateway that provides access to 160+ official models from OpenAI, Anthropic, Google, DeepSeek, and more through a single OpenAI-compatible API key at up to 50% off official pricing.",
+  "projectDescription": "Flatkey is an AI API gateway that provides access to 300+ official models from OpenAI, Anthropic, Google, DeepSeek, and more, plus 1000+ tools, through a single OpenAI-compatible API key at up to 50% off official pricing.",
   "theme": "luma",
   "primaryColor": "#ef7025",
   "lightColor": "#eec9bc",
@@ -82,7 +82,7 @@
     ]
   },
   "keyFeatures": [
-    "Single OpenAI-compatible API key for 160+ models",
+    "Single OpenAI-compatible API key for 300+ models and 1000+ tools",
     "60–90% of official model pricing with top-up bonus credits",
     "Automatic failover and 99.9% success rate SLA",
     "Live model health dashboard and rankings",
