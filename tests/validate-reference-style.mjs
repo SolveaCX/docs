@@ -19,6 +19,7 @@ assert.deepEqual(config.fonts, {
 assert.deepEqual(config.logo, {
   light: "/logo/light.svg",
   dark: "/logo/dark.svg",
+  href: "https://flatkey.ai",
 });
 assert.equal(config.favicon, "/favicon.svg");
 assert.deepEqual(config.appearance, { default: "system", strict: false });
@@ -27,10 +28,10 @@ assert.equal(config.styling.codeblocks, "dark");
 const navigationPages = config.navigation.languages.flatMap((language) =>
   language.tabs.flatMap((tab) => tab.groups.flatMap((group) => group.pages)),
 );
-assert.equal(navigationPages.length, 58);
+assert.equal(navigationPages.length, 60);
 const pages = ["index", "zh/index", ...navigationPages];
-assert.equal(pages.length, 60);
-assert.equal(new Set(pages).size, 60);
+assert.equal(pages.length, 62);
+assert.equal(new Set(pages).size, 62);
 for (const page of pages) {
   assert.ok(existsSync(resolve(root, `${page}.mdx`)), page);
 }
@@ -245,6 +246,108 @@ for (const redirect of requiredRedirects) {
     ),
     `docs.json redirect: ${redirect.source} -> ${redirect.destination}`,
   );
+}
+
+const minimaxH3Guides = {
+  "guides/minimax-h3": {
+    title: 'title: "Generate MiniMax H3 videos with Flatkey"',
+    sidebarTitle: 'sidebarTitle: "MiniMax H3"',
+    workflow: [
+      "## Create your first H3 video",
+      "POST /v1/videos",
+      "Save the returned `task_...`",
+      "GET /v1/videos/{task_id}",
+      "`completed`",
+      "`metadata.url`",
+      "minimax-h3.mp4",
+      "`failed`",
+    ],
+    details: [
+      "7,000 Unicode characters",
+      "| First frame | `image_url` | `first_frame`, or omit the role | 1 image |",
+      "| Last frame | `image_url` | `last_frame` | 1 image |",
+      "| Reference image | `image_url` | `reference_image` | 9 images |",
+      "| Reference video | `video_url` | `reference_video` | 3 videos |",
+      "| Reference audio | `audio_url` | `reference_audio` | 3 audio files; also include a reference image or video |",
+      "Do not mix first- or last-frame inputs with reference inputs",
+      "Reference audio cannot be the only media input.",
+      "`21:9`, `16:9`, `4:3`, `1:1`, `3:4`, `9:16`, or `adaptive` with media",
+      "works without a Flatkey authorization header",
+      "do not log, publish, or share it",
+    ],
+  },
+  "zh/guides/minimax-h3": {
+    title: 'title: "MiniMax H3 调用指南"',
+    sidebarTitle: 'sidebarTitle: "MiniMax H3"',
+    workflow: [
+      "## 创建第一个 H3 视频",
+      "POST /v1/videos",
+      "保存返回的 `task_...`",
+      "GET /v1/videos/{task_id}",
+      "`completed`",
+      "`metadata.url`",
+      "minimax-h3.mp4",
+      "`failed`",
+    ],
+    details: [
+      "7,000 个 Unicode 字符",
+      "| 首帧 | `image_url` | `first_frame`，也可以省略 `role` | 1 张 |",
+      "| 尾帧 | `image_url` | `last_frame` | 1 张 |",
+      "| 参考图片 | `image_url` | `reference_image` | 9 张 |",
+      "| 参考视频 | `video_url` | `reference_video` | 3 段 |",
+      "| 参考音频 | `audio_url` | `reference_audio` | 3 段；同时还要提供参考图片或参考视频 |",
+      "不要在同一个请求中混用首尾帧和参考素材",
+      "参考音频不能作为唯一的媒体输入。",
+      "`21:9`、`16:9`、`4:3`、`1:1`、`3:4`、`9:16`；有媒体时可用 `adaptive`",
+      "不需要 Flatkey 鉴权头",
+      "不要记录到日志、公开或分享",
+    ],
+  },
+};
+for (const [route, contract] of Object.entries(minimaxH3Guides)) {
+  assert.ok(navigationPages.includes(route), route);
+  const guide = read(`${route}.mdx`);
+  assert.ok(guide.includes(contract.title), `${route}: title`);
+  assert.ok(guide.includes(contract.sidebarTitle), `${route}: sidebarTitle`);
+  assertOrderedIncludes(guide, route, "video result workflow", contract.workflow);
+  for (const detail of contract.details) {
+    assert.ok(guide.includes(detail), `${route}: ${detail}`);
+  }
+  for (const required of [
+    "Base URL: `https://router.flatkey.ai`",
+    "https://router.flatkey.ai/v1/videos",
+    "MiniMax-H3",
+    "YOUR_FLATKEY_API_KEY",
+    "`768P`",
+    "`2K`",
+    "`4`",
+    "`15`",
+    "first_frame",
+    "last_frame",
+    "reference_image",
+    "reference_video",
+    "reference_audio",
+    "usage.completion_tokens",
+    "usage.total_tokens",
+    "callback_url",
+    "MiniMax-H3-Context-IR",
+  ]) {
+    assert.ok(guide.includes(required), `${route}: ${required}`);
+  }
+  assert.doesNotMatch(
+    guide,
+    /\b(?:(?:ark|sk)-[A-Za-z0-9_-]{20,}|AK[A-Za-z0-9]{20,})\b/,
+    `${route}: real credential`,
+  );
+  assert.doesNotMatch(guide, /\bjq\b/, `${route}: examples must not require jq`);
+  assert.doesNotMatch(
+    guide,
+    /upstream|channel ID|内部渠道|上游|渠道 ID/i,
+    `${route}: internal implementation language`,
+  );
+  for (const forbidden of customerFacingForbiddenTerms) {
+    assert.doesNotMatch(guide, forbidden, `${route}: internal implementation term ${forbidden}`);
+  }
 }
 
 for (const path of ["logo/light.svg", "logo/dark.svg", "favicon.svg"]) {

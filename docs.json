@@ -80,7 +80,8 @@
                   "guides/codex-desktop",
                   "guides/claude-code",
                   "guides/image-generation",
-                  "guides/seedance"
+                  "guides/seedance",
+                  "guides/minimax-h3"
                 ]
               },
               {
@@ -166,7 +167,8 @@
                   "zh/guides/codex-desktop",
                   "zh/guides/claude-code",
                   "zh/guides/image-generation",
-                  "zh/guides/seedance"
+                  "zh/guides/seedance",
+                  "zh/guides/minimax-h3"
                 ]
               },
               {
