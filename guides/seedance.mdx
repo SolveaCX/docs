@@ -130,11 +130,11 @@ Use the `asset://ast_...` URI returned by Flatkey in your Seedance requests.
 
 ### Virtual assets
 
-Virtual assets do not require real-person verification. They are the simplest way to reuse a product image, background video, or audio reference.
+Virtual assets do not require real-person verification. Create them from a public URL or upload a local file, then reuse the returned Flatkey asset URI.
 
 #### 1. Create a virtual asset from a public HTTPS URL
 
-Send a public `https://` URL. Virtual assets accept URL-based JSON creation, not local `multipart/form-data` upload.
+Send a public `https://` URL.
 
 <CodeGroup>
 ```bash Bash
@@ -169,24 +169,79 @@ The response includes an `id`, for example `ast_1234567890abcdef1234567890abcdef
 asset://ast_1234567890abcdef1234567890abcdef
 ```
 
-#### 2. Poll until Active
+Do not send `model` when you create, upload, or query an asset. Flatkey derives the relevant Seedance models from the API key used for the request.
+
+#### 2. Upload a local virtual asset
+
+For a local image, video, or audio file, send `multipart/form-data` to `POST /v1/assets/upload`. Use one `file` field. `asset_type` can be `Image`, `Video`, or `Audio`.
 
 <CodeGroup>
 ```bash Bash
-curl -sS https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef \
+curl -sS https://router.flatkey.ai/v1/assets/upload \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -F "file=@./reference-a.png" \
+  -F "asset_type=Image"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets/upload `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -F "file=@./reference-a.png" `
+  -F "asset_type=Image"
+```
+</CodeGroup>
+
+The response uses the same asset shape as URL creation. Save its `id` or `asset_url` for polling and later video requests.
+
+#### 3. Poll until the selected model is available
+
+Query every asset with the same API key that will create the video task. For example, check two image assets separately:
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets/ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+curl -sS https://router.flatkey.ai/v1/assets/ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
   -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
 ```
 ```powershell Windows PowerShell
-curl.exe -sS https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef `
+curl.exe -sS https://router.flatkey.ai/v1/assets/ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+curl.exe -sS https://router.flatkey.ai/v1/assets/ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb `
   -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
 ```
 </CodeGroup>
 
-Only `Active` assets can be used in video generation. `Creating`, `Processing`, and `Deleting` are not ready. After deletion completes, `GET /v1/assets/{asset_id}` returns `404 asset_not_found`; do not wait for a pollable `Deleted` status.
+Every asset response includes `available_models`. `available_models` is always an array and lists the models that can use this asset now. A partially ready asset can look like this:
 
-#### 3. Call Seedance with the virtual asset
+```json
+{
+  "id": "ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "object": "asset",
+  "asset_type": "Image",
+  "status": "Processing",
+  "available_models": ["seedance-2.0-fast"],
+  "asset_url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "created_at": 1785292000
+}
+```
 
-Put the `asset://ast_...` URI in the media field that matches the asset type: `image_url.url` for `Image`, `video_url.url` for `Video`, or `audio_url.url` for `Audio`. A Seedance request needs text or at least one image/video; audio alone is not enough.
+`status` is the aggregate state across the relevant Seedance models for this API key:
+
+| Status | Meaning |
+| --- | --- |
+| `Creating` | The source upload has not finished. |
+| `Processing` | At least one relevant model is still being prepared. Check `available_models`; another model may already be usable. |
+| `Active` | Every relevant model for this API key is ready. |
+| `Failed` | The source failed, or readiness could not be established for at least one relevant model. |
+| `Expired` | The source can no longer be used. Create a new asset. |
+
+You do not need to wait for aggregate `Active` when your chosen model is already listed. Before creating a task, make sure the selected model appears in every asset's `available_models`. For fast use `seedance-2.0-fast`; for pro use `seedance-2.0`. The task creation request checks readiness again, so retry polling if routing changed between the GET and POST requests.
+
+The `asset://` URI identifies the asset but does not prove readiness by itself. `Deleting` means deletion is in progress and the asset cannot be used for a new task. After deletion completes, `GET /v1/assets/{asset_id}` returns `404 asset_not_found`; do not wait for a pollable `Deleted` status.
+
+#### 4. Call Seedance with two virtual assets
+
+Put each `asset://ast_...` URI in the media field that matches the asset type: `image_url.url` for `Image`, `video_url.url` for `Video`, or `audio_url.url` for `Audio`. A Seedance request needs text or at least one image/video; audio alone is not enough. This example starts only after both assets list `seedance-2.0-fast` in `available_models`.
 
 <CodeGroup>
 ```bash Bash
@@ -194,12 +249,19 @@ curl -sS https://router.flatkey.ai/v1/videos \
   -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "seedance-2.0",
+    "model": "seedance-2.0-fast",
     "content": [
       {
         "type": "image_url",
         "image_url": {
-          "url": "asset://ast_1234567890abcdef1234567890abcdef"
+          "url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
         },
         "role": "reference_image"
       },
@@ -218,12 +280,19 @@ curl.exe -sS https://router.flatkey.ai/v1/videos `
   -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
   -H "Content-Type: application/json" `
   -d '{
-    "model": "seedance-2.0",
+    "model": "seedance-2.0-fast",
     "content": [
       {
         "type": "image_url",
         "image_url": {
-          "url": "asset://ast_1234567890abcdef1234567890abcdef"
+          "url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
         },
         "role": "reference_image"
       },
@@ -245,7 +314,7 @@ Copy the returned `task_...` and use `GET /v1/videos/{task_id}` from the first s
 
 Real-person assets are for a specific person's face, voice, or video. This capability is limited access. Use it only after Flatkey enables it for your account.
 
-You will create a profile, send `verification_url` to the person, wait until the profile is `active`, create an asset, wait until the asset is `Active`, then call Seedance with `asset://ast_...`.
+You will create a profile, send `verification_url` to the person, wait until the profile is `active`, create an asset, wait until the asset `status` is `Active`, then call Seedance with `asset://ast_...`.
 
 | Endpoint | When to use it |
 | --- | --- |
@@ -375,22 +444,9 @@ curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/asse
 
 The create response includes an asset ID or `asset_uri`, for example `asset://ast_1234567890abcdef1234567890abcdef`.
 
-#### 5. Poll and call Seedance
+#### 5. Poll readiness and call Seedance
 
-Use the asset polling endpoint until the status is `Active`:
-
-<CodeGroup>
-```bash Bash
-curl -sS https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef \
-  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
-```
-```powershell Windows PowerShell
-curl.exe -sS https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef `
-  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
-```
-</CodeGroup>
-
-You can also list assets under the profile:
+Real-person asset responses do not include `available_models`. List the assets under the profile until the asset `status` is `Active`:
 
 <CodeGroup>
 ```bash Bash
@@ -403,7 +459,9 @@ curl.exe -sS "https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/ass
 ```
 </CodeGroup>
 
-After the asset is `Active`, call Seedance with the `asset://ast_...` URI:
+If the listed asset is still `Processing`, wait and poll again. If it is `Failed`, create a new asset from a better reference.
+
+After the asset is `Active`, call Seedance with the `asset://ast_...` URI.
 
 <CodeGroup>
 ```bash Bash

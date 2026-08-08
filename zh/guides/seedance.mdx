@@ -121,11 +121,11 @@ curl.exe -L "$videoUrl" -o output.mp4
 
 ### 虚拟素材
 
-虚拟素材不需要真人认证。你可以用它复用商品图、背景视频或音频参考。
+虚拟素材不需要真人认证。你可以从公网 URL 创建，也可以上传本地文件，然后复用返回的 Flatkey 素材 URI。
 
 #### 1. 用公网 HTTPS URL 创建虚拟素材
 
-发送一个公网 `https://` URL。虚拟素材通过 JSON 请求使用 URL 创建，不上传本地 `multipart/form-data` 文件。
+发送一个公网 `https://` URL。
 
 <CodeGroup>
 ```bash Bash
@@ -160,24 +160,79 @@ curl.exe -sS https://router.flatkey.ai/v1/assets `
 asset://ast_1234567890abcdef1234567890abcdef
 ```
 
-#### 2. 轮询到 Active
+创建、上传或查询素材时，不要发送 `model`。Flatkey 会根据这次请求使用的 API Key 自动确定相关的 Seedance 模型。
+
+#### 2. 上传本地虚拟素材
+
+本地图片、视频或音频文件使用 `multipart/form-data` 发送到 `POST /v1/assets/upload`。使用一个 `file` 字段；`asset_type` 可以是 `Image`、`Video` 或 `Audio`。
 
 <CodeGroup>
 ```bash Bash
-curl -sS https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef \
+curl -sS https://router.flatkey.ai/v1/assets/upload \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -F "file=@./reference-a.png" \
+  -F "asset_type=Image"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets/upload `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -F "file=@./reference-a.png" `
+  -F "asset_type=Image"
+```
+</CodeGroup>
+
+它的响应结构和 URL 创建一致。保存 `id` 或 `asset_url`，后面用来轮询并创建视频。
+
+#### 3. 轮询到目标模型可用
+
+用之后创建视频任务的同一个 API Key 查询每个素材。例如，分别查询两张图片素材：
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets/ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+curl -sS https://router.flatkey.ai/v1/assets/ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
   -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
 ```
 ```powershell Windows PowerShell
-curl.exe -sS https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef `
+curl.exe -sS https://router.flatkey.ai/v1/assets/ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+curl.exe -sS https://router.flatkey.ai/v1/assets/ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb `
   -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
 ```
 </CodeGroup>
 
-只有 `Active` 素材可以用于视频生成。`Creating`、`Processing` 和 `Deleting` 都还不能用。删除完成后，`GET /v1/assets/{asset_id}` 返回 `404 asset_not_found`；不要等待一个可轮询的 `Deleted` 状态。
+每个素材响应都会包含 `available_models`。`available_models` 始终是数组，列出现在可以使用这个素材的模型。部分模型已经可用时，响应可能是：
 
-#### 3. 用虚拟素材调用 Seedance
+```json
+{
+  "id": "ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "object": "asset",
+  "asset_type": "Image",
+  "status": "Processing",
+  "available_models": ["seedance-2.0-fast"],
+  "asset_url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "created_at": 1785292000
+}
+```
 
-把 `asset://ast_...` 放入和素材类型匹配的媒体字段：`Image` 用 `image_url.url`，`Video` 用 `video_url.url`，`Audio` 用 `audio_url.url`。Seedance 请求需要文本，或至少一张图片/一个视频；只有音频不够。
+`status` 是这个 API Key 相关 Seedance 模型的汇总状态：
+
+| 状态 | 含义 |
+| --- | --- |
+| `Creating` | 源文件上传还没有完成。 |
+| `Processing` | 至少一个相关模型仍在准备中。请查看 `available_models`；其他模型可能已经能用。 |
+| `Active` | 这个 API Key 的所有相关模型都已经可用。 |
+| `Failed` | 源文件失败，或至少一个相关模型无法建立可用状态。 |
+| `Expired` | 源文件已经不能继续使用，需要重新创建素材。 |
+
+如果目标模型已经出现在列表中，就不必等待汇总状态变成 `Active`。创建任务前，确认每个素材的 `available_models` 都包含目标模型：快速模型用 `seedance-2.0-fast`，专业模型用 `seedance-2.0`。创建任务时还会再次检查素材状态；如果查询后发生变化，请继续轮询再重试。
+
+`asset://` URI 只用于标识素材，本身不能证明素材已经可用。`Deleting` 表示删除中，不能再用于新任务。删除完成后，`GET /v1/assets/{asset_id}` 返回 `404 asset_not_found`；不要等待一个可轮询的 `Deleted` 状态。
+
+#### 4. 用两个虚拟素材调用 Seedance
+
+把每个 `asset://ast_...` 放入和素材类型匹配的媒体字段：`Image` 用 `image_url.url`，`Video` 用 `video_url.url`，`Audio` 用 `audio_url.url`。Seedance 请求需要文本，或至少一张图片/一个视频；只有音频不够。下面的例子需要两张素材的 `available_models` 都已经包含 `seedance-2.0-fast`。
 
 <CodeGroup>
 ```bash Bash
@@ -185,12 +240,19 @@ curl -sS https://router.flatkey.ai/v1/videos \
   -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "seedance-2.0",
+    "model": "seedance-2.0-fast",
     "content": [
       {
         "type": "image_url",
         "image_url": {
-          "url": "asset://ast_1234567890abcdef1234567890abcdef"
+          "url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
         },
         "role": "reference_image"
       },
@@ -209,12 +271,19 @@ curl.exe -sS https://router.flatkey.ai/v1/videos `
   -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
   -H "Content-Type: application/json" `
   -d '{
-    "model": "seedance-2.0",
+    "model": "seedance-2.0-fast",
     "content": [
       {
         "type": "image_url",
         "image_url": {
-          "url": "asset://ast_1234567890abcdef1234567890abcdef"
+          "url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
         },
         "role": "reference_image"
       },
@@ -236,7 +305,7 @@ curl.exe -sS https://router.flatkey.ai/v1/videos `
 
 真人素材用于特定真人的脸、声音或视频。这个能力受邀开放，需要 Flatkey 先为你的账号开通。
 
-流程是：创建真人档案，把 `verification_url` 交给真人本人认证，等档案变成 `active`，创建素材，等素材变成 `Active`，最后用 `asset://ast_...` 调用 Seedance。
+流程是：创建真人档案，把 `verification_url` 交给真人本人认证，等档案变成 `active`，创建素材，轮询到素材 `status` 变成 `Active`，最后用 `asset://ast_...` 调用 Seedance。
 
 | 接口 | 使用时机 |
 | --- | --- |
@@ -366,22 +435,9 @@ curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/asse
 
 创建响应会包含素材 ID 或 `asset_uri`，例如 `asset://ast_1234567890abcdef1234567890abcdef`。
 
-#### 5. 轮询素材并调用 Seedance
+#### 5. 轮询素材状态并调用 Seedance
 
-用素材查询接口轮询，直到状态变成 `Active`：
-
-<CodeGroup>
-```bash Bash
-curl -sS https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef \
-  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
-```
-```powershell Windows PowerShell
-curl.exe -sS https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef `
-  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
-```
-</CodeGroup>
-
-你也可以列出这个真人档案下的素材：
+真人素材响应不包含 `available_models`。列出这个真人档案下的素材，直到素材 `status` 变成 `Active`：
 
 <CodeGroup>
 ```bash Bash
@@ -394,7 +450,9 @@ curl.exe -sS "https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/ass
 ```
 </CodeGroup>
 
-素材变成 `Active` 后，用 `asset://ast_...` 调用 Seedance：
+如果列出的素材仍然是 `Processing`，稍后继续轮询。如果是 `Failed`，请用更好的参考素材重新创建。
+
+素材变成 `Active` 后，用 `asset://ast_...` 调用 Seedance。
 
 <CodeGroup>
 ```bash Bash

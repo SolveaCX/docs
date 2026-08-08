@@ -76,7 +76,15 @@ const seedanceGuideContracts = {
     "curl -L \"$VIDEO_URL\" -o output.mp4",
     "without an authorization header",
     "Create a virtual asset from a public HTTPS URL",
+    "Upload a local virtual asset",
     "Upload a local file",
+    "Do not send `model`",
+    "`available_models` is always an array",
+    '"available_models": ["seedance-2.0-fast"]',
+    "selected model appears in every asset's `available_models`",
+    '"model": "seedance-2.0-fast"',
+    "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "asset://ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   ],
   "zh/guides/seedance": [
     "受邀开放",
@@ -104,7 +112,15 @@ const seedanceGuideContracts = {
     "curl -L \"$VIDEO_URL\" -o output.mp4",
     "不需要鉴权头",
     "用公网 HTTPS URL 创建虚拟素材",
+    "上传本地虚拟素材",
     "上传本地文件",
+    "不要发送 `model`",
+    "`available_models` 始终是数组",
+    '"available_models": ["seedance-2.0-fast"]',
+    "每个素材的 `available_models` 都包含目标模型",
+    '"model": "seedance-2.0-fast"',
+    "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "asset://ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   ],
 };
 const seedanceOrderedStructure = {
@@ -124,9 +140,14 @@ const seedanceOrderedStructure = {
 const seedanceCustomerLanguageContracts = {
   "guides/seedance": [
     "Create a virtual asset from a public HTTPS URL",
+    "Upload a local virtual asset",
     "Upload a local file",
   ],
-  "zh/guides/seedance": ["用公网 HTTPS URL 创建虚拟素材", "上传本地文件"],
+  "zh/guides/seedance": [
+    "用公网 HTTPS URL 创建虚拟素材",
+    "上传本地虚拟素材",
+    "上传本地文件",
+  ],
 };
 const seedanceMetadataContracts = {
   "guides/seedance": {
@@ -138,6 +159,30 @@ const seedanceMetadataContracts = {
     title: 'title: "Seedance 调用指南"',
     sidebarTitle: 'sidebarTitle: "Seedance"',
     description: /description:\s*"[^"]*调用 Seedance/,
+  },
+};
+const seedanceRealPersonReadinessContracts = {
+  "guides/seedance": {
+    required: [
+      "wait until the asset `status` is `Active`",
+      "Real-person asset responses do not include `available_models`",
+    ],
+    forbidden: [
+      /Real-person assets[\s\S]*?selected model appears in `available_models`/,
+      /Real-person assets[\s\S]*?exact model is already listed/,
+      /Real-person assets[\s\S]*?aggregate `Active` means all relevant models are ready/,
+    ],
+  },
+  "zh/guides/seedance": {
+    required: [
+      "轮询到素材 `status` 变成 `Active`",
+      "真人素材响应不包含 `available_models`",
+    ],
+    forbidden: [
+      /真人素材[\s\S]*?目标模型出现在 `available_models`/,
+      /真人素材[\s\S]*?目标模型已经出现在列表中/,
+      /真人素材[\s\S]*?汇总状态 `Active` 表示所有相关模型都已经可用/,
+    ],
   },
 };
 const customerFacingForbiddenTerms = [
@@ -175,6 +220,11 @@ const assertOrderedIncludes = (text, route, label, required) => {
     index = next;
   }
 };
+const sectionFrom = (text, heading, route) => {
+  const index = text.indexOf(heading);
+  assert.ok(index >= 0, `${route}: section heading: ${heading}`);
+  return text.slice(index);
+};
 for (const route of seedanceAssetGuides) {
   assert.ok(navigationPages.includes(route), route);
   const guide = read(`${route}.mdx`);
@@ -197,6 +247,18 @@ for (const route of seedanceAssetGuides) {
   }
   for (const required of seedanceGuideContracts[route]) {
     assert.ok(guide.includes(required), `${route}: ${required}`);
+  }
+  const realPersonSection = sectionFrom(
+    guide,
+    route.startsWith("zh/") ? "### 真人素材" : "### Real-person assets",
+    route,
+  );
+  const realPersonReadiness = seedanceRealPersonReadinessContracts[route];
+  for (const required of realPersonReadiness.required) {
+    assert.ok(realPersonSection.includes(required), `${route}: real-person readiness: ${required}`);
+  }
+  for (const forbidden of realPersonReadiness.forbidden) {
+    assert.doesNotMatch(realPersonSection, forbidden, `${route}: real-person readiness must use status Active`);
   }
   if (route.startsWith("zh/")) {
     assertOrderedIncludes(guide, route, "video result workflow", [
