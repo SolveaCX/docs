@@ -1,0 +1,184 @@
+---
+title: "Utiliser Flatkey avec le SDK Python et Node.js d'OpenAI"
+sidebarTitle: "SDK OpenAI"
+description: "Intégrez Flatkey comme URL de base pour le SDK Python ou Node.js d'OpenAI afin d'accéder à plus de 300 modèles avec jusqu'à 50 % de réduction — sans réécriture de code."
+---
+
+Accédez à plus de 300 modèles d'IA avec jusqu'à 50 % de réduction en faisant transiter le SDK Python ou Node.js d'OpenAI par Flatkey. La migration ne nécessite qu'une seule ligne de code : définissez `base_url` sur `https://router.flatkey.ai/v1` et utilisez votre clé API Flatkey. Toutes les autres fonctionnalités du SDK — streaming, appel de fonctions, clients asynchrones, logique de réessai — fonctionnent exactement comme avant.
+
+## Installation
+
+<CodeGroup>
+```bash pip
+pip install openai
+```
+```bash npm
+npm install openai
+```
+```bash yarn
+yarn add openai
+```
+```bash pnpm
+pnpm add openai
+```
+</CodeGroup>
+
+## Configuration de base
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+```
+```javascript node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+```
+</CodeGroup>
+
+## Complétions de chat
+
+<CodeGroup>
+```python python
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Explain quantum entanglement simply."},
+    ],
+    max_tokens=512,
+    temperature=0.7,
+)
+print(response.choices[0].message.content)
+```
+```javascript node
+const response = await client.chat.completions.create({
+  model: "gpt-4o",
+  messages: [
+    { role: "system", content: "You are a helpful assistant." },
+    { role: "user", content: "Explain quantum entanglement simply." },
+  ],
+  max_tokens: 512,
+  temperature: 0.7,
+});
+console.log(response.choices[0].message.content);
+```
+</CodeGroup>
+
+## Streaming
+
+<CodeGroup>
+```python python
+stream = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Write a haiku about the ocean."}],
+    stream=True,
+)
+
+for chunk in stream:
+    delta = chunk.choices[0].delta.content
+    if delta:
+        print(delta, end="", flush=True)
+print()  # newline at end
+```
+```javascript node
+const stream = await client.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [{ role: "user", content: "Write a haiku about the ocean." }],
+  stream: true,
+});
+
+for await (const chunk of stream) {
+  const delta = chunk.choices[0]?.delta?.content || "";
+  process.stdout.write(delta);
+}
+console.log();
+```
+</CodeGroup>
+
+## Appel de fonctions / utilisation d'outils
+
+```python python
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get current weather for a location",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {"type": "string", "description": "City name"},
+                },
+                "required": ["location"],
+            },
+        },
+    }
+]
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "What's the weather in Tokyo?"}],
+    tools=tools,
+    tool_choice="auto",
+)
+print(response.choices[0].message.tool_calls)
+```
+
+## Utiliser des modèles non-OpenAI
+
+Vous pouvez appeler n'importe quel modèle pris en charge par Flatkey avec le même client — il suffit de modifier le paramètre `model` :
+
+```python python
+# Claude via Flatkey
+response = client.chat.completions.create(
+    model="claude-sonnet-4-5",
+    messages=[{"role": "user", "content": "Review this code for bugs."}],
+)
+
+# DeepSeek via Flatkey
+response = client.chat.completions.create(
+    model="deepseek-v3",
+    messages=[{"role": "user", "content": "Solve this math problem step by step."}],
+)
+
+# Gemini via Flatkey
+response = client.chat.completions.create(
+    model="gemini-2.5-flash",
+    messages=[{"role": "user", "content": "Summarize this article."}],
+)
+```
+
+## Client asynchrone
+
+```python python
+import asyncio
+from openai import AsyncOpenAI
+
+client = AsyncOpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+async def main():
+    response = await client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": "Hello!"}],
+    )
+    print(response.choices[0].message.content)
+
+asyncio.run(main())
+```
+
+<Tip>
+  Tout identifiant de modèle présent dans le [Répertoire des modèles](https://flatkey.ai/models) fonctionne avec le SDK OpenAI via Flatkey — y compris les modèles Claude, Gemini, DeepSeek et Qwen.
+</Tip>

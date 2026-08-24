@@ -1,0 +1,178 @@
+---
+title: "Chat Completions — POST /v1/chat/completions"
+sidebarTitle: "Chat Completions"
+description: "Tạo các hoàn thành chat và văn bản thông qua Flatkey bằng cách gửi một mảng tin nhắn đến bất kỳ mô hình nào được hỗ trợ. Trả về các lựa chọn với văn bản đã tạo và thống kê token."
+---
+
+Endpoint `/v1/chat/completions` tạo ra một đoạn văn bản hoàn chỉnh dựa trên danh sách các tin nhắn. Đây là endpoint chính cho các tác vụ chat, tuân theo hướng dẫn và tạo văn bản. Định dạng yêu cầu giống hệt với OpenAI Chat Completions API, vì vậy mọi SDK tương thích với OpenAI đều hoạt động mà không cần chỉnh sửa.
+
+## Endpoint
+
+```
+POST https://router.flatkey.ai/v1/chat/completions
+```
+
+## Yêu cầu
+
+### Headers
+
+| Header | Value |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### Tham số body
+
+<ParamField body="model" type="string" required>
+  ID mô hình cần sử dụng. Xem [Danh mục Mô hình](https://flatkey.ai/models) để biết tất cả các giá trị hợp lệ. Ví dụ: `"gpt-4o"`, `"claude-sonnet-4-5"`, `"gemini-2.5-flash"`.
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  Một mảng các đối tượng tin nhắn đại diện cho cuộc hội thoại. Mỗi đối tượng phải có `role` (`"system"`, `"user"` hoặc `"assistant"`) và `content` (chuỗi ký tự).
+</ParamField>
+
+<ParamField body="max_tokens" type="integer">
+  Số lượng token tối đa cần tạo ra. Giá trị mặc định thay đổi tùy theo mô hình.
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  Nhiệt độ lấy mẫu từ 0 đến 2. Giá trị cao hơn tạo ra đầu ra ngẫu nhiên hơn. Mặc định: 1.
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  Nếu là `true`, phản hồi được trả về dưới dạng luồng các sự kiện server-sent (SSE). Mặc định: `false`.
+</ParamField>
+
+<ParamField body="top_p" type="number">
+  Lấy mẫu nucleus — chỉ các token trong khối xác suất `top_p` hàng đầu được xem xét. Mặc định: 1.
+</ParamField>
+
+<ParamField body="stop" type="string | array">
+  Một hoặc nhiều chuỗi mà tại đó mô hình dừng tạo văn bản. Có thể là một chuỗi hoặc một mảng các chuỗi.
+</ParamField>
+
+<ParamField body="tools" type="array">
+  Danh sách các định nghĩa công cụ dùng cho việc gọi hàm. Mỗi công cụ phải có `type: "function"` và một đối tượng `function` với `name`, `description` và `parameters`.
+</ParamField>
+
+<ParamField body="tool_choice" type="string | object">
+  Kiểm soát việc chọn công cụ: `"none"`, `"auto"`, `"required"`, hoặc một công cụ cụ thể `{"type": "function", "function": {"name": "..."}}`.
+</ParamField>
+
+## Ví dụ yêu cầu
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "What is the speed of light?"},
+    ],
+    max_tokens=256,
+    temperature=0.7,
+)
+
+print(response.choices[0].message.content)
+```
+```bash curl
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant."},
+      {"role": "user", "content": "What is the speed of light?"}
+    ],
+    "max_tokens": 256
+  }'
+```
+</CodeGroup>
+
+## Phản hồi
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1710000000,
+  "model": "gpt-4o",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The speed of light in a vacuum is approximately 299,792,458 meters per second."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 28,
+    "completion_tokens": 22,
+    "total_tokens": 50
+  }
+}
+```
+
+### Các trường phản hồi
+
+<ResponseField name="id" type="string">
+  Định danh duy nhất cho lần hoàn thành.
+</ResponseField>
+
+<ResponseField name="choices" type="array">
+  Mảng các lựa chọn hoàn thành đã được tạo ra.
+  <Expandable title="thuộc tính của choice">
+    <ResponseField name="message.content" type="string">
+      Văn bản đã được tạo ra.
+    </ResponseField>
+    <ResponseField name="message.role" type="string">
+      Luôn là `"assistant"` đối với các tin nhắn được tạo ra.
+    </ResponseField>
+    <ResponseField name="finish_reason" type="string">
+      Lý do dừng tạo văn bản: `"stop"` (kết thúc tự nhiên), `"length"` (đạt max_tokens), `"tool_calls"` (gọi công cụ).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Số lượng token dùng để tính phí.
+  <Expandable title="thuộc tính của usage">
+    <ResponseField name="prompt_tokens" type="integer">Số lượng token đầu vào.</ResponseField>
+    <ResponseField name="completion_tokens" type="integer">Số lượng token đầu ra.</ResponseField>
+    <ResponseField name="total_tokens" type="integer">Tổng số token prompt và completion.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Streaming
+
+Đặt `stream: true` để nhận một luồng các đoạn SSE. Mỗi đoạn có cùng cấu trúc nhưng với nội dung `delta` một phần thay vì một tin nhắn đầy đủ:
+
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+stream = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Tell me a story."}],
+    stream=True,
+)
+
+for chunk in stream:
+    print(chunk.choices[0].delta.content or "", end="", flush=True)
+```

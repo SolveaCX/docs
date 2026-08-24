@@ -1,0 +1,54 @@
+---
+title: "Crie e Gerencie Suas Chaves de API Flatkey no Console"
+sidebarTitle: "Chaves de API"
+description: "Aprenda como criar, nomear e revogar chaves de API Flatkey no console. Gerencie múltiplas chaves por ambiente e mantenha suas integrações seguras."
+---
+
+Sua chave de API Flatkey autentica cada requisição para `https://router.flatkey.ai/v1`. Você cria e gerencia chaves na seção **Keys** do console. Você pode criar múltiplas chaves — uma por ambiente, aplicação ou membro da equipe — e revogar qualquer chave instantaneamente caso ela seja comprometida.
+
+## Criando uma chave
+
+<Steps>
+  <Step title="Abra a página de Chaves">
+    Faça login em [console.flatkey.ai](https://console.flatkey.ai) e clique em **Keys** na barra lateral esquerda.
+  </Step>
+  <Step title="Clique em Criar Chave">
+    Digite um nome descritivo para a chave. Escolha algo significativo como `production-api`, `staging-test` ou `john-dev`. O nome é visível apenas para você.
+  </Step>
+  <Step title="Copie e armazene o segredo">
+    A chave completa (iniciando com `sk-fk-`) é exibida **apenas uma vez**. Copie-a imediatamente e armazene em um gerenciador de segredos, gerenciador de senhas ou variável de ambiente. Você não poderá recuperá-la novamente após fechar o diálogo.
+  </Step>
+</Steps>
+
+<Warning>
+  Se você perder uma chave de API, precisará criar uma nova. Não há como visualizar o segredo novamente após a criação. A chave antiga continuará funcionando até que você a revogue.
+</Warning>
+
+## Boas práticas
+
+- **Uma chave por ambiente**: Use chaves separadas para desenvolvimento, homologação e produção. Se uma chave vazar, você pode revogar apenas aquele ambiente sem afetar os demais.
+- **Nomes descritivos**: Inclua o ambiente e o propósito (ex.: `prod-customer-chatbot`, `dev-local`).
+- **Use variáveis de ambiente**: Nunca escreva chaves diretamente no código-fonte. Use `FLATKEY_API_KEY` como nome da variável.
+- **Rotacione regularmente**: Revogue e substitua chaves em uma programação regular, especialmente para cargas de trabalho em produção.
+
+## Visualizando suas chaves
+
+A página **Keys** lista todas as suas chaves ativas com:
+- Nome da chave
+- Data de criação
+- Timestamp do último uso
+- Prefixo mascarado da chave (ex.: `sk-fk-****abcd`)
+
+Você não pode ver o valor completo da chave após a criação — apenas o prefixo.
+
+## Revogando uma chave
+
+Para revogar uma chave, clique no ícone **Delete** (lixeira) ao lado dela na página de Chaves. A revogação é imediata — qualquer requisição que usar essa chave receberá imediatamente uma resposta `401 Unauthorized`. Não há exclusão suave nem período de carência.
+
+<Tip>
+  Antes de revogar uma chave usada em produção, implante primeiro a chave substituta em sua aplicação. Revogar a chave antiga antes que a nova esteja ativa causará indisponibilidade.
+</Tip>
+
+## Permissões das chaves
+
+Todas as chaves compartilham o mesmo saldo da conta e podem acessar todos os modelos por padrão. Se você precisar restringir uma chave a modelos específicos ou definir uma cota de gastos, use **Groups** no console para aplicar políticas de roteamento e acesso.

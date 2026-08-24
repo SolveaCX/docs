@@ -1,0 +1,69 @@
+---
+title: "Theo Dõi Mức Sử Dụng và Chi Phí API Flatkey trên Bảng Điều Khiển"
+sidebarTitle: "Sử dụng"
+description: "Theo dõi mọi yêu cầu API Flatkey với số lượng token, tên model và chi phí theo từng yêu cầu. Lọc, tìm kiếm và xuất nhật ký sử dụng để đối soát thanh toán."
+---
+
+Bảng điều khiển **Sử dụng** của Flatkey cho bạn toàn quyền theo dõi mọi yêu cầu API được thực hiện với tài khoản của bạn. Mỗi mục nhật ký hiển thị model được dùng, số lượng token đầu vào và đầu ra, chi phí trừ từ số dư, và dấu thời gian. Dùng chế độ xem này để hiểu các mô hình chi tiêu, gỡ lỗi và đối soát chi phí.
+
+## Truy cập nhật ký sử dụng
+
+<Steps>
+  <Step title="Mở bảng điều khiển">
+    Đăng nhập vào [console.flatkey.ai](https://console.flatkey.ai) và nhấp vào **Sử dụng** ở thanh bên trái.
+  </Step>
+  <Step title="Đặt khoảng thời gian">
+    Dùng bộ chọn ngày ở trên cùng để lọc nhật ký theo ngày, tuần, tháng hoặc khoảng tùy chỉnh. Chế độ xem mặc định hiển thị 7 ngày gần nhất.
+  </Step>
+  <Step title="Lọc theo model hoặc khóa">
+    Dùng các menu thả xuống **Model** và **Khóa API** để tập trung vào một model hoặc khóa cụ thể. Tính năng này hữu ích khi so sánh chi phí giữa các model hoặc kiểm tra một tích hợp cụ thể.
+  </Step>
+</Steps>
+
+## Nội dung từng mục nhật ký
+
+| Trường | Mô tả |
+|---|---|
+| **Dấu thời gian** | Thời điểm Flatkey nhận yêu cầu |
+| **Model** | ID model được dùng (ví dụ: `gpt-4o-mini`, `claude-sonnet-4-5`) |
+| **Token đầu vào** | Số lượng token trong câu lệnh |
+| **Token đầu ra** | Số lượng token trong kết quả trả về |
+| **Chi phí** | Số tiền trừ từ số dư cho yêu cầu này |
+| **Khóa API** | Khóa nào được dùng (hiển thị dưới dạng tên + tiền tố ẩn) |
+| **Trạng thái** | Yêu cầu thành công hay thất bại |
+
+## Hiểu về chi phí
+
+Mỗi yêu cầu hiển thị chi phí thực tế được tính, phản ánh:
+- Giá đầu vào và đầu ra của model (theo mức giá chiết khấu của Flatkey)
+- Tiền thưởng nạp tiền hiện tại của bạn được áp dụng tự động
+
+Tổng chi phí của tất cả yêu cầu bằng tổng số dư đã tiêu thụ trong kỳ đó.
+
+## Theo dõi số dư
+
+Số dư hiện tại của bạn được hiển thị ở đầu trang Sử dụng và trong mục **Số dư**. Khi số dư giảm xuống dưới ngưỡng bạn đã đặt, bạn sẽ nhận được cảnh báo qua email. Để cấu hình cảnh báo, vào **Cài đặt → Thông báo**.
+
+<Note>
+  Số dư bị trừ theo thời gian thực khi yêu cầu hoàn tất. Nếu một yêu cầu thất bại ở phía nhà cung cấp, chi phí vẫn có thể bị trừ một phần tùy thuộc vào số lượng token đã được xử lý trước khi xảy ra lỗi.
+</Note>
+
+## Xuất nhật ký
+
+Để xuất dữ liệu sử dụng:
+1. Đặt khoảng thời gian và bộ lọc mong muốn.
+2. Nhấp vào **Xuất** ở góc trên bên phải.
+3. Chọn định dạng CSV hoặc JSON.
+4. Tệp sẽ tải xuống trình duyệt của bạn.
+
+Nhật ký đã xuất chứa tất cả các trường hiển thị trên bảng điều khiển và phù hợp để tải lên bảng tính hoặc công cụ tài chính.
+
+## Cảnh báo sử dụng cao
+
+Để tránh chi tiêu vượt mức:
+- Đặt **hạn mức chi tiêu hàng tháng** trong **Cài đặt → Thanh toán** — các yêu cầu sẽ bị chặn khi đạt hạn mức.
+- Dùng **Nhóm** để đặt hạn ngạch theo khóa hoặc theo ứng dụng.
+
+<Tip>
+  Trong quá trình phát triển, hãy dùng một khóa riêng với hạn mức chi tiêu được đặt ở mức nhỏ (ví dụ: $5). Điều này ngăn các yêu cầu vô tình có chi phí cao làm cạn kiệt số dư sản xuất của bạn.
+</Tip>

@@ -1,0 +1,68 @@
+---
+title: "Xác thực API Flatkey: Bearer Token và API Key"
+sidebarTitle: "Xác thực"
+description: "Xác thực các yêu cầu Flatkey API bằng cách truyền API key của bạn dưới dạng Bearer token trong header Authorization. Tìm hiểu định dạng key, lỗi và các phương pháp tốt nhất."
+---
+
+Mỗi yêu cầu đến Flatkey API đều phải bao gồm một API key hợp lệ trong header `Authorization` dưới dạng Bearer token. Bạn tạo và quản lý các key trong [Flatkey console](https://console.flatkey.ai/keys).
+
+## Định dạng header
+
+```http
+Authorization: Bearer sk-fk-your-api-key
+```
+
+Các API key của Flatkey bắt đầu bằng `sk-fk-`. Key phân biệt chữ hoa/thường và phải được truyền chính xác như khi được tạo.
+
+## Ví dụ yêu cầu
+
+```bash
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+## Tạo API key
+
+1. Đăng nhập vào [console.flatkey.ai](https://console.flatkey.ai)
+2. Nhấp vào **Keys** trong thanh bên trái
+3. Nhấp vào **Create Key** và nhập tên
+4. Sao chép key — key chỉ được hiển thị **một lần duy nhất**
+
+Nếu bạn mất key, bạn phải tạo một key mới. Các key cũ vẫn còn hoạt động cho đến khi bị thu hồi rõ ràng.
+
+## Lỗi xác thực
+
+| Mã trạng thái HTTP | Điều kiện | Cách xử lý |
+|---|---|---|
+| `401 Unauthorized` | Key bị thiếu trong yêu cầu | Thêm header `Authorization: Bearer sk-fk-...` |
+| `401 Unauthorized` | Key không hợp lệ hoặc đã bị thu hồi | Tạo key mới trong console |
+| `401 Unauthorized` | Số dư là $0.00 | Nạp tiền tại [console.flatkey.ai](https://console.flatkey.ai) |
+| `403 Forbidden` | Key không có quyền truy cập model | Kiểm tra quyền của key trong console |
+
+### Định dạng phản hồi lỗi
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided.",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## Phương pháp bảo mật tốt nhất
+
+- Lưu trữ key trong biến môi trường, không để trong mã nguồn
+- Sử dụng một key cho mỗi môi trường triển khai
+- Thu hồi key ngay lập tức nếu bị lộ
+- Xoay vòng key định kỳ cho các môi trường sản xuất
+
+<Warning>
+  Không bao giờ đưa API key vào JavaScript phía client, gói ứng dụng di động, hoặc kho lưu trữ công khai. Key có thể bị lợi dụng để làm cạn kiệt số dư của bạn.
+</Warning>

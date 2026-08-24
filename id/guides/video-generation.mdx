@@ -1,0 +1,245 @@
+---
+title: "Buat video dengan Flatkey"
+sidebarTitle: "Pembuatan Video"
+description: "Kirim tugas video, polling, dan unduh MP4. Mencakup dua format permintaan, resolusi per model, dan parameter yang berlaku maupun tidak berlaku."
+---
+
+URL Dasar: `https://router.flatkey.ai`
+
+Flatkey membuat video melalui satu endpoint asinkron. Anda mengirim tugas, melakukan polling hingga selesai, lalu mengunduh MP4. Halaman ini mencakup hal-hal yang berlaku untuk semua model video. Untuk opsi khusus model, lanjutkan ke [Seedance](/id/guides/seedance) atau [MiniMax H3](/id/guides/minimax-h3).
+
+<CardGroup cols={2}>
+  <Card title="Satu alur kerja asinkron" icon="video">
+    Buat tugas dengan `POST /v1/videos`, polling dengan `GET /v1/videos/{task_id}`, dan unduh MP4 dari `metadata.url`.
+  </Card>
+  <Card title="Dua bentuk permintaan" icon="code-branch">
+    Beberapa model menggunakan array `content`, yang lain menggunakan string `prompt`. Mengirim yang salah akan mengembalikan `400`.
+  </Card>
+</CardGroup>
+
+Gunakan header otorisasi ini pada setiap permintaan di halaman ini, termasuk saat mengunduh:
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+## Temukan model video
+
+Daftarkan semua model dan simpan yang memiliki `type` bernilai `video`:
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/models \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  | jq '.data[] | select(.type == "video") | .id'
+```
+
+```json
+"grok-imagine-video"
+"grok-imagine-video-1.5"
+"MiniMax-H3"
+"seedance-2.5"
+"veo-3.1-fast-generate-preview"
+"veo-3.1-generate-preview"
+```
+
+<Warning>
+  `/v1/models` mengabaikan parameter kueri. Penyaringan dilakukan di kode Anda sendiri, seperti pada contoh `jq` di atas.
+</Warning>
+
+Anda juga dapat menelusuri daftar yang sama beserta harga di [direktori model](https://flatkey.ai/models).
+
+## Pilih bentuk permintaan yang tepat
+
+Endpoint menerima dua bentuk berbeda, dan setiap model hanya menerima satu di antaranya.
+
+| Model | Kolom prompt |
+| --- | --- |
+| `seedance-2.5` | array `content` |
+| `seedance-2.0-pro` | array `content` |
+| `MiniMax-H3` | array `content` |
+| `grok-imagine-video` | string `prompt` |
+| `grok-imagine-video-1.5` | string `prompt` |
+| `veo-3.1-generate-preview` | string `prompt` |
+| `veo-3.1-fast-generate-preview` | string `prompt` |
+
+Mengirim array `content` ke model `prompt` akan mengembalikan:
+
+```json
+{ "code": "invalid_request", "message": "prompt is required" }
+```
+
+### Bentuk `content`
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.5",
+    "content": [
+      { "type": "text", "text": "a quiet neon-lit street at dusk, slow camera drift" }
+    ],
+    "duration": 5,
+    "resolution": "720p"
+  }'
+```
+
+Array ini juga membawa gambar. Tambahkan entri `image_url` untuk menginterpolasi antar frame atau menyediakan referensi. Nama kolom berbeda per model, jadi ikuti panduan model masing-masing.
+
+### Bentuk `prompt`
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "grok-imagine-video",
+    "prompt": "a quiet neon-lit street at dusk, slow camera drift",
+    "duration": 10
+  }'
+```
+
+## Resolusi berbeda per model
+
+Tidak ada kumpulan nilai resolusi yang berlaku untuk semua model. Mengirim nilai yang tidak didukung akan mengembalikan `400` sebelum tugas dibuat.
+
+| Model | Nilai yang diterima | Catatan |
+| --- | --- | --- |
+| `seedance-2.5` | `480p`, `720p` | `1080p` mengembalikan `unsupported resolution` |
+| `MiniMax-H3` | `768P`, `2K` | Huruf besar `P`. Nilai lain mengembalikan `resolution must be 768P or 2K` |
+| `grok-imagine-video` | `720p` | Output adalah `848x480` terlepas dari nilai yang dikirim |
+| `veo-3.1-*` | `720p` | |
+
+<Warning>
+  Periksa panduan model sebelum memilih resolusi. `1080p` ditolak oleh `seedance-2.5`, dan `720p` ditolak oleh `MiniMax-H3`.
+</Warning>
+
+## Parameter permintaan
+
+| Parameter | Tipe | Wajib | Deskripsi |
+| --- | --- | --- | --- |
+| `model` | string | Ya | Id model dari `/v1/models` |
+| `content` | array | Kondisional | Prompt dan media untuk model berbentuk `content` |
+| `prompt` | string | Kondisional | Prompt untuk model berbentuk `prompt` |
+| `duration` | integer | Tidak | Durasi dalam detik. `MiniMax-H3` menerima `4` hingga `15` |
+| `resolution` | string | Tidak | Lihat tabel di atas |
+
+<Warning>
+  `aspect_ratio` dan `seed` diterima tanpa error tetapi tidak mengubah output di setiap model. Pada `grok-imagine-video`, meminta `9:16` tetap menghasilkan klip lanskap `848x480`, dan `seed` yang sama menghasilkan file berbeda setiap kali. Jika model mendukung orientasi, hal itu didokumentasikan di halaman model tersebut. Jangan mengandalkan dua kolom ini untuk perilaku lintas model.
+</Warning>
+
+## Polling tugas
+
+Pengiriman yang berhasil langsung mengembalikan tugas:
+
+```json
+{
+  "id": "task_aaaaaaaaaaaaaaaa",
+  "task_id": "task_aaaaaaaaaaaaaaaa",
+  "object": "video",
+  "model": "seedance-2.5",
+  "status": "queued",
+  "progress": 0,
+  "created_at": 1787110914
+}
+```
+
+Lakukan polling dengan id tugas hingga statusnya terminal:
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+
+```json
+{
+  "id": "task_aaaaaaaaaaaaaaaa",
+  "status": "completed",
+  "progress": 100,
+  "completed_at": 1787111135,
+  "metadata": {
+    "url": "https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa/content"
+  }
+}
+```
+
+| Status | Arti |
+| --- | --- |
+| `queued` | Diterima dan menunggu |
+| `in_progress` | Sedang dibuat |
+| `completed` | Siap diunduh dari `metadata.url` |
+| `failed` | Pembuatan gagal. Baca kolom error |
+
+Lakukan polling sekitar setiap 15 detik. Klip berdurasi lima detik biasanya selesai dalam dua hingga empat menit.
+
+## Unduh MP4
+
+URL unduhan ada di `metadata.url`, dan memerlukan header otorisasi yang sama:
+
+```bash
+curl -L "https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa/content" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -o output.mp4
+```
+
+## Contoh ujung ke ujung
+
+```python
+import os, time, requests
+
+BASE = "https://router.flatkey.ai/v1"
+HEAD = {"Authorization": f"Bearer {os.environ['FLATKEY_API_KEY']}",
+        "Content-Type": "application/json"}
+
+task = requests.post(f"{BASE}/videos", headers=HEAD, json={
+    "model": "seedance-2.5",
+    "content": [{"type": "text", "text": "a quiet neon-lit street at dusk"}],
+    "duration": 5,
+    "resolution": "720p",
+}).json()
+
+task_id = task["task_id"]
+
+while True:
+    time.sleep(15)
+    state = requests.get(f"{BASE}/videos/{task_id}", headers=HEAD).json()
+    if state["status"] == "completed":
+        mp4 = requests.get(state["metadata"]["url"], headers=HEAD).content
+        open("output.mp4", "wb").write(mp4)
+        break
+    if state["status"] == "failed":
+        raise RuntimeError(state)
+```
+
+## Pemecahan masalah
+
+**`prompt is required`**
+
+Anda mengirim array `content` ke model yang mengharapkan `prompt`. Periksa tabel di [Pilih bentuk permintaan yang tepat](#pilih-bentuk-permintaan-yang-tepat).
+
+**`unsupported resolution` atau `resolution must be 768P or 2K`**
+
+Nilai tersebut valid untuk model lain. Lihat [Resolusi berbeda per model](#resolusi-berbeda-per-model).
+
+**`No available channel for model ...`**
+
+Model tidak dapat dirutekan saat ini. Pilih model video lain daripada mencoba ulang — error ini tidak hilang dengan sendirinya. Periksa [direktori model](https://flatkey.ai/models) untuk ketersediaan terkini.
+
+**`duration must be between 4 and 15`**
+
+`MiniMax-H3` mengharuskan `duration` dalam rentang tersebut. Kirim nilai secara eksplisit.
+
+**Tugas tetap `queued`**
+
+Pembuatan video membutuhkan menit, bukan detik. Terus lakukan polling dengan interval 15 detik sebelum menganggapnya macet.
+
+## Panduan model
+
+<CardGroup cols={2}>
+  <Card title="Seedance" icon="film" href="/id/guides/seedance">
+    Teks ke video beserta perpustakaan aset orang virtual dan nyata.
+  </Card>
+  <Card title="MiniMax H3" icon="wand-magic-sparkles" href="/id/guides/minimax-h3">
+    Kontrol frame pertama dan terakhir, media referensi, dan pengaturan tugas.
+  </Card>
+</CardGroup>

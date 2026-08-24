@@ -1,0 +1,171 @@
+---
+title: "Embeddings — POST /v1/embeddings"
+sidebarTitle: "Embeddings"
+description: "Générez des embeddings vectoriels pour du texte via POST /v1/embeddings. Prend en charge les entrées par lot et plusieurs modèles d'embedding pour la recherche sémantique, le clustering et la RAG."
+---
+
+Le point de terminaison `/v1/embeddings` génère des embeddings vectoriels pour une entrée textuelle. Les embeddings représentent le sens sémantique du texte sous forme d'un tableau de flottants à haute dimension, permettant la recherche par similarité, le clustering et la génération augmentée par récupération (RAG). Le point de terminaison est compatible avec l'API Embeddings de OpenAI.
+
+## Point de terminaison
+
+```
+POST https://router.flatkey.ai/v1/embeddings
+```
+
+## Modèles d'embedding pris en charge
+
+| Modèle | Dimensions | Fournisseur |
+|---|---|---|
+| `gemini-embedding-001` | 3072 | Google |
+| `text-embedding-3-small` | 1536 | OpenAI |
+| `text-embedding-3-large` | 3072 | OpenAI |
+
+Consultez le [Répertoire des modèles](https://flatkey.ai/models) pour connaître la disponibilité actuelle et les tarifs.
+
+## Requête
+
+### En-têtes
+
+| En-tête | Valeur |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### Paramètres du corps
+
+<ParamField body="model" type="string" required>
+  Identifiant du modèle d'embedding. Exemple : `"gemini-embedding-001"`, `"text-embedding-3-small"`.
+</ParamField>
+
+<ParamField body="input" type="string | array" required>
+  Texte à vectoriser. Peut être une chaîne de caractères unique ou un tableau de chaînes pour un embedding par lot.
+</ParamField>
+
+<ParamField body="encoding_format" type="string">
+  `"float"` (par défaut) retourne un tableau de flottants. `"base64"` retourne une chaîne encodée en base64.
+</ParamField>
+
+<ParamField body="dimensions" type="integer">
+  Nombre de dimensions pour l'embedding de sortie. Non pris en charge par tous les modèles.
+</ParamField>
+
+## Exemples de requêtes
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+# Single text
+response = client.embeddings.create(
+    model="gemini-embedding-001",
+    input="The quick brown fox jumps over the lazy dog",
+)
+
+embedding = response.data[0].embedding
+print(f"Embedding dimensions: {len(embedding)}")
+print(f"First 5 values: {embedding[:5]}")
+```
+```python python batch
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+# Batch embedding
+texts = [
+    "What is machine learning?",
+    "How does neural network training work?",
+    "Explain gradient descent",
+]
+
+response = client.embeddings.create(
+    model="gemini-embedding-001",
+    input=texts,
+)
+
+for i, item in enumerate(response.data):
+    print(f"{texts[i]}: {len(item.embedding)} dimensions")
+```
+```bash curl
+curl https://router.flatkey.ai/v1/embeddings \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini-embedding-001",
+    "input": "The quick brown fox jumps over the lazy dog"
+  }'
+```
+</CodeGroup>
+
+## Réponse
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "object": "embedding",
+      "index": 0,
+      "embedding": [0.0023064255, -0.009327292, ...]
+    }
+  ],
+  "model": "gemini-embedding-001",
+  "usage": {
+    "prompt_tokens": 9,
+    "total_tokens": 9
+  }
+}
+```
+
+### Champs de la réponse
+
+<ResponseField name="data" type="array">
+  Tableau d'objets d'embedding, un par chaîne d'entrée.
+  <Expandable title="objet embedding">
+    <ResponseField name="index" type="integer">Position dans le tableau d'entrée.</ResponseField>
+    <ResponseField name="embedding" type="array">Tableau de flottants représentant le vecteur d'embedding.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage.prompt_tokens" type="integer">
+  Nombre de tokens traités.
+</ResponseField>
+
+## Exemple de similarité cosinus
+
+```python python
+import os
+import numpy as np
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+def embed(text):
+    return client.embeddings.create(
+        model="gemini-embedding-001",
+        input=text,
+    ).data[0].embedding
+
+def cosine_similarity(a, b):
+    a, b = np.array(a), np.array(b)
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+q = embed("capital city of France")
+doc1 = embed("Paris is the capital and most populous city of France.")
+doc2 = embed("The Eiffel Tower is a famous landmark.")
+
+print(cosine_similarity(q, doc1))  # higher — more relevant
+print(cosine_similarity(q, doc2))  # lower
+```

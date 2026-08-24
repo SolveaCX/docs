@@ -1,0 +1,245 @@
+---
+title: "使用 Flatkey 生成视频"
+sidebarTitle: "视频生成"
+description: "提交视频任务、轮询状态并下载 MP4。涵盖两种请求格式、各模型的分辨率差异，以及哪些参数真正生效。"
+---
+
+Base URL: `https://router.flatkey.ai`
+
+Flatkey 通过一个异步接口生成视频。你提交任务，轮询到完成，然后下载 MP4。这一页讲所有视频模型的共性部分。某个模型独有的选项，请继续看 [Seedance](/zh/guides/seedance) 或 [MiniMax H3](/zh/guides/minimax-h3)。
+
+<CardGroup cols={2}>
+  <Card title="一条异步流程" icon="video">
+    用 `POST /v1/videos` 创建任务，用 `GET /v1/videos/{task_id}` 轮询，从 `metadata.url` 下载 MP4。
+  </Card>
+  <Card title="两种请求格式" icon="code-branch">
+    一部分模型接收 `content` 数组，另一部分接收 `prompt` 字符串。发错会返回 `400`。
+  </Card>
+</CardGroup>
+
+这一页的每个请求都要带这个鉴权头，下载视频时同样需要：
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+## 找到视频模型
+
+列出所有模型，保留 `type` 为 `video` 的那些：
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/models \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  | jq '.data[] | select(.type == "video") | .id'
+```
+
+```json
+"grok-imagine-video"
+"grok-imagine-video-1.5"
+"MiniMax-H3"
+"seedance-2.5"
+"veo-3.1-fast-generate-preview"
+"veo-3.1-generate-preview"
+```
+
+<Warning>
+  `/v1/models` 会忽略查询参数。筛选要在你自己的代码里做，就像上面的 `jq` 示例。
+</Warning>
+
+你也可以在[模型目录](https://flatkey.ai/models)里浏览同一份列表，并看到价格。
+
+## 选对请求格式
+
+这个接口接受两种不同的格式，每个模型只接受其中一种。
+
+| 模型 | 提示词字段 |
+| --- | --- |
+| `seedance-2.5` | `content` 数组 |
+| `seedance-2.0-pro` | `content` 数组 |
+| `MiniMax-H3` | `content` 数组 |
+| `grok-imagine-video` | `prompt` 字符串 |
+| `grok-imagine-video-1.5` | `prompt` 字符串 |
+| `veo-3.1-generate-preview` | `prompt` 字符串 |
+| `veo-3.1-fast-generate-preview` | `prompt` 字符串 |
+
+给只接受 `prompt` 的模型发 `content` 数组，会返回：
+
+```json
+{ "code": "invalid_request", "message": "prompt is required" }
+```
+
+### `content` 格式
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.5",
+    "content": [
+      { "type": "text", "text": "黄昏时分的霓虹街道，镜头缓慢平移" }
+    ],
+    "duration": 5,
+    "resolution": "720p"
+  }'
+```
+
+图片也放在这个数组里。加一条 `image_url` 就能做首尾帧插值或提供参考素材。字段名各模型不同，按对应模型的指南来写。
+
+### `prompt` 格式
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "grok-imagine-video",
+    "prompt": "黄昏时分的霓虹街道，镜头缓慢平移",
+    "duration": 10
+  }'
+```
+
+## 分辨率取值各模型不同
+
+没有一套通用的分辨率取值。发了不支持的值，任务创建前就会返回 `400`。
+
+| 模型 | 可用取值 | 说明 |
+| --- | --- | --- |
+| `seedance-2.5` | `480p`、`720p` | `1080p` 会返回 `unsupported resolution` |
+| `MiniMax-H3` | `768P`、`2K` | `P` 是大写。其他值返回 `resolution must be 768P or 2K` |
+| `grok-imagine-video` | `720p` | 实际输出固定为 `848x480` |
+| `veo-3.1-*` | `720p` | |
+
+<Warning>
+  选分辨率前先看对应模型的指南。`1080p` 会被 `seedance-2.5` 拒绝，`720p` 会被 `MiniMax-H3` 拒绝。
+</Warning>
+
+## 请求参数
+
+| 参数 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `model` | string | 是 | 来自 `/v1/models` 的模型 id |
+| `content` | array | 视模型而定 | `content` 格式模型的提示词与素材 |
+| `prompt` | string | 视模型而定 | `prompt` 格式模型的提示词 |
+| `duration` | integer | 否 | 时长（秒）。`MiniMax-H3` 接受 `4` 到 `15` |
+| `resolution` | string | 否 | 见上面的表格 |
+
+<Warning>
+  `aspect_ratio` 和 `seed` 不会报错，但并非在所有模型上都会改变输出。在 `grok-imagine-video` 上请求 `9:16` 仍然返回 `848x480` 横屏，同一个 `seed` 每次产出的文件也不同。哪些模型支持画面方向，写在该模型自己的页面里。不要依赖这两个字段做跨模型的通用控制。
+</Warning>
+
+## 轮询任务
+
+提交成功会立刻返回任务：
+
+```json
+{
+  "id": "task_aaaaaaaaaaaaaaaa",
+  "task_id": "task_aaaaaaaaaaaaaaaa",
+  "object": "video",
+  "model": "seedance-2.5",
+  "status": "queued",
+  "progress": 0,
+  "created_at": 1787110914
+}
+```
+
+用 task id 轮询到终态：
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+
+```json
+{
+  "id": "task_aaaaaaaaaaaaaaaa",
+  "status": "completed",
+  "progress": 100,
+  "completed_at": 1787111135,
+  "metadata": {
+    "url": "https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa/content"
+  }
+}
+```
+
+| 状态 | 含义 |
+| --- | --- |
+| `queued` | 已接收，排队中 |
+| `in_progress` | 生成中 |
+| `completed` | 可以从 `metadata.url` 下载 |
+| `failed` | 生成失败，查看错误字段 |
+
+大约每 15 秒轮询一次。5 秒的片段通常 2 到 4 分钟完成。
+
+## 下载 MP4
+
+下载地址在 `metadata.url`，需要带同样的鉴权头：
+
+```bash
+curl -L "https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa/content" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -o output.mp4
+```
+
+## 完整示例
+
+```python
+import os, time, requests
+
+BASE = "https://router.flatkey.ai/v1"
+HEAD = {"Authorization": f"Bearer {os.environ['FLATKEY_API_KEY']}",
+        "Content-Type": "application/json"}
+
+task = requests.post(f"{BASE}/videos", headers=HEAD, json={
+    "model": "seedance-2.5",
+    "content": [{"type": "text", "text": "黄昏时分的霓虹街道"}],
+    "duration": 5,
+    "resolution": "720p",
+}).json()
+
+task_id = task["task_id"]
+
+while True:
+    time.sleep(15)
+    state = requests.get(f"{BASE}/videos/{task_id}", headers=HEAD).json()
+    if state["status"] == "completed":
+        mp4 = requests.get(state["metadata"]["url"], headers=HEAD).content
+        open("output.mp4", "wb").write(mp4)
+        break
+    if state["status"] == "failed":
+        raise RuntimeError(state)
+```
+
+## 故障排查
+
+**`prompt is required`**
+
+你给只接受 `prompt` 的模型发了 `content` 数组。对照[选对请求格式](#选对请求格式)里的表。
+
+**`unsupported resolution` 或 `resolution must be 768P or 2K`**
+
+这个取值属于另一个模型。见[分辨率取值各模型不同](#分辨率取值各模型不同)。
+
+**`No available channel for model ...`**
+
+该模型当前不可路由。换一个视频模型，不要重试——这个错误不会自行恢复。当前可用情况见[模型目录](https://flatkey.ai/models)。
+
+**`duration must be between 4 and 15`**
+
+`MiniMax-H3` 要求 `duration` 在这个范围内，显式传一个值。
+
+**任务一直是 `queued`**
+
+视频生成以分钟计，不是秒。按 15 秒的间隔继续轮询，再判断是否卡住。
+
+## 模型指南
+
+<CardGroup cols={2}>
+  <Card title="Seedance" icon="film" href="/zh/guides/seedance">
+    文生视频，以及虚拟素材和真人素材库。
+  </Card>
+  <Card title="MiniMax H3" icon="wand-magic-sparkles" href="/zh/guides/minimax-h3">
+    首尾帧控制、参考素材和任务参数。
+  </Card>
+</CardGroup>

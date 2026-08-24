@@ -1,0 +1,93 @@
+---
+title: "Sử dụng Flatkey với Claude Code để được giảm giá AI Coding"
+sidebarTitle: "Claude Code"
+description: "Định tuyến lưu lượng Claude Code CLI qua Flatkey để truy cập các mô hình Claude với giá giảm đến 50% so với giá chính thức của Anthropic chỉ với hai thay đổi biến môi trường."
+---
+
+Claude Code của Anthropic là trợ lý viết code AI tác nhân chạy trong terminal của bạn. Bằng cách đặt biến môi trường `ANTHROPIC_BASE_URL`, bạn có thể định tuyến tất cả các yêu cầu Claude Code qua Flatkey và trả theo mức giá chiết khấu của Flatkey khi sử dụng các mô hình Claude.
+
+## Điều kiện tiên quyết
+
+- Claude Code đã được cài đặt: `npm install -g @anthropic-ai/claude-code`
+- Tài khoản Flatkey với API key — [đăng ký tại đây](https://console.flatkey.ai/sign-up)
+
+## Cấu hình
+
+Đặt hai biến môi trường sau:
+
+```bash
+export ANTHROPIC_BASE_URL="https://router.flatkey.ai"
+export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
+```
+
+Để lưu cài đặt vĩnh viễn, thêm chúng vào profile shell của bạn:
+
+```bash ~/.zshrc
+export ANTHROPIC_BASE_URL="https://router.flatkey.ai"
+export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
+```
+
+<Warning>
+  Đặt `ANTHROPIC_BASE_URL` thành `https://router.flatkey.ai` — không có dấu `/v1` ở cuối. Claude Code CLI sẽ tự động thêm đường dẫn đúng.
+</Warning>
+
+## Cấu hình với CC Switch
+
+[CC Switch](https://ccswitch.io) là trình quản lý cấu hình desktop của bên thứ ba dành cho các trợ lý viết code. Bạn cũng có thể tải xuống từ [kho lưu trữ GitHub chính thức](https://github.com/farion1231/cc-switch).
+
+1. Mở CC Switch và chọn **Claude Code**.
+2. Thêm **Custom Provider** với tên `Flatkey`.
+3. Đặt URL cơ sở thành `https://router.flatkey.ai` không có dấu `/v1` ở cuối.
+4. Nhập API key Flatkey của bạn (`sk-fk-...`) và kích hoạt provider.
+5. Thoát hoàn toàn và mở lại Claude Code để tải lại cài đặt provider.
+6. Gửi một yêu cầu nhỏ, sau đó xác nhận trong **Usage Logs** tại [Flatkey Console](https://console.flatkey.ai/usage-logs/common).
+
+<Note>
+  Nếu phiên bản CC Switch của bạn không có sẵn preset Flatkey, hãy sử dụng **Custom Provider**. CC Switch không phải là sản phẩm của Flatkey.
+</Note>
+
+## Chạy Claude Code
+
+Sử dụng Claude Code hoàn toàn như bình thường:
+
+```bash
+claude "Fix the bug in this file"
+```
+
+hoặc theo chế độ tương tác:
+
+```bash
+claude
+```
+
+Tất cả các yêu cầu được định tuyến đến Flatkey và tính phí từ số dư trả trước của bạn theo mức giá chiết khấu.
+
+## Xác minh thiết lập
+
+Chạy một yêu cầu đơn giản rồi kiểm tra **Usage Logs** trong [Flatkey Console](https://console.flatkey.ai/usage-logs/common) của bạn. Bạn sẽ thấy yêu cầu Claude được ghi lại cùng với ID mô hình, số lượng token và chi phí.
+
+## Ước tính tiết kiệm
+
+Sử dụng Claude Sonnet (lựa chọn phổ biến cho Claude Code) qua Flatkey:
+
+| | Giá chính thức | Flatkey (sau khoản thưởng $200) |
+|---|---|---|
+| Đầu vào `claude-sonnet-4-5` | $3 / 1M token | ~$1.6 / 1M token |
+| Đầu vào `claude-haiku-4-5-20251001` | $1 / 1M token | ~$0.53 / 1M token |
+
+Với một phiên Claude Code thông thường gồm 50K token đầu vào, sử dụng Sonnet:
+- Giá chính thức: ~$0.15 mỗi phiên
+- Flatkey: ~$0.08 mỗi phiên
+
+<Tip>
+  Người dùng Claude Code nhiều sẽ được hưởng lợi nhiều nhất từ gói nạp $200 — khoản tín dụng thưởng giúp bạn có thêm khoảng một tháng sử dụng trên mức chiết khấu mô hình.
+</Tip>
+
+## Khắc phục sự cố
+
+| Sự cố | Cách khắc phục |
+|---|---|
+| `Authentication failed` | Xác nhận `ANTHROPIC_API_KEY` là key Flatkey của bạn (`sk-fk-...`) |
+| `Could not connect` | Kiểm tra `ANTHROPIC_BASE_URL` đã được đặt thành `https://router.flatkey.ai` |
+| `Insufficient balance` | Nạp thêm tín dụng tại [console.flatkey.ai](https://console.flatkey.ai) |
+| Yêu cầu không hiển thị trong dashboard | Kiểm tra các biến môi trường đã được export trong shell hiện tại |

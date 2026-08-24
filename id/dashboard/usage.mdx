@@ -1,0 +1,69 @@
+---
+title: "Pantau Penggunaan dan Biaya API Flatkey di Dasbor"
+sidebarTitle: "Penggunaan"
+description: "Lacak setiap permintaan API Flatkey dengan jumlah token, nama model, dan biaya per permintaan. Filter, cari, dan ekspor log penggunaan untuk rekonsiliasi tagihan."
+---
+
+Dasbor **Penggunaan** Flatkey memberi Anda visibilitas penuh atas setiap permintaan API yang dibuat dengan akun Anda. Setiap entri log menampilkan model yang digunakan, jumlah token input dan output, biaya yang dikurangi dari saldo Anda, dan cap waktu. Gunakan tampilan ini untuk memahami pola pengeluaran Anda, men-debug kesalahan, dan merekonsiliasi biaya.
+
+## Mengakses log penggunaan
+
+<Steps>
+  <Step title="Buka konsol">
+    Masuk ke [console.flatkey.ai](https://console.flatkey.ai) dan klik **Penggunaan** di bilah sisi kiri.
+  </Step>
+  <Step title="Atur rentang tanggal">
+    Gunakan pemilih tanggal di bagian atas untuk memfilter log berdasarkan hari, minggu, bulan, atau rentang kustom. Tampilan default menampilkan 7 hari terakhir.
+  </Step>
+  <Step title="Filter berdasarkan model atau kunci">
+    Gunakan dropdown **Model** dan **Kunci API** untuk fokus pada model atau kunci tertentu. Ini berguna untuk membandingkan biaya antar model atau mengaudit integrasi tertentu.
+  </Step>
+</Steps>
+
+## Yang ditampilkan setiap entri log
+
+| Kolom | Deskripsi |
+|---|---|
+| **Cap Waktu** | Kapan permintaan diterima oleh Flatkey |
+| **Model** | ID model yang digunakan (mis., `gpt-4o-mini`, `claude-sonnet-4-5`) |
+| **Token input** | Jumlah token dalam prompt |
+| **Token output** | Jumlah token dalam penyelesaian |
+| **Biaya** | Jumlah yang dikurangi dari saldo Anda untuk permintaan ini |
+| **Kunci API** | Kunci mana yang digunakan (ditampilkan sebagai nama + awalan yang disembunyikan) |
+| **Status** | Apakah permintaan berhasil atau gagal |
+
+## Memahami biaya
+
+Setiap permintaan menampilkan biaya aktual yang dikenakan, yang mencerminkan:
+- Harga input dan output model (dengan tarif diskon Flatkey)
+- Bonus top-up Anda saat ini yang diterapkan secara otomatis
+
+Jumlah dari semua biaya permintaan sama dengan total saldo yang dikonsumsi dalam periode tersebut.
+
+## Memantau saldo Anda
+
+Saldo Anda saat ini ditampilkan di bagian atas halaman Penggunaan dan di bagian **Saldo**. Ketika saldo turun di bawah ambang batas yang Anda tetapkan, Anda akan menerima peringatan email. Untuk mengonfigurasi peringatan, buka **Pengaturan → Notifikasi**.
+
+<Note>
+  Saldo dikurangi secara real time saat permintaan selesai. Jika permintaan gagal di sisi penyedia, biaya mungkin masih dikurangi sebagian tergantung pada berapa banyak token yang diproses sebelum kegagalan terjadi.
+</Note>
+
+## Mengekspor log
+
+Untuk mengekspor data penggunaan:
+1. Atur rentang tanggal dan filter yang Anda inginkan.
+2. Klik **Ekspor** di sudut kanan atas.
+3. Pilih format CSV atau JSON.
+4. File akan diunduh ke browser Anda.
+
+Log yang diekspor berisi semua kolom yang ditampilkan di dasbor dan cocok untuk diunggah ke spreadsheet atau alat keuangan.
+
+## Peringatan penggunaan tinggi
+
+Untuk mencegah pengeluaran yang tidak terkendali:
+- Tetapkan **batas pengeluaran bulanan** di **Pengaturan → Tagihan** — permintaan akan diblokir setelah batas tercapai.
+- Gunakan **Grup** untuk menetapkan kuota per kunci atau per aplikasi.
+
+<Tip>
+  Selama pengembangan, gunakan kunci terpisah dengan kuota pengeluaran yang ditetapkan ke jumlah kecil (mis., $5). Ini mencegah permintaan berbiaya tinggi yang tidak disengaja menguras saldo produksi Anda.
+</Tip>

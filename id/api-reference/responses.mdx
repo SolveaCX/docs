@@ -1,0 +1,165 @@
+---
+title: "Responses API — POST /v1/responses"
+sidebarTitle: "Responses"
+description: "Gunakan POST /v1/responses untuk menjalankan percakapan multi-giliran berbasis status dengan format OpenAI Responses API. Flatkey meneruskan endpoint ini untuk model yang kompatibel."
+---
+
+Endpoint `/v1/responses` mengimplementasikan OpenAI Responses API, yang mendukung percakapan multi-giliran berbasis status dengan manajemen riwayat percakapan bawaan. Ini merupakan alternatif dari `/v1/chat/completions` untuk alur kerja yang memerlukan format respons terbaru dari OpenAI. Kirimkan `previous_response_id` untuk melanjutkan percakapan tanpa perlu mengirim ulang seluruh riwayat pesan.
+
+## Endpoint
+
+```
+POST https://router.flatkey.ai/v1/responses
+```
+
+## Kapan menggunakan endpoint ini
+
+Gunakan `/v1/responses` jika:
+- Aplikasi Anda dibangun di atas OpenAI Responses API
+- Anda memerlukan manajemen percakapan berbasis status
+- Anda menggunakan parameter `previous_response_id` untuk percakapan multi-giliran
+
+Untuk sebagian besar integrasi baru, `/v1/chat/completions` adalah endpoint yang direkomendasikan dan memiliki dukungan model yang lebih luas.
+
+## Permintaan
+
+### Header
+
+| Header | Nilai |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### Parameter body
+
+<ParamField body="model" type="string" required>
+  ID model yang akan digunakan. Hanya model yang mendukung format Responses API yang valid di sini.
+</ParamField>
+
+<ParamField body="input" type="string | array" required>
+  Input pengguna untuk giliran ini. Dapat berupa string atau array objek konten.
+</ParamField>
+
+<ParamField body="instructions" type="string">
+  Instruksi tingkat sistem untuk model (setara dengan pesan `system` pada chat completions).
+</ParamField>
+
+<ParamField body="previous_response_id" type="string">
+  `id` dari respons sebelumnya. Jika diberikan, model melanjutkan percakapan dari titik tersebut tanpa klien perlu mengirim riwayat.
+</ParamField>
+
+<ParamField body="max_output_tokens" type="integer">
+  Jumlah maksimum token yang akan dihasilkan.
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  Jika `true`, mengembalikan aliran server-sent events. Default: `false`.
+</ParamField>
+
+## Contoh permintaan
+
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.responses.create(
+    model="gpt-4o",
+    input="What is the capital of Japan?",
+    instructions="Answer concisely.",
+)
+
+print(response.output_text)
+```
+
+## Multi-giliran dengan previous_response_id
+
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+# First turn
+response1 = client.responses.create(
+    model="gpt-4o",
+    input="My name is Alice.",
+)
+
+# Second turn — continue from the first
+response2 = client.responses.create(
+    model="gpt-4o",
+    input="What is my name?",
+    previous_response_id=response1.id,
+)
+
+print(response2.output_text)  # "Your name is Alice."
+```
+
+## Respons
+
+```json
+{
+  "id": "resp_abc123",
+  "object": "response",
+  "created_at": 1710000000,
+  "model": "gpt-4o",
+  "output": [
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {"type": "output_text", "text": "The capital of Japan is Tokyo."}
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 15,
+    "output_tokens": 9,
+    "total_tokens": 24
+  }
+}
+```
+
+### Kolom respons
+
+<ResponseField name="id" type="string">
+  Pengenal unik untuk respons ini. Kirimkan sebagai `previous_response_id` untuk melanjutkan percakapan.
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  Selalu `"response"`.
+</ResponseField>
+
+<ResponseField name="created_at" type="integer">
+  Stempel waktu Unix saat respons dibuat.
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  Model yang menghasilkan respons.
+</ResponseField>
+
+<ResponseField name="output" type="array">
+  Array objek output yang dihasilkan oleh model.
+  <Expandable title="properti item output">
+    <ResponseField name="type" type="string">Tipe output. `"message"` untuk respons teks.</ResponseField>
+    <ResponseField name="role" type="string">Selalu `"assistant"` untuk output yang dihasilkan.</ResponseField>
+    <ResponseField name="content" type="array">Array blok konten. Setiap blok memiliki `type` (`"output_text"`) dan string `text`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Jumlah token untuk penagihan.
+  <Expandable title="properti usage">
+    <ResponseField name="input_tokens" type="integer">Jumlah token input yang diproses.</ResponseField>
+    <ResponseField name="output_tokens" type="integer">Jumlah token output yang dihasilkan.</ResponseField>
+    <ResponseField name="total_tokens" type="integer">Jumlah token input dan output.</ResponseField>
+  </Expandable>
+</ResponseField>

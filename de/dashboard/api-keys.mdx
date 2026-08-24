@@ -1,0 +1,54 @@
+---
+title: "Flatkey API-Schlüssel in der Konsole erstellen und verwalten"
+sidebarTitle: "API-Schlüssel"
+description: "Erfahren Sie, wie Sie Flatkey API-Schlüssel in der Konsole erstellen, benennen und widerrufen. Verwalten Sie mehrere Schlüssel pro Umgebung und halten Sie Ihre Integrationen sicher."
+---
+
+Ihr Flatkey API-Schlüssel authentifiziert jede Anfrage an `https://router.flatkey.ai/v1`. Sie erstellen und verwalten Schlüssel im Bereich **Schlüssel** der Konsole. Sie können mehrere Schlüssel erstellen — einen pro Umgebung, Anwendung oder Teammitglied — und jeden Schlüssel sofort widerrufen, wenn er kompromittiert wurde.
+
+## Einen Schlüssel erstellen
+
+<Steps>
+  <Step title="Die Schlüssel-Seite öffnen">
+    Melden Sie sich bei [console.flatkey.ai](https://console.flatkey.ai) an und klicken Sie in der linken Seitenleiste auf **Schlüssel**.
+  </Step>
+  <Step title="Schlüssel erstellen anklicken">
+    Geben Sie einen beschreibenden Namen für den Schlüssel ein. Wählen Sie etwas Aussagekräftiges wie `production-api`, `staging-test` oder `john-dev`. Der Name ist nur für Sie sichtbar.
+  </Step>
+  <Step title="Das Secret kopieren und speichern">
+    Der vollständige Schlüssel (beginnend mit `sk-fk-`) wird **nur einmal** angezeigt. Kopieren Sie ihn sofort und speichern Sie ihn in einem Secrets-Manager, Passwort-Manager oder als Umgebungsvariable. Sie können ihn nach dem Schließen des Dialogs nicht mehr abrufen.
+  </Step>
+</Steps>
+
+<Warning>
+  Wenn Sie einen API-Schlüssel verlieren, müssen Sie einen neuen erstellen. Es gibt keine Möglichkeit, das Secret nach der Erstellung erneut einzusehen. Der alte Schlüssel funktioniert weiterhin, bis Sie ihn widerrufen.
+</Warning>
+
+## Best Practices
+
+- **Ein Schlüssel pro Umgebung**: Verwenden Sie separate Schlüssel für Entwicklung, Staging und Produktion. Wenn ein Schlüssel durchsickert, können Sie nur diese Umgebung widerrufen, ohne andere zu beeinträchtigen.
+- **Beschreibende Namen**: Fügen Sie die Umgebung und den Zweck hinzu (z. B. `prod-customer-chatbot`, `dev-local`).
+- **Umgebungsvariablen verwenden**: Schlüssel niemals im Quellcode hardcoden. Verwenden Sie `FLATKEY_API_KEY` als Variablenname.
+- **Regelmäßig rotieren**: Widerrufen und ersetzen Sie Schlüssel nach einem regelmäßigen Zeitplan, insbesondere für Produktions-Workloads.
+
+## Ihre Schlüssel anzeigen
+
+Die Seite **Schlüssel** listet alle Ihre aktiven Schlüssel mit folgenden Informationen auf:
+- Schlüsselname
+- Erstellungsdatum
+- Zeitstempel der letzten Verwendung
+- Maskiertes Schlüsselpräfix (z. B. `sk-fk-****abcd`)
+
+Nach der Erstellung können Sie den vollständigen Schlüsselwert nicht mehr einsehen — nur das Präfix.
+
+## Einen Schlüssel widerrufen
+
+Um einen Schlüssel zu widerrufen, klicken Sie auf der Schlüssel-Seite auf das Symbol **Löschen** (Papierkorb) neben dem Schlüssel. Der Widerruf erfolgt sofort — jede Anfrage, die diesen Schlüssel verwendet, erhält sofort eine `401 Unauthorized`-Antwort. Es gibt kein Soft-Delete oder eine Karenzzeit.
+
+<Tip>
+  Bevor Sie einen in der Produktion verwendeten Schlüssel widerrufen, deployen Sie zunächst den Ersatzschlüssel in Ihrer Anwendung. Wenn Sie den alten Schlüssel widerrufen, bevor Ihr neuer Schlüssel aktiv ist, kommt es zu Ausfallzeiten.
+</Tip>
+
+## Schlüsselberechtigungen
+
+Alle Schlüssel teilen sich dasselbe Kontoguthaben und können standardmäßig auf alle Modelle zugreifen. Wenn Sie einen Schlüssel auf bestimmte Modelle beschränken oder ein Ausgabenkontingent festlegen möchten, verwenden Sie **Gruppen** in der Konsole, um Routing- und Zugriffsrichtlinien anzuwenden.

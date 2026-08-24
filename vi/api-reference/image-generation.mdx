@@ -1,0 +1,224 @@
+---
+title: "API Tạo và Chỉnh Sửa Hình Ảnh"
+sidebarTitle: "Images API"
+description: "Tạo hoặc chỉnh sửa hình ảnh thông qua các endpoint /v1/images/generations và /v1/images/edits tương thích với OpenAI Images."
+---
+
+Sử dụng `/v1/images/generations` để tạo hình ảnh từ một đoạn văn bản mô tả và `/v1/images/edits` để chỉnh sửa hình ảnh đầu vào. Cả hai endpoint đều sử dụng định dạng request tương thích với OpenAI Images. Các thao tác khả dụng phụ thuộc vào model và kênh được cung cấp bởi dịch vụ Flatkey của bạn.
+
+<Warning>
+  Các model hình ảnh Gemini sử dụng endpoint `generateContent` gốc của Gemini và không thể được gọi thông qua các endpoint OpenAI Images này. Xem [hướng dẫn model hình ảnh Gemini](/vi/guides/image-generation#sử-dụng-model-hình-ảnh-gemini).
+</Warning>
+
+## Tạo hình ảnh
+
+### Endpoint
+
+```
+POST https://router.flatkey.ai/v1/images/generations
+```
+
+### Headers
+
+| Header | Giá trị |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### Các tham số body JSON
+
+<ParamField body="model" type="string" required>
+  ID model hình ảnh được cung cấp bởi dịch vụ Flatkey của bạn, chẳng hạn như `"gpt-image-2"`.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Mô tả văn bản của hình ảnh cần tạo.
+</ParamField>
+
+<ParamField body="size" type="string">
+  Kích thước đầu ra, chẳng hạn như `"1024x1024"`. Các giá trị được hỗ trợ phụ thuộc vào model.
+</ParamField>
+
+<ParamField body="quality" type="string">
+  Chất lượng đầu ra: `"low"`, `"medium"`, hoặc `"high"`. Nếu bỏ qua, giá trị mặc định từ upstream sẽ được sử dụng. Chất lượng cao hơn làm tăng độ trễ và mức sử dụng.
+</ParamField>
+
+<ParamField body="background" type="string">
+  Xử lý nền, chẳng hạn như `"transparent"` hoặc `"opaque"`, khi được model hỗ trợ.
+</ParamField>
+
+<ParamField body="output_format" type="string">
+  Định dạng đầu ra, chẳng hạn như `"png"`, `"jpeg"`, hoặc `"webp"`, khi được model hỗ trợ.
+</ParamField>
+
+<ParamField body="output_compression" type="integer">
+  Mức độ nén đầu ra, khi được model hỗ trợ.
+</ParamField>
+
+<ParamField body="moderation" type="string">
+  Mức độ kiểm duyệt nội dung, khi được model hỗ trợ.
+</ParamField>
+
+<ParamField body="response_format" type="string">
+  Kết quả của `gpt-image-2` được trả về trong `data[].b64_json`. URL hình ảnh được lưu trữ không được cung cấp, và `response_format: "url"` không được hỗ trợ.
+</ParamField>
+
+<ParamField body="n" type="integer">
+  Số lượng hình ảnh được yêu cầu. `gpt-image-2` hiện chỉ trả về một hình ảnh mỗi request vì công cụ hình ảnh upstream của nó không chấp nhận `n`. Hãy gửi nhiều request nếu bạn cần nhiều hình ảnh.
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  Đặt thành `true` để nhận phản hồi SSE. Bỏ qua để nhận phản hồi đồng bộ.
+</ParamField>
+
+### Ví dụ request
+
+<CodeGroup>
+```python python
+import base64
+import os
+from pathlib import Path
+
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.images.generate(
+    model="gpt-image-2",
+    prompt="A futuristic city skyline at dusk, cyberpunk style",
+    size="1024x1024",
+    quality="high",
+)
+
+Path("generated.png").write_bytes(
+    base64.b64decode(response.data[0].b64_json)
+)
+```
+```javascript node
+import { writeFileSync } from "node:fs";
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const response = await client.images.generate({
+  model: "gpt-image-2",
+  prompt: "A futuristic city skyline at dusk, cyberpunk style",
+  size: "1024x1024",
+  quality: "high",
+});
+
+writeFileSync(
+  "generated.png",
+  Buffer.from(response.data[0].b64_json, "base64"),
+);
+```
+```bash curl
+curl https://router.flatkey.ai/v1/images/generations \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-2",
+    "prompt": "A serene forest clearing with morning mist and sunbeams",
+    "size": "1024x1024",
+    "quality": "high"
+  }'
+```
+</CodeGroup>
+
+## Chỉnh sửa hình ảnh
+
+`/v1/images/edits` chấp nhận hình ảnh đầu vào và hướng dẫn chỉnh sửa dưới dạng `multipart/form-data`.
+
+### Endpoint
+
+```
+POST https://router.flatkey.ai/v1/images/edits
+```
+
+### Headers
+
+| Header | Giá trị |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `multipart/form-data`; curl tự động thêm boundary khi bạn sử dụng `-F` |
+
+### Các trường form
+
+| Trường | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `model` | string | Có | ID model hình ảnh được cung cấp bởi dịch vụ Flatkey của bạn, chẳng hạn như `gpt-image-2`. |
+| `prompt` | string | Có | Hướng dẫn mô tả cách chỉnh sửa hình ảnh. |
+| `image` | file | Có | Hình ảnh đầu vào ở định dạng PNG, JPEG, hoặc WebP. Đối với nhiều hình ảnh, sử dụng `image[]` hoặc các trường có chỉ số như `image[0]` và `image[1]`. |
+| `mask` | file | Không | Mặt nạ cho inpainting. Các vùng trong suốt xác định khu vực cần vẽ lại. |
+| `size` | string | Không | Kích thước đầu ra. Các giá trị được hỗ trợ phụ thuộc vào model. |
+| `quality` | string | Không | Chất lượng đầu ra: `low`, `medium`, hoặc `high`. |
+| `stream` | boolean | Không | Đặt thành `true` để nhận phản hồi SSE. |
+
+### Ví dụ request
+
+```bash
+curl https://router.flatkey.ai/v1/images/edits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -F "model=gpt-image-2" \
+  -F "prompt=add a small yellow star in the center" \
+  -F "image=@input.png" \
+  -F "mask=@mask.png"
+```
+
+Trường `mask` là tùy chọn. Bỏ qua nó để chỉnh sửa toàn bộ hình ảnh dựa trên prompt. Không đặt header `Content-Type` thủ công; curl tự động xác định boundary multipart chính xác từ các trường `-F`.
+
+<Warning>
+  Nếu mặt nạ được cung cấp bị hỏng, không đọc được, hoặc vượt quá giới hạn dịch vụ, request sẽ thất bại thay vì chuyển sang chỉnh sửa toàn bộ hình ảnh.
+</Warning>
+
+## Phản hồi
+
+Các request tạo và chỉnh sửa đồng bộ đều trả về cùng một cấu trúc phản hồi. Flatkey trả về hình ảnh dưới dạng dữ liệu base64; nó không cung cấp URL hình ảnh được lưu trữ cho `gpt-image-2`.
+
+```json
+{
+  "created": 1710000000,
+  "data": [
+    {
+      "b64_json": "iVBORw0KGgoAAA...",
+      "revised_prompt": "Add a small yellow five-pointed star in the center...",
+      "url": ""
+    }
+  ]
+}
+```
+
+### Các trường phản hồi
+
+<ResponseField name="created" type="integer">
+  Dấu thời gian Unix khi request hoàn thành.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Mảng các đối tượng hình ảnh.
+  <Expandable title="đối tượng hình ảnh">
+    <ResponseField name="b64_json" type="string">Dữ liệu hình ảnh được mã hóa Base64.</ResponseField>
+    <ResponseField name="revised_prompt" type="string">Prompt thực tế được model sử dụng sau khi viết lại.</ResponseField>
+    <ResponseField name="url" type="string">Trống đối với `gpt-image-2`; URL được lưu trữ không được cung cấp.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+Đối với các thao tác chỉnh sửa, hình ảnh đầu vào cũng được tính vào mức sử dụng model, vì vậy một lần chỉnh sửa thường tiêu tốn nhiều mức sử dụng hơn so với tạo hình ảnh chỉ từ văn bản.
+
+## Streaming
+
+Đặt `stream` thành `true` trong body JSON của một request tạo hoặc thêm `-F "stream=true"` vào một request chỉnh sửa để nhận đầu ra `text/event-stream`. Sự kiện cuối cùng chứa kết quả hình ảnh, theo sau là `data: [DONE]`.
+
+| Sự kiện | Ý nghĩa |
+|---|---|
+| `image_generation.completed` | Tạo hình ảnh đã hoàn thành. |
+| `image_edit.completed` | Chỉnh sửa hình ảnh đã hoàn thành. |
+| `[DONE]` | Luồng đã kết thúc. |
+
+Hỗ trợ streaming có thể phụ thuộc vào model và kênh được chọn. Đối với các request chất lượng cao đồng bộ, hãy cấu hình thời gian chờ client ít nhất 150 giây.

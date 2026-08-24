@@ -1,0 +1,60 @@
+---
+title: "Nạp Tiền Vào Số Dư Tài Khoản Flatkey và Nhận Tín Dụng Thưởng"
+sidebarTitle: "Nạp Tiền"
+description: "Thêm tín dụng trả trước vào tài khoản Flatkey của bạn. Tìm hiểu về các mức nạp tiền, tín dụng thưởng, và cách quản lý số dư để truy cập API không bị gián đoạn."
+---
+
+Flatkey sử dụng mô hình số dư trả trước — bạn thêm tín dụng vào tài khoản và tín dụng sẽ được tiêu thụ khi các yêu cầu API của bạn sử dụng các mô hình. Không có gói đăng ký hay phí định kỳ. Mỗi lần nạp tiền đều nhận được tín dụng thưởng, được cộng ngay vào số dư của bạn.
+
+## Các mức nạp tiền
+
+| Nạp tiền | Thưởng | Tổng tín dụng | Tiết kiệm hiệu quả |
+|---|---|---|---|
+| $10 | +$3 | $13 | 30% |
+| $20 | +$8 | $28 | 40% |
+| $200 | +$100 | $300 | **50% (tiết kiệm nhất)** |
+
+<Tip>
+  Mức nạp tiền $200 mang lại tỷ lệ hiệu quả tốt nhất. Kết hợp với chiết khấu mô hình (60–90% so với giá niêm yết chính thức), mức này giúp giảm chi phí xuống còn 50% so với giá của nhà cung cấp chính thức.
+</Tip>
+
+## Thực hiện nạp tiền
+
+<Steps>
+  <Step title="Mở Số Dư">
+    Trong [bảng điều khiển](https://console.flatkey.ai), nhấp vào **Số Dư** ở thanh bên trái.
+  </Step>
+  <Step title="Chọn số tiền nạp">
+    Chọn $10, $20 hoặc $200. Tín dụng thưởng sẽ được hiển thị trước khi bạn xác nhận.
+  </Step>
+  <Step title="Hoàn tất thanh toán">
+    Nhập thông tin thẻ của bạn và xác nhận. Thanh toán được xử lý qua Stripe. Tín dụng (bao gồm cả thưởng) được cộng vào số dư của bạn ngay lập tức.
+  </Step>
+</Steps>
+
+## Cách tín dụng thưởng hoạt động
+
+- **Cộng ngay lập tức**: Tín dụng thưởng xuất hiện trong số dư của bạn ngay khi thanh toán được xử lý.
+- **Không bao giờ hết hạn**: Tín dụng thưởng và tín dụng đã thanh toán đều tồn tại vô thời hạn trong số dư của bạn — không có ngày hết hạn.
+- **Sử dụng như tín dụng thông thường**: Tín dụng thưởng được tiêu thụ theo cách tương tự như tín dụng đã thanh toán. Không có hạn chế nào về việc sử dụng cho mô hình nào.
+- **Cộng dồn mỗi lần**: Mỗi lần nạp tiền đều nhận được thưởng mới. Nạp $200 ba lần và nhận tổng cộng $300 tín dụng thưởng.
+
+## Quản lý số dư
+
+Số dư của bạn được hiển thị trong phần **Số Dư** của bảng điều khiển. Bạn có thể:
+
+- Xem phân tích chi tiết giữa tín dụng đã thanh toán và tín dụng thưởng
+- Xem lịch sử tất cả các giao dịch nạp tiền kèm ngày và số tiền
+- Bật cảnh báo email khi số dư thấp từ **Cài đặt → Thông báo**
+
+## Điều gì xảy ra khi số dư hết
+
+Nếu số dư của bạn giảm xuống $0.00, các yêu cầu API sẽ trả về lỗi `401 Insufficient Balance` cho đến khi bạn nạp tiền. Không có khoản phí tự động hay thấu chi — các yêu cầu của bạn sẽ đơn giản là dừng lại cho đến khi bạn thêm tín dụng.
+
+<Warning>
+  Đối với các khối lượng công việc sản xuất, hãy thiết lập cảnh báo số dư thấp để đảm bảo bạn nạp tiền trước khi số dư bị tiêu hết hoàn toàn. Vào **Cài đặt → Thông báo** để cấu hình ngưỡng.
+</Warning>
+
+## Thanh toán doanh nghiệp
+
+Đối với các nhóm cần thanh toán theo hóa đơn, khối lượng hàng tháng tùy chỉnh, hoặc hỗ trợ mua sắm, hãy liên hệ [support@flatkey.ai](mailto:support@flatkey.ai) để thảo luận về các điều khoản doanh nghiệp. Tài khoản doanh nghiệp không yêu cầu nạp tiền trả trước.

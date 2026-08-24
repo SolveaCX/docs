@@ -1,0 +1,103 @@
+---
+title: "Acheminer les requêtes Claude via Flatkey avec le SDK Anthropic"
+sidebarTitle: "SDK Anthropic"
+description: "Acheminez les requêtes Anthropic Claude via Flatkey en définissant l'URL de base dans le SDK Anthropic. Accédez à Claude avec jusqu'à 50 % de réduction sur les tarifs officiels."
+---
+
+Vous pouvez accéder aux modèles Claude avec jusqu'à 50 % de réduction sur les tarifs officiels Anthropic en acheminant le SDK Python Anthropic via Flatkey. Définissez le paramètre `base_url` une seule fois et votre code SDK existant fonctionne tel quel — aucune autre modification n'est nécessaire.
+
+## Installation
+
+```bash pip
+pip install anthropic
+```
+
+## Configuration de base
+
+```python python
+import os
+import anthropic
+
+client = anthropic.Anthropic(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai",
+)
+```
+
+<Note>
+  Lorsque vous utilisez le SDK Anthropic, définissez `base_url` sur `https://router.flatkey.ai` (sans `/v1`). Le SDK ajoute le chemin automatiquement.
+</Note>
+
+## Envoyer un message
+
+```python python
+message = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=1024,
+    messages=[
+        {"role": "user", "content": "Write a Python function to reverse a linked list."}
+    ],
+)
+
+print(message.content[0].text)
+```
+
+## Prompts système
+
+```python python
+message = client.messages.create(
+    model="claude-opus-4-5",
+    max_tokens=2048,
+    system="You are a senior software engineer. Provide concise, idiomatic code.",
+    messages=[
+        {"role": "user", "content": "Implement a rate limiter in Python."}
+    ],
+)
+
+print(message.content[0].text)
+```
+
+## Streaming
+
+```python python
+with client.messages.stream(
+    model="claude-haiku-4-5-20251001",
+    max_tokens=512,
+    messages=[{"role": "user", "content": "Explain how HTTPS works."}],
+) as stream:
+    for text in stream.text_stream:
+        print(text, end="", flush=True)
+print()
+```
+
+## Conversations multi-tours
+
+```python python
+conversation = [
+    {"role": "user", "content": "What is the capital of France?"},
+    {"role": "assistant", "content": "The capital of France is Paris."},
+    {"role": "user", "content": "What is its population?"},
+]
+
+response = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=256,
+    messages=conversation,
+)
+
+print(response.content[0].text)
+```
+
+## Modèles Claude disponibles
+
+| Modèle | Idéal pour | Prix en entrée (après bonus) |
+|---|---|---|
+| `claude-opus-4-5` | Raisonnement complexe, rédaction longue | ~3 $ / 1 M de tokens |
+| `claude-sonnet-4-5` | Qualité et vitesse équilibrées | ~1,6 $ / 1 M de tokens |
+| `claude-haiku-4-5-20251001` | Tâches rapides et économiques | ~0,53 $ / 1 M de tokens |
+
+Consultez le [Répertoire des modèles](https://flatkey.ai/models) pour tous les modèles Claude et les tarifs actuels.
+
+<Tip>
+  Vous pouvez également utiliser les modèles Claude avec le SDK OpenAI via Flatkey — il suffit de définir `model="claude-sonnet-4-5"` dans un appel `client.chat.completions.create()`. Utilisez le SDK qui convient le mieux à votre projet.
+</Tip>

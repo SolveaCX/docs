@@ -1,0 +1,83 @@
+---
+title: "Flatkey REST API: Endpoint, Autentikasi, dan Format Permintaan"
+sidebarTitle: "Ikhtisar"
+description: "Flatkey menyediakan REST API yang kompatibel dengan OpenAI di https://router.flatkey.ai/v1. Permintaan API menggunakan autentikasi Bearer, dengan akses anonim hanya untuk URL konten video yang telah selesai."
+---
+
+Flatkey API adalah REST API yang sepenuhnya kompatibel dengan spesifikasi OpenAI API. Permintaan API dikirim ke `https://router.flatkey.ai/v1` — URL dasar yang sama untuk semua endpoint, penyedia, dan model. Autentikasi menggunakan token Bearer di header `Authorization`, kecuali untuk URL konten video yang telah selesai.
+
+## URL Dasar
+
+```
+https://router.flatkey.ai/v1
+```
+
+## Autentikasi
+
+Permintaan API harus menyertakan kunci API Flatkey Anda sebagai token Bearer:
+
+```
+Authorization: Bearer sk-fk-your-api-key
+```
+
+Buat kunci API Anda di [konsol](https://console.flatkey.ai/keys). Lihat [Autentikasi](/id/api-reference/authentication) untuk detail lengkap.
+
+URL `GET /v1/videos/{task_id}/content` yang bersifat anonim adalah pengecualian. Perlakukan sebagai data sensitif karena kepemilikan URL tugas tersebut memberikan akses ke video yang telah selesai.
+
+## Format permintaan
+
+- Semua permintaan menggunakan **HTTPS**
+- Isi permintaan harus berformat **JSON** (`Content-Type: application/json`)
+- Respons berupa JSON, SSE untuk streaming, atau `video/mp4` untuk konten video yang telah selesai
+
+## Endpoint yang tersedia
+
+| Endpoint | Metode | Deskripsi |
+|---|---|---|
+| `/v1/chat/completions` | POST | Obrolan dan pembuatan teks (kompatibel dengan OpenAI) |
+| `/v1/responses` | POST | OpenAI Responses API (multi-giliran stateful) |
+| `/v1/embeddings` | POST | Embedding teks |
+| `/v1/images/generations` | POST | Pembuatan gambar |
+| `/v1/videos` | POST | Buat tugas pembuatan video Seedance |
+| `/v1/videos/{task_id}` | GET | Ambil status dan hasil tugas Seedance |
+| `/v1/videos/{task_id}/content` | GET | Unduh video yang telah selesai tanpa autentikasi Bearer |
+| `/v1/models` | GET | Daftar model yang tersedia |
+
+## Kompatibilitas OpenAI SDK
+
+Karena API ini kompatibel dengan OpenAI, Anda dapat menggunakan SDK Python atau Node.js resmi OpenAI tanpa mengubah kode permintaan — cukup atur `base_url`:
+
+<CodeGroup>
+```python python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-fk-your-api-key",
+    base_url="https://router.flatkey.ai/v1",
+)
+```
+```javascript node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: "sk-fk-your-api-key",
+  baseURL: "https://router.flatkey.ai/v1",
+});
+```
+</CodeGroup>
+
+## Versi
+
+Flatkey menggunakan skema versi yang sama dengan OpenAI API. Awalan jalur `/v1` bersifat stabil. Ketika versi OpenAI API baru dirilis, Flatkey menambahkan dukungannya sambil mempertahankan kompatibilitas mundur dengan `/v1`.
+
+## Batas kecepatan
+
+Batas kecepatan diterapkan per kunci API. Jika Anda melebihi batas tersebut, Anda akan menerima respons `429 Too Many Requests`. Hubungi [support@flatkey.ai](mailto:support@flatkey.ai) jika Anda membutuhkan batas kecepatan yang lebih tinggi untuk beban kerja produksi.
+
+## Tipe konten yang didukung
+
+| Tipe konten | Digunakan untuk |
+|---|---|
+| `application/json` | Isi permintaan JSON dan respons API |
+| `text/event-stream` | Respons streaming (saat `stream: true`) |
+| `video/mp4` | Konten video yang telah selesai |

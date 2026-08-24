@@ -1,0 +1,277 @@
+---
+title: "FlatkeyでGPTおよびGeminiモデルを使って画像を生成・編集する"
+sidebarTitle: "画像生成・編集"
+description: "OpenAI Images互換またはネイティブGemini APIを使用して、gpt-image-2およびGemini画像モデルでFlatkey経由で画像を生成・編集します。"
+---
+
+Flatkeyは2つの画像APIファミリーを提供しています。`gpt-image-2`にはOpenAI互換の`/v1/images/generations`および`/v1/images/edits`エンドポイントを使用してください。Gemini画像モデルにはネイティブGeminiの`generateContent`エンドポイントを使用してください。
+
+<Warning>
+  Gemini画像モデルをOpenAI Images SDK、`/v1/images/generations`、または`/v1/images/edits`で呼び出すことはできません。このページのネイティブGemini APIの例を使用してください。そうしないと、リクエストが`get_channel_failed`を返す可能性があります。
+</Warning>
+
+## サポートされている画像モデル
+
+| モデル | API | 公式価格 | ボーナス適用後の価格 |
+|---|---|---|---|
+| `gpt-image-2` | OpenAI Images API | $6.65 / 1Mトークン | 約$3.99 / 1Mトークン |
+| `gemini-3-pro-image` | ネイティブGemini API | $2.00 / 1Mトークン | 約$1.20 / 1Mトークン |
+| `gemini-2.5-flash-image` | ネイティブGemini API | $0.30 / 1Mトークン | 約$0.18 / 1Mトークン |
+| `gemini-3.1-flash-image` | ネイティブGemini API | ダッシュボードを参照 | ダッシュボードを参照 |
+| `gemini-3.1-flash-lite-image` | ネイティブGemini API | ダッシュボードを参照 | ダッシュボードを参照 |
+| `nano-banana-pro-preview` | ネイティブGemini API | ダッシュボードを参照 | ダッシュボードを参照 |
+
+完全なモデル一覧と最新の料金については[モデルディレクトリ](https://flatkey.ai/models)をご覧ください。
+
+## gpt-image-2を使用する
+
+### OpenAI SDKを使用する
+
+<CodeGroup>
+```python python
+import base64
+import os
+from pathlib import Path
+
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.images.generate(
+    model="gpt-image-2",
+    prompt="A serene mountain lake at sunset, photorealistic",
+    size="1024x1024",
+)
+
+Path("generated.png").write_bytes(
+    base64.b64decode(response.data[0].b64_json)
+)
+```
+```javascript node
+import { writeFileSync } from "node:fs";
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const response = await client.images.generate({
+  model: "gpt-image-2",
+  prompt: "A serene mountain lake at sunset, photorealistic",
+  size: "1024x1024",
+});
+
+writeFileSync(
+  "generated.png",
+  Buffer.from(response.data[0].b64_json, "base64"),
+);
+```
+</CodeGroup>
+
+### curlで画像を生成する
+
+```bash
+curl https://router.flatkey.ai/v1/images/generations \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-2",
+    "prompt": "A futuristic cityscape at night, neon lights, wide angle",
+    "size": "1024x1024"
+  }'
+```
+
+このエンドポイントは生成された画像を`data[0].b64_json`で返します。`gpt-image-2`はホストされた画像URLを提供しません。すべてのフィールドについては[Images APIリファレンス](/ja/api-reference/image-generation#画像を生成する)を参照してください。
+
+### curlで画像を編集する
+
+`/v1/images/edits`を使用して、編集の指示とともに入力画像をアップロードします。このエンドポイントは`multipart/form-data`を使用します。`image`は必須で、`mask`はオプションです。
+
+```bash
+curl https://router.flatkey.ai/v1/images/edits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -F "model=gpt-image-2" \
+  -F "prompt=add a small yellow star in the center" \
+  -F "image=@input.png" \
+  -F "mask=@mask.png"
+```
+
+`image`はPNG、JPEG、WebPをサポートしています。`mask`を省略すると、プロンプトに基づいて画像全体が編集されます。マスクが指定された場合、その透明な領域が再描画する領域を示します。編集された画像は`data[0].b64_json`で返されます。すべてのフィールドについては[編集APIリファレンス](/ja/api-reference/image-generation#画像を編集する)を参照してください。
+
+## Gemini画像モデルを使用する
+
+Gemini画像モデルは以下のエンドポイントを使用します。`{model}`をモデルIDに置き換えてください。
+
+```text
+POST https://router.flatkey.ai/v1beta/models/{model}:generateContent
+```
+
+リクエストには`generationConfig.responseModalities`に`"IMAGE"`を含める必要があります。生成された画像は`candidates[].content.parts[].inlineData`で返されます。
+
+### curlを使用する
+
+```bash
+curl https://router.flatkey.ai/v1beta/models/gemini-2.5-flash-image:generateContent \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contents": [{
+      "parts": [{
+        "text": "A product photo of a translucent purple glass bottle on a white background"
+      }]
+    }],
+    "generationConfig": {
+      "responseModalities": ["TEXT", "IMAGE"]
+    }
+  }'
+```
+
+### Pythonを使用して画像を保存する
+
+HTTPクライアントをインストールします。
+
+```bash
+pip install requests
+```
+
+```python
+import base64
+import os
+from pathlib import Path
+
+import requests
+
+model = "gemini-2.5-flash-image"
+response = requests.post(
+    f"https://router.flatkey.ai/v1beta/models/{model}:generateContent",
+    headers={
+        "Authorization": f"Bearer {os.environ['FLATKEY_API_KEY']}",
+        "Content-Type": "application/json",
+    },
+    json={
+        "contents": [{
+            "parts": [{
+                "text": "A product photo of a translucent purple glass bottle on a white background"
+            }]
+        }],
+        "generationConfig": {
+            "responseModalities": ["TEXT", "IMAGE"]
+        },
+    },
+    timeout=180,
+)
+response.raise_for_status()
+
+parts = response.json()["candidates"][0]["content"]["parts"]
+image = next(part["inlineData"] for part in parts if "inlineData" in part)
+suffix = ".jpg" if image["mimeType"] == "image/jpeg" else ".png"
+output = Path(f"generated{suffix}")
+output.write_bytes(base64.b64decode(image["data"]))
+print(output)
+```
+
+### Node.jsを使用して画像を保存する
+
+```javascript
+import { writeFileSync } from "node:fs";
+
+const model = "gemini-2.5-flash-image";
+const response = await fetch(
+  `https://router.flatkey.ai/v1beta/models/${model}:generateContent`,
+  {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.FLATKEY_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      contents: [{
+        parts: [{
+          text: "A product photo of a translucent purple glass bottle on a white background",
+        }],
+      }],
+      generationConfig: {
+        responseModalities: ["TEXT", "IMAGE"],
+      },
+    }),
+  },
+);
+
+if (!response.ok) {
+  throw new Error(`${response.status}: ${await response.text()}`);
+}
+
+const result = await response.json();
+const image = result.candidates[0].content.parts.find(
+  (part) => part.inlineData,
+).inlineData;
+const suffix = image.mimeType === "image/jpeg" ? "jpg" : "png";
+writeFileSync(`generated.${suffix}`, Buffer.from(image.data, "base64"));
+```
+
+## Geminiリクエストフィールド
+
+<ParamField body="contents" type="array" required>
+  会話コンテンツ。テキストから画像への生成では、`parts[].text`に画像の説明を記述してください。
+</ParamField>
+
+<ParamField body="generationConfig.responseModalities" type="array" required>
+  レスポンスのモダリティ。テキストと画像には`["TEXT", "IMAGE"]`を、画像のみを要求する場合は`["IMAGE"]`を使用してください。
+</ParamField>
+
+<ParamField body="model" type="string" required>
+  モデルIDはリクエスト本文ではなくURLパスに指定します。例：`gemini-3-pro-image`。
+</ParamField>
+
+## Geminiレスポンス形式
+
+```json
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "Here is the generated image."
+          },
+          {
+            "inlineData": {
+              "mimeType": "image/png",
+              "data": "iVBORw0KGgoAAA..."
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+<Note>
+  `inlineData.data`にはbase64エンコードされた画像が含まれます。レスポンスにはテキストと複数の画像パーツが含まれる場合があります。画像が常に最初のアイテムであると仮定せず、`parts`を反復処理してください。
+</Note>
+
+## トラブルシューティング
+
+### APIがget_channel_failedを返す場合
+
+エンドポイントがモデルと一致していることを確認してください。
+
+- `gpt-image-2`で生成するには`/v1/images/generations`を使用してください。
+- `gpt-image-2`で編集するには`/v1/images/edits`を使用してください。
+- Gemini画像モデルには`/v1beta/models/{model}:generateContent`を使用してください。
+
+### Geminiのレスポンスに画像が含まれない場合
+
+`generationConfig.responseModalities`に`"IMAGE"`が含まれていることを確認してください。また、レスポンスにエラーまたは安全ブロックがないか確認してください。
+
+## 効果的なプロンプトを書く
+
+- スタイルを指定する：*フォトリアリスティック、油絵、水彩画、3Dレンダリング*
+- 照明の詳細を含める：*ゴールデンアワー、スタジオ照明、ドラマチックな影*
+- 構図を指定する：*クローズアップ、広角、俯瞰、縦向き*
+- 品質の修飾語を追加する：*非常に詳細、4K、プロフェッショナル写真*

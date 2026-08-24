@@ -1,0 +1,79 @@
+---
+title: "Flatkey: AI API-шлюз для 300+ моделей и 1000+ инструментов — один ключ, скидка 50%"
+sidebarTitle: "Главная"
+description: "Flatkey предоставляет единый API-ключ, совместимый с OpenAI, для 300+ официальных моделей и доступ к 1000+ инструментам — GPT, Claude, Gemini, DeepSeek и другим — со скидкой до 50% от официальных цен."
+---
+
+Flatkey — это AI API-шлюз, который предоставляет единый эндпоинт, совместимый с OpenAI, для 300+ официальных моделей от OpenAI, Anthropic, Google, DeepSeek, Qwen, GLM и других, а также доступ к 1000+ инструментам. Измените `base_url` на `https://router.flatkey.ai/v1`, сохраните существующий код и сразу начните экономить — модели доступны со скидкой до 50% от официального прайса.
+
+<CardGroup cols={2}>
+  <Card title="Быстрый старт" icon="bolt" href="/ru/quickstart">
+    Выполните первый API-вызов менее чем за 5 минут
+  </Card>
+  <Card title="Справочник API" icon="code" href="/ru/api-reference/overview">
+    Полный справочник эндпоинтов с примерами запросов и ответов
+  </Card>
+  <Card title="Каталог моделей" icon="list" href="https://flatkey.ai/models">
+    Просмотрите все 300+ моделей, провайдеров и актуальные цены
+  </Card>
+  <Card title="Тарифы и кредиты" icon="coins" href="https://flatkey.ai/pricing">
+    Узнайте о планах подписки, тарификации использования и кредитах аккаунта
+  </Card>
+</CardGroup>
+
+## Как работает Flatkey
+
+<Steps>
+  <Step title="Создайте аккаунт">
+    Зарегистрируйтесь на [console.flatkey.ai](https://console.flatkey.ai/sign-up) и выберите план подписки, подходящий для вашего объёма использования.
+  </Step>
+  <Step title="Сгенерируйте API-ключ">
+    Откройте раздел **Keys** в панели управления и создайте новый API-ключ. Храните его в тайне — обращайтесь с ним как с паролем.
+  </Step>
+  <Step title="Подключите клиент к Flatkey">
+    Задайте `base_url` равным `https://router.flatkey.ai/v1` в вашем SDK, совместимом с OpenAI. Никаких других изменений в коде не требуется.
+  </Step>
+  <Step title="Отслеживайте использование и расходы">
+    Контролируйте каждый запрос, количество токенов и потраченные средства в панели **Usage**. Устанавливайте квоты для ограничения расходов.
+  </Step>
+</Steps>
+
+## Почему команды выбирают Flatkey
+
+<CardGroup cols={3}>
+  <Card title="Один ключ — все модели" icon="key">
+    Получите доступ к GPT, Claude, Gemini, DeepSeek, Qwen, GLM и другим моделям с помощью одного API-ключа и базового URL.
+  </Card>
+  <Card title="Экономия до 50%" icon="piggy-bank">
+    Модели доступны со скидкой до 50% от официального прайса.
+  </Card>
+  <Card title="Успешность запросов 99,9%" icon="shield-check">
+    Автоматическое переключение между провайдерами. Дашборды состояния в реальном времени для каждой модели.
+  </Card>
+  <Card title="Без хранения данных" icon="lock">
+    Промпты и ответы не сохраняются. Соответствие GDPR, выравнивание с SOC 2 и ISO 27001.
+  </Card>
+  <Card title="Замена без миграции" icon="plug">
+    API, совместимый с OpenAI. Измените одну строку кода — никаких переписей SDK, никаких затрат на миграцию.
+  </Card>
+  <Card title="Подписочная тарификация" icon="receipt">
+    Выберите план под свою нагрузку и отслеживайте использование в реальном времени.
+  </Card>
+</CardGroup>
+
+## Изучите документацию
+
+<CardGroup cols={2}>
+  <Card title="Аутентификация" icon="lock-keyhole" href="/ru/api-reference/authentication">
+    Узнайте, как создать и использовать API-ключ Flatkey
+  </Card>
+  <Card title="Руководство по OpenAI SDK" icon="python" href="/ru/guides/openai-sdk">
+    Используйте Flatkey с официальным OpenAI SDK для Python или Node.js
+  </Card>
+  <Card title="Руководство по Anthropic SDK" icon="robot" href="/ru/guides/anthropic-sdk">
+    Направляйте запросы Claude через Flatkey с помощью Anthropic SDK
+  </Card>
+  <Card title="Состояние моделей" icon="heart-pulse" href="https://flatkey.ai/status">
+    Просматривайте показатели успешности и задержки для каждой модели в реальном времени
+  </Card>
+</CardGroup>

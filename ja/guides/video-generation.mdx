@@ -1,0 +1,245 @@
+---
+title: "Flatkeyで動画を生成する"
+sidebarTitle: "動画生成"
+description: "動画タスクを送信し、ポーリングしてMP4をダウンロードする。2つのリクエスト形式、モデルごとの解像度、適用されるパラメーターとされないパラメーターについて解説します。"
+---
+
+ベースURL: `https://router.flatkey.ai`
+
+Flatkey は1つの非同期エンドポイントを通じて動画を生成します。タスクを送信し、完了するまでポーリングしてからMP4をダウンロードします。このページでは、すべての動画モデルに共通する内容を説明します。各モデル固有のオプションについては、[Seedance](/ja/guides/seedance) または [MiniMax H3](/ja/guides/minimax-h3) を参照してください。
+
+<CardGroup cols={2}>
+  <Card title="1つの非同期ワークフロー" icon="video">
+    `POST /v1/videos` でタスクを作成し、`GET /v1/videos/{task_id}` でポーリングし、`metadata.url` からMP4をダウンロードします。
+  </Card>
+  <Card title="2つのリクエスト形式" icon="code-branch">
+    `content` 配列を使うモデルと、`prompt` 文字列を使うモデルがあります。誤った形式を送ると `400` が返されます。
+  </Card>
+</CardGroup>
+
+このページのすべてのリクエスト（ダウンロードを含む）には、次の認証ヘッダーを使用してください:
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+## 動画モデルを探す
+
+すべてのモデルを一覧表示し、`type` が `video` のものだけを残します:
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/models \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  | jq '.data[] | select(.type == "video") | .id'
+```
+
+```json
+"grok-imagine-video"
+"grok-imagine-video-1.5"
+"MiniMax-H3"
+"seedance-2.5"
+"veo-3.1-fast-generate-preview"
+"veo-3.1-generate-preview"
+```
+
+<Warning>
+  `/v1/models` はクエリパラメーターを無視します。フィルタリングは、上記の `jq` の例のように、自分のコード内で行ってください。
+</Warning>
+
+同じ一覧を料金付きで[モデルディレクトリ](https://flatkey.ai/models)でも参照できます。
+
+## 適切なリクエスト形式を選ぶ
+
+このエンドポイントは2種類の形式を受け付けており、各モデルはそのうちの1つのみを使用します。
+
+| モデル | プロンプトフィールド |
+| --- | --- |
+| `seedance-2.5` | `content` 配列 |
+| `seedance-2.0-pro` | `content` 配列 |
+| `MiniMax-H3` | `content` 配列 |
+| `grok-imagine-video` | `prompt` 文字列 |
+| `grok-imagine-video-1.5` | `prompt` 文字列 |
+| `veo-3.1-generate-preview` | `prompt` 文字列 |
+| `veo-3.1-fast-generate-preview` | `prompt` 文字列 |
+
+`prompt` モデルに `content` 配列を送ると、次のレスポンスが返されます:
+
+```json
+{ "code": "invalid_request", "message": "prompt is required" }
+```
+
+### `content` 形式
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.5",
+    "content": [
+      { "type": "text", "text": "a quiet neon-lit street at dusk, slow camera drift" }
+    ],
+    "duration": 5,
+    "resolution": "720p"
+  }'
+```
+
+この配列には画像も含めることができます。フレーム間の補間やリファレンスとして使用する場合は、`image_url` エントリを追加してください。フィールド名はモデルによって異なるため、各モデルのガイドに従ってください。
+
+### `prompt` 形式
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "grok-imagine-video",
+    "prompt": "a quiet neon-lit street at dusk, slow camera drift",
+    "duration": 10
+  }'
+```
+
+## 解像度はモデルによって異なる
+
+共通の解像度値セットはありません。サポートされていない値を送ると、タスクが作成される前に `400` が返されます。
+
+| モデル | 受け付ける値 | 備考 |
+| --- | --- | --- |
+| `seedance-2.5` | `480p`, `720p` | `1080p` は `unsupported resolution` を返す |
+| `MiniMax-H3` | `768P`, `2K` | 大文字の `P` を使用。他の値は `resolution must be 768P or 2K` を返す |
+| `grok-imagine-video` | `720p` | 実際の出力は常に `848x480` |
+| `veo-3.1-*` | `720p` | |
+
+<Warning>
+  解像度を選ぶ前に各モデルのガイドを確認してください。`1080p` は `seedance-2.5` では拒否され、`720p` は `MiniMax-H3` では拒否されます。
+</Warning>
+
+## リクエストパラメーター
+
+| パラメーター | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `model` | string | はい | `/v1/models` から取得したモデルID |
+| `content` | array | 条件付き | `content` 形式モデル用のプロンプトとメディア |
+| `prompt` | string | 条件付き | `prompt` 形式モデル用のプロンプト |
+| `duration` | integer | いいえ | 秒単位の長さ。`MiniMax-H3` は `4` から `15` まで受け付ける |
+| `resolution` | string | いいえ | 上記のテーブルを参照 |
+
+<Warning>
+  `aspect_ratio` と `seed` はエラーなしで受け付けられますが、すべてのモデルで出力に影響するわけではありません。`grok-imagine-video` では `9:16` を指定しても `848x480` の横長クリップが返され、同じ `seed` を指定しても毎回異なるファイルが生成されます。モデルが向きをサポートしている場合は、そのモデルのページに記載されています。この2つのフィールドをモデル横断的な動作として使用しないでください。
+</Warning>
+
+## タスクをポーリングする
+
+送信が成功すると、すぐにタスクが返されます:
+
+```json
+{
+  "id": "task_aaaaaaaaaaaaaaaa",
+  "task_id": "task_aaaaaaaaaaaaaaaa",
+  "object": "video",
+  "model": "seedance-2.5",
+  "status": "queued",
+  "progress": 0,
+  "created_at": 1787110914
+}
+```
+
+タスクIDを使ってステータスが終了状態になるまでポーリングします:
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+
+```json
+{
+  "id": "task_aaaaaaaaaaaaaaaa",
+  "status": "completed",
+  "progress": 100,
+  "completed_at": 1787111135,
+  "metadata": {
+    "url": "https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa/content"
+  }
+}
+```
+
+| ステータス | 意味 |
+| --- | --- |
+| `queued` | 受け付け済み、待機中 |
+| `in_progress` | 生成中 |
+| `completed` | `metadata.url` からダウンロード可能 |
+| `failed` | 生成失敗。エラーフィールドを確認してください |
+
+約15秒ごとにポーリングしてください。5秒のクリップは通常2〜4分で完成します。
+
+## MP4をダウンロードする
+
+ダウンロードURLは `metadata.url` に含まれており、同じ認証ヘッダーが必要です:
+
+```bash
+curl -L "https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa/content" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -o output.mp4
+```
+
+## エンドツーエンドの例
+
+```python
+import os, time, requests
+
+BASE = "https://router.flatkey.ai/v1"
+HEAD = {"Authorization": f"Bearer {os.environ['FLATKEY_API_KEY']}",
+        "Content-Type": "application/json"}
+
+task = requests.post(f"{BASE}/videos", headers=HEAD, json={
+    "model": "seedance-2.5",
+    "content": [{"type": "text", "text": "a quiet neon-lit street at dusk"}],
+    "duration": 5,
+    "resolution": "720p",
+}).json()
+
+task_id = task["task_id"]
+
+while True:
+    time.sleep(15)
+    state = requests.get(f"{BASE}/videos/{task_id}", headers=HEAD).json()
+    if state["status"] == "completed":
+        mp4 = requests.get(state["metadata"]["url"], headers=HEAD).content
+        open("output.mp4", "wb").write(mp4)
+        break
+    if state["status"] == "failed":
+        raise RuntimeError(state)
+```
+
+## トラブルシューティング
+
+**`prompt is required`**
+
+`prompt` を期待するモデルに `content` 配列を送信しています。[適切なリクエスト形式を選ぶ](#適切なリクエスト形式を選ぶ)のテーブルを確認してください。
+
+**`unsupported resolution` または `resolution must be 768P or 2K`**
+
+その値は別のモデル向けです。[解像度はモデルによって異なる](#解像度はモデルによって異なる)を参照してください。
+
+**`No available channel for model ...`**
+
+現在そのモデルはルーティング不可能な状態です。リトライするのではなく、別の動画モデルを選んでください。このエラーは自然には解消されません。現在の利用可能状況は[モデルディレクトリ](https://flatkey.ai/models)で確認してください。
+
+**`duration must be between 4 and 15`**
+
+`MiniMax-H3` はその範囲の `duration` を必要とします。明示的に指定してください。
+
+**タスクが `queued` のまま変わらない**
+
+動画生成には秒ではなく数分かかります。スタックと判断する前に、15秒間隔でポーリングを続けてください。
+
+## モデルガイド
+
+<CardGroup cols={2}>
+  <Card title="Seedance" icon="film" href="/ja/guides/seedance">
+    テキストから動画への生成に加え、バーチャルおよびリアルな人物のアセットライブラリ。
+  </Card>
+  <Card title="MiniMax H3" icon="wand-magic-sparkles" href="/ja/guides/minimax-h3">
+    最初と最後のフレームの制御、リファレンスメディア、タスク設定。
+  </Card>
+</CardGroup>

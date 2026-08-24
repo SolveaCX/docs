@@ -38,6 +38,296 @@
       "source": "/zh/guides/seedance-reference-assets",
       "destination": "/zh/guides/seedance",
       "permanent": true
+    },
+    {
+      "source": "/authentication",
+      "destination": "/api-reference/authentication",
+      "permanent": true
+    },
+    {
+      "source": "/zh/authentication",
+      "destination": "/zh/api-reference/authentication",
+      "permanent": true
+    },
+    {
+      "source": "/concepts/models",
+      "destination": "https://flatkey.ai/models",
+      "permanent": true
+    },
+    {
+      "source": "/zh/concepts/models",
+      "destination": "https://flatkey.ai/models",
+      "permanent": true
+    },
+    {
+      "source": "/enterprise",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/zh/enterprise",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/concepts/billing",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/zh/concepts/billing",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/concepts/routing",
+      "destination": "/api-reference/overview",
+      "permanent": true
+    },
+    {
+      "source": "/zh/concepts/routing",
+      "destination": "/zh/api-reference/overview",
+      "permanent": true
+    },
+    {
+      "source": "/es/guides/seedance-reference-assets",
+      "destination": "/es/guides/seedance",
+      "permanent": true
+    },
+    {
+      "source": "/es/authentication",
+      "destination": "/es/api-reference/authentication",
+      "permanent": true
+    },
+    {
+      "source": "/es/concepts/models",
+      "destination": "https://flatkey.ai/models",
+      "permanent": true
+    },
+    {
+      "source": "/es/enterprise",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/es/concepts/billing",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/es/concepts/routing",
+      "destination": "/es/api-reference/overview",
+      "permanent": true
+    },
+    {
+      "source": "/fr/guides/seedance-reference-assets",
+      "destination": "/fr/guides/seedance",
+      "permanent": true
+    },
+    {
+      "source": "/fr/authentication",
+      "destination": "/fr/api-reference/authentication",
+      "permanent": true
+    },
+    {
+      "source": "/fr/concepts/models",
+      "destination": "https://flatkey.ai/models",
+      "permanent": true
+    },
+    {
+      "source": "/fr/enterprise",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/fr/concepts/billing",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/fr/concepts/routing",
+      "destination": "/fr/api-reference/overview",
+      "permanent": true
+    },
+    {
+      "source": "/pt/guides/seedance-reference-assets",
+      "destination": "/pt/guides/seedance",
+      "permanent": true
+    },
+    {
+      "source": "/pt/authentication",
+      "destination": "/pt/api-reference/authentication",
+      "permanent": true
+    },
+    {
+      "source": "/pt/concepts/models",
+      "destination": "https://flatkey.ai/models",
+      "permanent": true
+    },
+    {
+      "source": "/pt/enterprise",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/pt/concepts/billing",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/pt/concepts/routing",
+      "destination": "/pt/api-reference/overview",
+      "permanent": true
+    },
+    {
+      "source": "/ru/guides/seedance-reference-assets",
+      "destination": "/ru/guides/seedance",
+      "permanent": true
+    },
+    {
+      "source": "/ru/authentication",
+      "destination": "/ru/api-reference/authentication",
+      "permanent": true
+    },
+    {
+      "source": "/ru/concepts/models",
+      "destination": "https://flatkey.ai/models",
+      "permanent": true
+    },
+    {
+      "source": "/ru/enterprise",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/ru/concepts/billing",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/ru/concepts/routing",
+      "destination": "/ru/api-reference/overview",
+      "permanent": true
+    },
+    {
+      "source": "/ja/guides/seedance-reference-assets",
+      "destination": "/ja/guides/seedance",
+      "permanent": true
+    },
+    {
+      "source": "/ja/authentication",
+      "destination": "/ja/api-reference/authentication",
+      "permanent": true
+    },
+    {
+      "source": "/ja/concepts/models",
+      "destination": "https://flatkey.ai/models",
+      "permanent": true
+    },
+    {
+      "source": "/ja/enterprise",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/ja/concepts/billing",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/ja/concepts/routing",
+      "destination": "/ja/api-reference/overview",
+      "permanent": true
+    },
+    {
+      "source": "/vi/guides/seedance-reference-assets",
+      "destination": "/vi/guides/seedance",
+      "permanent": true
+    },
+    {
+      "source": "/vi/authentication",
+      "destination": "/vi/api-reference/authentication",
+      "permanent": true
+    },
+    {
+      "source": "/vi/concepts/models",
+      "destination": "https://flatkey.ai/models",
+      "permanent": true
+    },
+    {
+      "source": "/vi/enterprise",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/vi/concepts/billing",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/vi/concepts/routing",
+      "destination": "/vi/api-reference/overview",
+      "permanent": true
+    },
+    {
+      "source": "/de/guides/seedance-reference-assets",
+      "destination": "/de/guides/seedance",
+      "permanent": true
+    },
+    {
+      "source": "/de/authentication",
+      "destination": "/de/api-reference/authentication",
+      "permanent": true
+    },
+    {
+      "source": "/de/concepts/models",
+      "destination": "https://flatkey.ai/models",
+      "permanent": true
+    },
+    {
+      "source": "/de/enterprise",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/de/concepts/billing",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/de/concepts/routing",
+      "destination": "/de/api-reference/overview",
+      "permanent": true
+    },
+    {
+      "source": "/id/guides/seedance-reference-assets",
+      "destination": "/id/guides/seedance",
+      "permanent": true
+    },
+    {
+      "source": "/id/authentication",
+      "destination": "/id/api-reference/authentication",
+      "permanent": true
+    },
+    {
+      "source": "/id/concepts/models",
+      "destination": "https://flatkey.ai/models",
+      "permanent": true
+    },
+    {
+      "source": "/id/enterprise",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/id/concepts/billing",
+      "destination": "https://flatkey.ai/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/id/concepts/routing",
+      "destination": "/id/api-reference/overview",
+      "permanent": true
     }
   ],
   "navigation": {
@@ -56,32 +346,47 @@
             "tab": "Documentation",
             "groups": [
               {
-                "group": "Get Started",
+                "group": "Quick Start",
                 "pages": [
                   "introduction",
-                  "quickstart",
-                  "authentication"
+                  "quickstart"
                 ]
               },
               {
-                "group": "Core Concepts",
-                "pages": [
-                  "concepts/models",
-                  "concepts/routing",
-                  "concepts/billing"
-                ]
-              },
-              {
-                "group": "Guides",
+                "group": "Code",
                 "pages": [
                   "guides/openai-sdk",
                   "guides/anthropic-sdk",
+                  "guides/api-access"
+                ]
+              },
+              {
+                "group": "Mainstream AI Tools",
+                "pages": [
                   "guides/codex-cli",
-                  "guides/codex-desktop",
                   "guides/claude-code",
+                  "guides/codex-desktop"
+                ]
+              },
+              {
+                "group": "Media Generation",
+                "pages": [
+                  "guides/flatkey-cli"
+                ]
+              },
+              {
+                "group": "Popular models",
+                "pages": [
+                  "guides/text-generation",
                   "guides/image-generation",
-                  "guides/seedance",
-                  "guides/minimax-h3"
+                  {
+                    "group": "Video Generation",
+                    "root": "guides/video-generation",
+                    "pages": [
+                      "guides/seedance",
+                      "guides/minimax-h3"
+                    ]
+                  }
                 ]
               },
               {
@@ -95,10 +400,11 @@
               {
                 "group": "Reference",
                 "pages": [
+                  "reference/faq",
+                  "reference/enterprise",
                   "reference/model-list",
                   "reference/pricing",
-                  "reference/model-health",
-                  "reference/faq"
+                  "reference/model-health"
                 ]
               }
             ]
@@ -146,29 +452,44 @@
                 "group": "快速入门",
                 "pages": [
                   "zh/introduction",
-                  "zh/quickstart",
-                  "zh/authentication"
+                  "zh/quickstart"
                 ]
               },
               {
-                "group": "核心概念",
-                "pages": [
-                  "zh/concepts/models",
-                  "zh/concepts/routing",
-                  "zh/concepts/billing"
-                ]
-              },
-              {
-                "group": "使用指南",
+                "group": "代码接入",
                 "pages": [
                   "zh/guides/openai-sdk",
                   "zh/guides/anthropic-sdk",
+                  "zh/guides/api-access"
+                ]
+              },
+              {
+                "group": "主流 AI 工具",
+                "pages": [
                   "zh/guides/codex-cli",
-                  "zh/guides/codex-desktop",
                   "zh/guides/claude-code",
+                  "zh/guides/codex-desktop"
+                ]
+              },
+              {
+                "group": "媒体生成",
+                "pages": [
+                  "zh/guides/flatkey-cli"
+                ]
+              },
+              {
+                "group": "热门模型",
+                "pages": [
+                  "zh/guides/text-generation",
                   "zh/guides/image-generation",
-                  "zh/guides/seedance",
-                  "zh/guides/minimax-h3"
+                  {
+                    "group": "视频生成",
+                    "root": "zh/guides/video-generation",
+                    "pages": [
+                      "zh/guides/seedance",
+                      "zh/guides/minimax-h3"
+                    ]
+                  }
                 ]
               },
               {
@@ -182,10 +503,11 @@
               {
                 "group": "参考",
                 "pages": [
+                  "zh/reference/faq",
+                  "zh/reference/enterprise",
                   "zh/reference/model-list",
                   "zh/reference/pricing",
-                  "zh/reference/model-health",
-                  "zh/reference/faq"
+                  "zh/reference/model-health"
                 ]
               }
             ]
@@ -210,6 +532,774 @@
                   "zh/api-reference/image-generation",
                   "zh/api-reference/seedance-video-generation",
                   "zh/api-reference/models"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "es",
+        "tabs": [
+          {
+            "tab": "Documentación",
+            "groups": [
+              {
+                "group": "Inicio rápido",
+                "pages": [
+                  "es/introduction",
+                  "es/quickstart"
+                ]
+              },
+              {
+                "group": "Código",
+                "pages": [
+                  "es/guides/openai-sdk",
+                  "es/guides/anthropic-sdk",
+                  "es/guides/api-access"
+                ]
+              },
+              {
+                "group": "Herramientas de IA populares",
+                "pages": [
+                  "es/guides/codex-cli",
+                  "es/guides/claude-code",
+                  "es/guides/codex-desktop"
+                ]
+              },
+              {
+                "group": "Generación de medios",
+                "pages": [
+                  "es/guides/flatkey-cli"
+                ]
+              },
+              {
+                "group": "Modelos populares",
+                "pages": [
+                  "es/guides/text-generation",
+                  "es/guides/image-generation",
+                  {
+                    "group": "Generación de vídeo",
+                    "root": "es/guides/video-generation",
+                    "pages": [
+                      "es/guides/seedance",
+                      "es/guides/minimax-h3"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Panel",
+                "pages": [
+                  "es/dashboard/api-keys",
+                  "es/dashboard/usage",
+                  "es/dashboard/top-up"
+                ]
+              },
+              {
+                "group": "Referencia",
+                "pages": [
+                  "es/reference/faq",
+                  "es/reference/enterprise",
+                  "es/reference/model-list",
+                  "es/reference/pricing",
+                  "es/reference/model-health"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Referencia de API",
+            "groups": [
+              {
+                "group": "Descripción general",
+                "pages": [
+                  "es/api-reference/overview",
+                  "es/api-reference/authentication",
+                  "es/api-reference/errors"
+                ]
+              },
+              {
+                "group": "Endpoints",
+                "pages": [
+                  "es/api-reference/chat-completions",
+                  "es/api-reference/responses",
+                  "es/api-reference/embeddings",
+                  "es/api-reference/image-generation",
+                  "es/api-reference/seedance-video-generation",
+                  "es/api-reference/models"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "fr",
+        "tabs": [
+          {
+            "tab": "Documentation",
+            "groups": [
+              {
+                "group": "Démarrage rapide",
+                "pages": [
+                  "fr/introduction",
+                  "fr/quickstart"
+                ]
+              },
+              {
+                "group": "Code",
+                "pages": [
+                  "fr/guides/openai-sdk",
+                  "fr/guides/anthropic-sdk",
+                  "fr/guides/api-access"
+                ]
+              },
+              {
+                "group": "Outils d'IA courants",
+                "pages": [
+                  "fr/guides/codex-cli",
+                  "fr/guides/claude-code",
+                  "fr/guides/codex-desktop"
+                ]
+              },
+              {
+                "group": "Génération de médias",
+                "pages": [
+                  "fr/guides/flatkey-cli"
+                ]
+              },
+              {
+                "group": "Modèles populaires",
+                "pages": [
+                  "fr/guides/text-generation",
+                  "fr/guides/image-generation",
+                  {
+                    "group": "Génération de vidéo",
+                    "root": "fr/guides/video-generation",
+                    "pages": [
+                      "fr/guides/seedance",
+                      "fr/guides/minimax-h3"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Tableau de bord",
+                "pages": [
+                  "fr/dashboard/api-keys",
+                  "fr/dashboard/usage",
+                  "fr/dashboard/top-up"
+                ]
+              },
+              {
+                "group": "Référence",
+                "pages": [
+                  "fr/reference/faq",
+                  "fr/reference/enterprise",
+                  "fr/reference/model-list",
+                  "fr/reference/pricing",
+                  "fr/reference/model-health"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Référence API",
+            "groups": [
+              {
+                "group": "Vue d'ensemble",
+                "pages": [
+                  "fr/api-reference/overview",
+                  "fr/api-reference/authentication",
+                  "fr/api-reference/errors"
+                ]
+              },
+              {
+                "group": "Endpoints",
+                "pages": [
+                  "fr/api-reference/chat-completions",
+                  "fr/api-reference/responses",
+                  "fr/api-reference/embeddings",
+                  "fr/api-reference/image-generation",
+                  "fr/api-reference/seedance-video-generation",
+                  "fr/api-reference/models"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "pt",
+        "tabs": [
+          {
+            "tab": "Documentação",
+            "groups": [
+              {
+                "group": "Início rápido",
+                "pages": [
+                  "pt/introduction",
+                  "pt/quickstart"
+                ]
+              },
+              {
+                "group": "Código",
+                "pages": [
+                  "pt/guides/openai-sdk",
+                  "pt/guides/anthropic-sdk",
+                  "pt/guides/api-access"
+                ]
+              },
+              {
+                "group": "Ferramentas de IA populares",
+                "pages": [
+                  "pt/guides/codex-cli",
+                  "pt/guides/claude-code",
+                  "pt/guides/codex-desktop"
+                ]
+              },
+              {
+                "group": "Geração de mídia",
+                "pages": [
+                  "pt/guides/flatkey-cli"
+                ]
+              },
+              {
+                "group": "Modelos populares",
+                "pages": [
+                  "pt/guides/text-generation",
+                  "pt/guides/image-generation",
+                  {
+                    "group": "Geração de vídeo",
+                    "root": "pt/guides/video-generation",
+                    "pages": [
+                      "pt/guides/seedance",
+                      "pt/guides/minimax-h3"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Painel",
+                "pages": [
+                  "pt/dashboard/api-keys",
+                  "pt/dashboard/usage",
+                  "pt/dashboard/top-up"
+                ]
+              },
+              {
+                "group": "Referência",
+                "pages": [
+                  "pt/reference/faq",
+                  "pt/reference/enterprise",
+                  "pt/reference/model-list",
+                  "pt/reference/pricing",
+                  "pt/reference/model-health"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Referência da API",
+            "groups": [
+              {
+                "group": "Visão geral",
+                "pages": [
+                  "pt/api-reference/overview",
+                  "pt/api-reference/authentication",
+                  "pt/api-reference/errors"
+                ]
+              },
+              {
+                "group": "Endpoints",
+                "pages": [
+                  "pt/api-reference/chat-completions",
+                  "pt/api-reference/responses",
+                  "pt/api-reference/embeddings",
+                  "pt/api-reference/image-generation",
+                  "pt/api-reference/seedance-video-generation",
+                  "pt/api-reference/models"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "ru",
+        "tabs": [
+          {
+            "tab": "Документация",
+            "groups": [
+              {
+                "group": "Быстрый старт",
+                "pages": [
+                  "ru/introduction",
+                  "ru/quickstart"
+                ]
+              },
+              {
+                "group": "Код",
+                "pages": [
+                  "ru/guides/openai-sdk",
+                  "ru/guides/anthropic-sdk",
+                  "ru/guides/api-access"
+                ]
+              },
+              {
+                "group": "Популярные ИИ-инструменты",
+                "pages": [
+                  "ru/guides/codex-cli",
+                  "ru/guides/claude-code",
+                  "ru/guides/codex-desktop"
+                ]
+              },
+              {
+                "group": "Генерация медиа",
+                "pages": [
+                  "ru/guides/flatkey-cli"
+                ]
+              },
+              {
+                "group": "Популярные модели",
+                "pages": [
+                  "ru/guides/text-generation",
+                  "ru/guides/image-generation",
+                  {
+                    "group": "Генерация видео",
+                    "root": "ru/guides/video-generation",
+                    "pages": [
+                      "ru/guides/seedance",
+                      "ru/guides/minimax-h3"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Панель управления",
+                "pages": [
+                  "ru/dashboard/api-keys",
+                  "ru/dashboard/usage",
+                  "ru/dashboard/top-up"
+                ]
+              },
+              {
+                "group": "Справочник",
+                "pages": [
+                  "ru/reference/faq",
+                  "ru/reference/enterprise",
+                  "ru/reference/model-list",
+                  "ru/reference/pricing",
+                  "ru/reference/model-health"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Справочник API",
+            "groups": [
+              {
+                "group": "Обзор",
+                "pages": [
+                  "ru/api-reference/overview",
+                  "ru/api-reference/authentication",
+                  "ru/api-reference/errors"
+                ]
+              },
+              {
+                "group": "Эндпоинты",
+                "pages": [
+                  "ru/api-reference/chat-completions",
+                  "ru/api-reference/responses",
+                  "ru/api-reference/embeddings",
+                  "ru/api-reference/image-generation",
+                  "ru/api-reference/seedance-video-generation",
+                  "ru/api-reference/models"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "ja",
+        "tabs": [
+          {
+            "tab": "ドキュメント",
+            "groups": [
+              {
+                "group": "クイックスタート",
+                "pages": [
+                  "ja/introduction",
+                  "ja/quickstart"
+                ]
+              },
+              {
+                "group": "コード",
+                "pages": [
+                  "ja/guides/openai-sdk",
+                  "ja/guides/anthropic-sdk",
+                  "ja/guides/api-access"
+                ]
+              },
+              {
+                "group": "主要な AI ツール",
+                "pages": [
+                  "ja/guides/codex-cli",
+                  "ja/guides/claude-code",
+                  "ja/guides/codex-desktop"
+                ]
+              },
+              {
+                "group": "メディア生成",
+                "pages": [
+                  "ja/guides/flatkey-cli"
+                ]
+              },
+              {
+                "group": "人気のモデル",
+                "pages": [
+                  "ja/guides/text-generation",
+                  "ja/guides/image-generation",
+                  {
+                    "group": "動画生成",
+                    "root": "ja/guides/video-generation",
+                    "pages": [
+                      "ja/guides/seedance",
+                      "ja/guides/minimax-h3"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "ダッシュボード",
+                "pages": [
+                  "ja/dashboard/api-keys",
+                  "ja/dashboard/usage",
+                  "ja/dashboard/top-up"
+                ]
+              },
+              {
+                "group": "リファレンス",
+                "pages": [
+                  "ja/reference/faq",
+                  "ja/reference/enterprise",
+                  "ja/reference/model-list",
+                  "ja/reference/pricing",
+                  "ja/reference/model-health"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API リファレンス",
+            "groups": [
+              {
+                "group": "概要",
+                "pages": [
+                  "ja/api-reference/overview",
+                  "ja/api-reference/authentication",
+                  "ja/api-reference/errors"
+                ]
+              },
+              {
+                "group": "エンドポイント",
+                "pages": [
+                  "ja/api-reference/chat-completions",
+                  "ja/api-reference/responses",
+                  "ja/api-reference/embeddings",
+                  "ja/api-reference/image-generation",
+                  "ja/api-reference/seedance-video-generation",
+                  "ja/api-reference/models"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "vi",
+        "tabs": [
+          {
+            "tab": "Tài liệu",
+            "groups": [
+              {
+                "group": "Bắt đầu nhanh",
+                "pages": [
+                  "vi/introduction",
+                  "vi/quickstart"
+                ]
+              },
+              {
+                "group": "Mã nguồn",
+                "pages": [
+                  "vi/guides/openai-sdk",
+                  "vi/guides/anthropic-sdk",
+                  "vi/guides/api-access"
+                ]
+              },
+              {
+                "group": "Công cụ AI phổ biến",
+                "pages": [
+                  "vi/guides/codex-cli",
+                  "vi/guides/claude-code",
+                  "vi/guides/codex-desktop"
+                ]
+              },
+              {
+                "group": "Tạo nội dung đa phương tiện",
+                "pages": [
+                  "vi/guides/flatkey-cli"
+                ]
+              },
+              {
+                "group": "Mô hình phổ biến",
+                "pages": [
+                  "vi/guides/text-generation",
+                  "vi/guides/image-generation",
+                  {
+                    "group": "Tạo video",
+                    "root": "vi/guides/video-generation",
+                    "pages": [
+                      "vi/guides/seedance",
+                      "vi/guides/minimax-h3"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Bảng điều khiển",
+                "pages": [
+                  "vi/dashboard/api-keys",
+                  "vi/dashboard/usage",
+                  "vi/dashboard/top-up"
+                ]
+              },
+              {
+                "group": "Tham chiếu",
+                "pages": [
+                  "vi/reference/faq",
+                  "vi/reference/enterprise",
+                  "vi/reference/model-list",
+                  "vi/reference/pricing",
+                  "vi/reference/model-health"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Tham chiếu API",
+            "groups": [
+              {
+                "group": "Tổng quan",
+                "pages": [
+                  "vi/api-reference/overview",
+                  "vi/api-reference/authentication",
+                  "vi/api-reference/errors"
+                ]
+              },
+              {
+                "group": "Endpoint",
+                "pages": [
+                  "vi/api-reference/chat-completions",
+                  "vi/api-reference/responses",
+                  "vi/api-reference/embeddings",
+                  "vi/api-reference/image-generation",
+                  "vi/api-reference/seedance-video-generation",
+                  "vi/api-reference/models"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "de",
+        "tabs": [
+          {
+            "tab": "Dokumentation",
+            "groups": [
+              {
+                "group": "Schnellstart",
+                "pages": [
+                  "de/introduction",
+                  "de/quickstart"
+                ]
+              },
+              {
+                "group": "Code",
+                "pages": [
+                  "de/guides/openai-sdk",
+                  "de/guides/anthropic-sdk",
+                  "de/guides/api-access"
+                ]
+              },
+              {
+                "group": "Gängige KI-Tools",
+                "pages": [
+                  "de/guides/codex-cli",
+                  "de/guides/claude-code",
+                  "de/guides/codex-desktop"
+                ]
+              },
+              {
+                "group": "Medienerzeugung",
+                "pages": [
+                  "de/guides/flatkey-cli"
+                ]
+              },
+              {
+                "group": "Beliebte Modelle",
+                "pages": [
+                  "de/guides/text-generation",
+                  "de/guides/image-generation",
+                  {
+                    "group": "Videoerzeugung",
+                    "root": "de/guides/video-generation",
+                    "pages": [
+                      "de/guides/seedance",
+                      "de/guides/minimax-h3"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Dashboard",
+                "pages": [
+                  "de/dashboard/api-keys",
+                  "de/dashboard/usage",
+                  "de/dashboard/top-up"
+                ]
+              },
+              {
+                "group": "Referenz",
+                "pages": [
+                  "de/reference/faq",
+                  "de/reference/enterprise",
+                  "de/reference/model-list",
+                  "de/reference/pricing",
+                  "de/reference/model-health"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API-Referenz",
+            "groups": [
+              {
+                "group": "Überblick",
+                "pages": [
+                  "de/api-reference/overview",
+                  "de/api-reference/authentication",
+                  "de/api-reference/errors"
+                ]
+              },
+              {
+                "group": "Endpunkte",
+                "pages": [
+                  "de/api-reference/chat-completions",
+                  "de/api-reference/responses",
+                  "de/api-reference/embeddings",
+                  "de/api-reference/image-generation",
+                  "de/api-reference/seedance-video-generation",
+                  "de/api-reference/models"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "id",
+        "tabs": [
+          {
+            "tab": "Dokumentasi",
+            "groups": [
+              {
+                "group": "Mulai Cepat",
+                "pages": [
+                  "id/introduction",
+                  "id/quickstart"
+                ]
+              },
+              {
+                "group": "Kode",
+                "pages": [
+                  "id/guides/openai-sdk",
+                  "id/guides/anthropic-sdk",
+                  "id/guides/api-access"
+                ]
+              },
+              {
+                "group": "Alat AI Populer",
+                "pages": [
+                  "id/guides/codex-cli",
+                  "id/guides/claude-code",
+                  "id/guides/codex-desktop"
+                ]
+              },
+              {
+                "group": "Pembuatan Media",
+                "pages": [
+                  "id/guides/flatkey-cli"
+                ]
+              },
+              {
+                "group": "Model Populer",
+                "pages": [
+                  "id/guides/text-generation",
+                  "id/guides/image-generation",
+                  {
+                    "group": "Pembuatan Video",
+                    "root": "id/guides/video-generation",
+                    "pages": [
+                      "id/guides/seedance",
+                      "id/guides/minimax-h3"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Dasbor",
+                "pages": [
+                  "id/dashboard/api-keys",
+                  "id/dashboard/usage",
+                  "id/dashboard/top-up"
+                ]
+              },
+              {
+                "group": "Referensi",
+                "pages": [
+                  "id/reference/faq",
+                  "id/reference/enterprise",
+                  "id/reference/model-list",
+                  "id/reference/pricing",
+                  "id/reference/model-health"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Referensi API",
+            "groups": [
+              {
+                "group": "Ikhtisar",
+                "pages": [
+                  "id/api-reference/overview",
+                  "id/api-reference/authentication",
+                  "id/api-reference/errors"
+                ]
+              },
+              {
+                "group": "Endpoint",
+                "pages": [
+                  "id/api-reference/chat-completions",
+                  "id/api-reference/responses",
+                  "id/api-reference/embeddings",
+                  "id/api-reference/image-generation",
+                  "id/api-reference/seedance-video-generation",
+                  "id/api-reference/models"
                 ]
               }
             ]

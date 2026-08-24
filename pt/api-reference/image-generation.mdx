@@ -1,0 +1,224 @@
+---
+title: "API de Geração e Edição de Imagens"
+sidebarTitle: "API de Imagens"
+description: "Gere ou edite imagens por meio dos endpoints /v1/images/generations e /v1/images/edits, compatíveis com a API de Imagens da OpenAI."
+---
+
+Use `/v1/images/generations` para gerar uma imagem a partir de um prompt de texto e `/v1/images/edits` para editar uma imagem de entrada. Ambos os endpoints utilizam formatos de requisição compatíveis com a API de Imagens da OpenAI. As operações disponíveis dependem do modelo e do canal expostos pelo seu serviço Flatkey.
+
+<Warning>
+  Os modelos de imagem Gemini utilizam o endpoint nativo `generateContent` do Gemini e não podem ser chamados por estes endpoints de Imagens da OpenAI. Consulte o [guia de modelos de imagem Gemini](/pt/guides/image-generation#use-gemini-image-models).
+</Warning>
+
+## Gerar uma imagem
+
+### Endpoint
+
+```
+POST https://router.flatkey.ai/v1/images/generations
+```
+
+### Cabeçalhos
+
+| Cabeçalho | Valor |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### Parâmetros do corpo JSON
+
+<ParamField body="model" type="string" required>
+  ID do modelo de imagem exposto pelo seu serviço Flatkey, como `"gpt-image-2"`.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Descrição em texto da imagem a ser gerada.
+</ParamField>
+
+<ParamField body="size" type="string">
+  Dimensões de saída, como `"1024x1024"`. Os valores suportados dependem do modelo.
+</ParamField>
+
+<ParamField body="quality" type="string">
+  Qualidade de saída: `"low"`, `"medium"` ou `"high"`. Se omitido, o padrão do upstream é utilizado. Qualidade mais alta aumenta a latência e o consumo.
+</ParamField>
+
+<ParamField body="background" type="string">
+  Tratamento do fundo, como `"transparent"` ou `"opaque"`, quando suportado pelo modelo.
+</ParamField>
+
+<ParamField body="output_format" type="string">
+  Formato de saída, como `"png"`, `"jpeg"` ou `"webp"`, quando suportado pelo modelo.
+</ParamField>
+
+<ParamField body="output_compression" type="integer">
+  Nível de compressão da saída, quando suportado pelo modelo.
+</ParamField>
+
+<ParamField body="moderation" type="string">
+  Nível de moderação de conteúdo, quando suportado pelo modelo.
+</ParamField>
+
+<ParamField body="response_format" type="string">
+  Os resultados do `gpt-image-2` são retornados em `data[].b64_json`. URLs de imagens hospedadas não são fornecidas e `response_format: "url"` não é suportado.
+</ParamField>
+
+<ParamField body="n" type="integer">
+  Quantidade de imagens solicitadas. O `gpt-image-2` atualmente retorna uma imagem por requisição, pois sua ferramenta de imagem upstream não aceita `n`. Envie múltiplas requisições se precisar de várias imagens.
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  Defina como `true` para receber uma resposta SSE. Omita para uma resposta síncrona.
+</ParamField>
+
+### Exemplos de requisição
+
+<CodeGroup>
+```python python
+import base64
+import os
+from pathlib import Path
+
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.images.generate(
+    model="gpt-image-2",
+    prompt="A futuristic city skyline at dusk, cyberpunk style",
+    size="1024x1024",
+    quality="high",
+)
+
+Path("generated.png").write_bytes(
+    base64.b64decode(response.data[0].b64_json)
+)
+```
+```javascript node
+import { writeFileSync } from "node:fs";
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const response = await client.images.generate({
+  model: "gpt-image-2",
+  prompt: "A futuristic city skyline at dusk, cyberpunk style",
+  size: "1024x1024",
+  quality: "high",
+});
+
+writeFileSync(
+  "generated.png",
+  Buffer.from(response.data[0].b64_json, "base64"),
+);
+```
+```bash curl
+curl https://router.flatkey.ai/v1/images/generations \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-2",
+    "prompt": "A serene forest clearing with morning mist and sunbeams",
+    "size": "1024x1024",
+    "quality": "high"
+  }'
+```
+</CodeGroup>
+
+## Editar uma imagem
+
+`/v1/images/edits` aceita uma imagem de entrada e instruções de edição como `multipart/form-data`.
+
+### Endpoint
+
+```
+POST https://router.flatkey.ai/v1/images/edits
+```
+
+### Cabeçalhos
+
+| Cabeçalho | Valor |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `multipart/form-data`; o curl adiciona o boundary automaticamente quando você usa `-F` |
+
+### Campos do formulário
+
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `model` | string | Sim | ID do modelo de imagem exposto pelo seu serviço Flatkey, como `gpt-image-2`. |
+| `prompt` | string | Sim | Instruções descrevendo como editar a imagem. |
+| `image` | file | Sim | Imagem de entrada nos formatos PNG, JPEG ou WebP. Para múltiplas imagens, use `image[]` ou campos indexados como `image[0]` e `image[1]`. |
+| `mask` | file | Não | Máscara para inpainting. Áreas transparentes identificam as regiões a serem redesenhadas. |
+| `size` | string | Não | Dimensões de saída. Os valores suportados dependem do modelo. |
+| `quality` | string | Não | Qualidade de saída: `low`, `medium` ou `high`. |
+| `stream` | boolean | Não | Defina como `true` para receber uma resposta SSE. |
+
+### Exemplo de requisição
+
+```bash
+curl https://router.flatkey.ai/v1/images/edits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -F "model=gpt-image-2" \
+  -F "prompt=add a small yellow star in the center" \
+  -F "image=@input.png" \
+  -F "mask=@mask.png"
+```
+
+O campo `mask` é opcional. Omita-o para editar a imagem inteira com base no prompt. Não defina o cabeçalho `Content-Type` manualmente; o curl deriva o boundary multipart correto a partir dos campos `-F`.
+
+<Warning>
+  Se uma máscara fornecida estiver corrompida, ilegível ou exceder o limite do serviço, a requisição falhará em vez de recorrer a uma edição da imagem inteira.
+</Warning>
+
+## Resposta
+
+Requisições síncronas de geração e edição retornam o mesmo formato de resposta. O Flatkey retorna a imagem como dados em base64; ele não fornece uma URL de imagem hospedada para `gpt-image-2`.
+
+```json
+{
+  "created": 1710000000,
+  "data": [
+    {
+      "b64_json": "iVBORw0KGgoAAA...",
+      "revised_prompt": "Add a small yellow five-pointed star in the center...",
+      "url": ""
+    }
+  ]
+}
+```
+
+### Campos da resposta
+
+<ResponseField name="created" type="integer">
+  Timestamp Unix de quando a requisição foi concluída.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array de objetos de imagem.
+  <Expandable title="objeto de imagem">
+    <ResponseField name="b64_json" type="string">Dados da imagem codificados em Base64.</ResponseField>
+    <ResponseField name="revised_prompt" type="string">O prompt efetivamente utilizado pelo modelo após a reescrita.</ResponseField>
+    <ResponseField name="url" type="string">Vazio para `gpt-image-2`; URLs hospedadas não são fornecidas.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+Para edições, a imagem de entrada também é contabilizada no consumo do modelo, portanto uma edição normalmente consome mais do que a geração de imagem somente por texto.
+
+## Streaming
+
+Defina `stream` como `true` no corpo JSON de uma requisição de geração ou adicione `-F "stream=true"` a uma requisição de edição para receber saída `text/event-stream`. O evento final contém o resultado da imagem, seguido de `data: [DONE]`.
+
+| Evento | Significado |
+|---|---|
+| `image_generation.completed` | Geração de imagem concluída. |
+| `image_edit.completed` | Edição de imagem concluída. |
+| `[DONE]` | O stream foi encerrado. |
+
+O suporte a streaming pode depender do modelo e do canal selecionados. Para requisições síncronas de alta qualidade, configure um timeout de cliente de pelo menos 150 segundos.

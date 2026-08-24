@@ -1,0 +1,104 @@
+---
+title: "Danh sách Models — GET /v1/models"
+sidebarTitle: "Models"
+description: "Truy xuất tất cả các mô hình AI có sẵn qua tài khoản Flatkey của bạn với GET /v1/models. Trả về ID mô hình, nhà cung cấp và dấu thời gian theo định dạng tương thích OpenAI."
+---
+
+Endpoint `/v1/models` trả về danh sách tất cả các mô hình có sẵn qua tài khoản Flatkey của bạn. Phản hồi tuân theo định dạng OpenAI API — các ID mô hình được trả về ở đây có thể được sử dụng trong `/v1/chat/completions`, `/v1/embeddings` và các endpoint khác.
+
+## Endpoint
+
+```
+GET https://router.flatkey.ai/v1/models
+```
+
+## Yêu cầu
+
+### Headers
+
+| Header | Giá trị |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+
+Không cần request body.
+
+## Ví dụ yêu cầu
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+models = client.models.list()
+
+for model in models.data:
+    print(model.id)
+```
+```javascript node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const models = await client.models.list();
+
+for (const model of models.data) {
+  console.log(model.id);
+}
+```
+```bash curl
+curl https://router.flatkey.ai/v1/models \
+  -H "Authorization: Bearer $FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+## Phản hồi
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-4o",
+      "object": "model",
+      "created": 1710000000,
+      "owned_by": "openai"
+    },
+    {
+      "id": "claude-sonnet-4-5",
+      "object": "model",
+      "created": 1710000000,
+      "owned_by": "anthropic"
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "object": "model",
+      "created": 1710000000,
+      "owned_by": "google"
+    }
+  ]
+}
+```
+
+### Các trường phản hồi
+
+<ResponseField name="data" type="array">
+  Mảng các đối tượng model.
+  <Expandable title="đối tượng model">
+    <ResponseField name="id" type="string">Định danh mô hình để sử dụng trong các yêu cầu.</ResponseField>
+    <ResponseField name="object" type="string">Luôn là `"model"`.</ResponseField>
+    <ResponseField name="created" type="integer">Dấu thời gian Unix khi mô hình được thêm vào.</ResponseField>
+    <ResponseField name="owned_by" type="string">Nhà cung cấp: `"openai"`, `"anthropic"`, `"google"`, v.v.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Tip>
+  Để biết thông tin về giá, tình trạng hoạt động và thông số kỹ thuật chi tiết của mô hình, hãy truy cập [flatkey.ai/models](https://flatkey.ai/models) hoặc [Thư mục Model](https://flatkey.ai/models).
+</Tip>

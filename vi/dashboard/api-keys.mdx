@@ -1,0 +1,54 @@
+---
+title: "Tạo và Quản lý Khóa API Flatkey trong Console"
+sidebarTitle: "Khóa API"
+description: "Tìm hiểu cách tạo, đặt tên và thu hồi khóa API Flatkey trong console. Quản lý nhiều khóa cho từng môi trường và giữ an toàn cho các tích hợp của bạn."
+---
+
+Khóa API Flatkey của bạn xác thực mọi yêu cầu gửi đến `https://router.flatkey.ai/v1`. Bạn tạo và quản lý các khóa từ mục **Keys** trong console. Bạn có thể tạo nhiều khóa — một khóa cho mỗi môi trường, ứng dụng hoặc thành viên trong nhóm — và thu hồi bất kỳ khóa nào ngay lập tức nếu khóa đó bị lộ.
+
+## Tạo khóa
+
+<Steps>
+  <Step title="Mở trang Keys">
+    Đăng nhập vào [console.flatkey.ai](https://console.flatkey.ai) và nhấp vào **Keys** ở thanh bên trái.
+  </Step>
+  <Step title="Nhấp Create Key">
+    Nhập tên mô tả cho khóa. Chọn tên có ý nghĩa như `production-api`, `staging-test` hoặc `john-dev`. Tên này chỉ hiển thị với bạn.
+  </Step>
+  <Step title="Sao chép và lưu trữ bí mật">
+    Khóa đầy đủ (bắt đầu bằng `sk-fk-`) chỉ được hiển thị **một lần duy nhất**. Hãy sao chép ngay và lưu vào trình quản lý bí mật, trình quản lý mật khẩu hoặc biến môi trường. Bạn không thể truy xuất lại sau khi đóng hộp thoại.
+  </Step>
+</Steps>
+
+<Warning>
+  Nếu bạn mất một khóa API, bạn phải tạo khóa mới. Không có cách nào xem lại bí mật sau khi tạo. Khóa cũ vẫn tiếp tục hoạt động cho đến khi bạn thu hồi nó.
+</Warning>
+
+## Các phương pháp tốt nhất
+
+- **Một khóa cho mỗi môi trường**: Sử dụng các khóa riêng biệt cho môi trường phát triển, staging và production. Nếu một khóa bị lộ, bạn chỉ cần thu hồi khóa đó mà không ảnh hưởng đến các môi trường khác.
+- **Tên mô tả**: Bao gồm môi trường và mục đích sử dụng (ví dụ: `prod-customer-chatbot`, `dev-local`).
+- **Sử dụng biến môi trường**: Không bao giờ nhúng cứng khóa vào mã nguồn. Dùng `FLATKEY_API_KEY` làm tên biến.
+- **Thay thế định kỳ**: Thu hồi và thay thế khóa theo lịch định kỳ, đặc biệt đối với các workload production.
+
+## Xem các khóa của bạn
+
+Trang **Keys** liệt kê tất cả các khóa đang hoạt động của bạn cùng với:
+- Tên khóa
+- Ngày tạo
+- Thời điểm sử dụng lần cuối
+- Tiền tố khóa bị che (ví dụ: `sk-fk-****abcd`)
+
+Bạn không thể xem giá trị khóa đầy đủ sau khi tạo — chỉ thấy tiền tố.
+
+## Thu hồi khóa
+
+Để thu hồi một khóa, nhấp vào biểu tượng **Delete** (thùng rác) bên cạnh khóa đó trên trang Keys. Việc thu hồi có hiệu lực ngay lập tức — mọi yêu cầu sử dụng khóa đó sẽ lập tức nhận được phản hồi `401 Unauthorized`. Không có tính năng xóa mềm hay thời gian gia hạn.
+
+<Tip>
+  Trước khi thu hồi khóa đang được dùng trong production, hãy triển khai khóa thay thế vào ứng dụng của bạn trước. Nếu thu hồi khóa cũ trước khi khóa mới hoạt động, dịch vụ sẽ bị gián đoạn.
+</Tip>
+
+## Quyền của khóa
+
+Tất cả các khóa dùng chung số dư tài khoản và có thể truy cập tất cả các model theo mặc định. Nếu bạn cần giới hạn một khóa chỉ cho các model cụ thể hoặc đặt hạn mức chi tiêu, hãy sử dụng **Groups** trong console để áp dụng các chính sách định tuyến và kiểm soát truy cập.

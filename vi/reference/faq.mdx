@@ -1,0 +1,83 @@
+---
+title: "Câu hỏi thường gặp về Flatkey"
+sidebarTitle: "FAQ"
+description: "Giải đáp các câu hỏi phổ biến nhất về Flatkey — bao gồm khả năng tương thích mô hình, thanh toán, quyền riêng tư, quản lý API key và các tùy chọn dành cho doanh nghiệp."
+---
+
+Trang này giải đáp các câu hỏi phổ biến nhất khi sử dụng Flatkey. Nếu bạn có câu hỏi chưa được giải đáp ở đây, hãy liên hệ [support@flatkey.ai](mailto:support@flatkey.ai) hoặc sử dụng live chat trong bảng điều khiển.
+
+## Bắt đầu
+
+<Accordion title="Flatkey là gì?">
+  Flatkey là một AI API gateway cung cấp quyền truy cập vào hơn 300 mô hình AI chính thức từ OpenAI, Anthropic, Google, DeepSeek, Qwen, GLM và nhiều nhà cung cấp khác, cùng hơn 1000 công cụ — tất cả thông qua một API key duy nhất tương thích với OpenAI. Đây là giải pháp thay thế trực tiếp cho bất kỳ client nào tương thích với OpenAI: chỉ cần đổi `base_url` thành `https://router.flatkey.ai/v1`, sử dụng Flatkey key của bạn và định tuyến đến bất kỳ mô hình nào với mức giá ưu đãi.
+</Accordion>
+
+<Accordion title="Tôi có cần API key riêng cho từng nhà cung cấp không?">
+  Không. Một Flatkey API key duy nhất định tuyến đến hơn 300 mô hình từ tất cả các nhà cung cấp. Bạn không cần API key riêng của OpenAI, Anthropic hay Google.
+</Accordion>
+
+<Accordion title="Các mô hình có phải là phiên bản chính thức từ nhà cung cấp gốc không?">
+  Có. Flatkey định tuyến các yêu cầu của bạn đến API chính thức của nhà cung cấp — OpenAI, Anthropic, Google, DeepSeek, v.v. Kết quả đầu ra của mô hình đến trực tiếp từ cơ sở hạ tầng của nhà cung cấp gốc. Flatkey không lưu trữ, tinh chỉnh hay chỉnh sửa bất kỳ mô hình nào.
+</Accordion>
+
+## Thanh toán và giá cả
+
+<Accordion title="Cách thanh toán hoạt động như thế nào?">
+  Flatkey hoạt động theo hình thức trả trước. Bạn nạp tiền vào số dư ($10, $20, $200 hoặc gói doanh nghiệp tùy chỉnh) và chi phí của mỗi yêu cầu API sẽ được trừ khỏi số dư của bạn theo thời gian thực. Không có gói đăng ký hay phí định kỳ.
+</Accordion>
+
+<Accordion title="Ưu đãi nạp tiền hoạt động như thế nào?">
+  Mỗi lần nạp tiền đều nhận được tín dụng thưởng: +$3 khi nạp $10, +$8 khi nạp $20, +$100 khi nạp $200. Tín dụng thưởng được cộng vào số dư ngay lập tức, không bao giờ hết hạn và sử dụng giống như tín dụng đã thanh toán. Đây không phải mã giảm giá — đây là tín dụng thực sự xuất hiện trong số dư của bạn.
+</Accordion>
+
+<Accordion title="Tôi có thể nạp tiền nhiều lần không?">
+  Có. Bạn có thể nạp tiền bao nhiêu lần tùy thích và nhận tín dụng thưởng cho mỗi lần nạp. Ba lần nạp $200 sẽ nhận được tổng cộng $300 tín dụng thưởng.
+</Accordion>
+
+<Accordion title="Điều gì xảy ra nếu số dư của tôi về không?">
+  Các yêu cầu API sẽ trả về lỗi `401 Insufficient Balance`. Không có khoản phí tự động nào. Hãy nạp tiền vào số dư để tiếp tục sử dụng. Bật cảnh báo số dư thấp trong **Cài đặt → Thông báo** để tránh bị gián đoạn.
+</Accordion>
+
+## Khả năng tương thích và mô hình
+
+<Accordion title="Flatkey có tương thích với OpenAI SDK chính thức không?">
+  Có. Các SDK Python và Node.js của OpenAI hỗ trợ tham số `base_url`. Đặt giá trị thành `https://router.flatkey.ai/v1` và sử dụng Flatkey API key của bạn. Không cần thay đổi gì khác.
+</Accordion>
+
+<Accordion title="Tôi có thể sử dụng Flatkey với Anthropic SDK không?">
+  Có. Đặt `base_url` thành `https://router.flatkey.ai` (không có `/v1`) trong constructor của Anthropic SDK và sử dụng Flatkey API key của bạn. Xem [hướng dẫn Anthropic SDK](/vi/guides/anthropic-sdk) để biết thêm chi tiết.
+</Accordion>
+
+<Accordion title="Tôi nên sử dụng tên mô hình nào?">
+  Sử dụng các model ID chuẩn giống như khi dùng trực tiếp với nhà cung cấp gốc — ví dụ `gpt-4o`, `claude-sonnet-4-5`, `gemini-2.5-flash`. Danh sách đầy đủ có trong [Thư mục Mô hình](https://flatkey.ai/models).
+</Accordion>
+
+<Accordion title="Flatkey có hỗ trợ streaming không?">
+  Có. Đặt `stream: true` trong yêu cầu của bạn. Flatkey trả về các sự kiện server-sent (SSE) theo cùng định dạng với OpenAI API. Streaming hoạt động với tất cả các mô hình chat và tạo văn bản.
+</Accordion>
+
+## Quyền riêng tư và bảo mật
+
+<Accordion title="Flatkey có lưu trữ prompt hoặc kết quả của tôi không?">
+  Không. Flatkey không lưu giữ nội dung yêu cầu — prompt và kết quả hoàn toàn không được ghi vào đĩa hay lưu trữ. Chỉ có metadata (mô hình, số lượng token, dấu thời gian, chi phí) được ghi lại cho mục đích thanh toán và phân tích.
+</Accordion>
+
+<Accordion title="Flatkey có những chứng nhận tuân thủ nào?">
+  Flatkey vận hành trên cơ sở hạ tầng tuân thủ GDPR và duy trì các biện pháp kiểm soát phù hợp với tiêu chuẩn SOC 2 và ISO 27001.
+</Accordion>
+
+<Accordion title="Tôi phải làm gì nếu API key của mình bị lộ?">
+  Thu hồi key ngay lập tức từ trang **Keys** trong bảng điều khiển. Việc thu hồi có hiệu lực ngay tức thì. Sau đó tạo key mới và cập nhật ứng dụng của bạn. Xem [Quản lý API Key](/vi/dashboard/api-keys) để biết thêm chi tiết.
+</Accordion>
+
+## Doanh nghiệp
+
+Chiết khấu theo khối lượng cam kết, định tuyến tùy chỉnh, lập hóa đơn và mua sắm được đề cập trên trang [Doanh nghiệp](/vi/reference/enterprise).
+
+## Hỗ trợ
+
+<Accordion title="Làm thế nào để liên hệ hỗ trợ?">
+  - **Email**: [support@flatkey.ai](mailto:support@flatkey.ai)
+  - **Live chat**: Có sẵn tại [flatkey.ai](https://flatkey.ai) và trong bảng điều khiển
+  - **X (Twitter)**: [@flatkey101](https://x.com/flatkey101)
+</Accordion>

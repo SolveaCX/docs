@@ -1,0 +1,92 @@
+---
+title: "Flatkey APIを直接呼び出す"
+sidebarTitle: "APIアクセス"
+description: "SDKなしでプレーンHTTPからREST APIを利用する方法。ベースURL、認証、利用可能なエンドポイント、エラー処理を説明します。"
+---
+
+ベースURL: `https://router.flatkey.ai`
+
+Flatkey は OpenAI 互換の REST API を公開しています。すでに HTTP クライアントをお持ちであれば、SDK は不要です。このページは、キーの取得から動作するリクエストの送信までの最短経路です。
+
+## 認証
+
+すべてのリクエストにベアラートークンとしてキーを含めます：
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+キーは[コンソール](https://console.flatkey.ai)で作成してください。キーは `sk-fk-` で始まります。環境変数に保存し、ソースコントロールやブラウザのコードには含めないようにしてください。
+
+```bash
+export FLATKEY_API_KEY="sk-fk-..."
+```
+
+## リクエストを送信する
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-5",
+    "messages": [{ "role": "user", "content": "Hello!" }]
+  }'
+```
+
+呼び出しが成功すると、`choices` と `usage` を含む標準のチャット補完オブジェクトが返されます。
+
+## 利用可能なエンドポイント
+
+| エンドポイント | 目的 |
+| --- | --- |
+| `POST /v1/chat/completions` | [テキストおよびチャット生成](/ja/api-reference/chat-completions) |
+| `POST /v1/responses` | [Responses API](/ja/api-reference/responses)（OpenAI モデル用） |
+| `POST /v1/images/generations` | [画像生成と編集](/ja/api-reference/image-generation) |
+| `POST /v1/videos` | [動画生成](/ja/api-reference/seedance-video-generation)（非同期） |
+| `GET /v1/videos/{task_id}` | 動画タスクのポーリング |
+| `GET /v1/models` | [利用可能なモデルの一覧](/ja/api-reference/models) |
+| `GET /v1/credits` | 残高の確認 |
+
+<Warning>
+  `POST /v1/responses` は現在 OpenAI モデルで動作します。他のファミリーはこのエンドポイントでエラーを返すため、それらには `POST /v1/chat/completions` を使用してください。
+</Warning>
+
+## 残高を確認する
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/credits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY"
+```
+
+```json
+{ "remaining": 34.18, "used": 185.13 }
+```
+
+## エラーを処理する
+
+エラーは対処可能なメッセージを含む JSON ボディを返します：
+
+```json
+{ "error": { "message": "No available channel for model ..." } }
+```
+
+| ステータス | 意味 | 対処方法 |
+| --- | --- | --- |
+| `400` | リクエストの形式が不正 | メッセージを読む。問題のあるフィールド名が記載されています |
+| `401` | 無効なキー | `Authorization` ヘッダーとキーの値を確認する |
+| `429` | リクエスト過多 | バックオフして再試行する |
+| `500`, `503` | モデルまたはルートが利用不可 | モデルを切り替える。同じモデルで再試行しても解消されないことがほとんどです |
+
+完全な一覧は[エラーリファレンス](/ja/api-reference/errors)を参照してください。
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="APIリファレンス" icon="code" href="/ja/api-reference/overview">
+    すべてのエンドポイント、パラメーター、レスポンスフィールド。
+  </Card>
+  <Card title="SDKを代わりに使用する" icon="plug" href="/ja/guides/openai-sdk">
+    OpenAI または Anthropic クライアントをそのまま使い、1行だけ変更する。
+  </Card>
+</CardGroup>

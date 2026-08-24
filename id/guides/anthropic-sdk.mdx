@@ -1,0 +1,103 @@
+---
+title: "Rutekan Permintaan Claude Melalui Flatkey via Anthropic SDK"
+sidebarTitle: "Anthropic SDK"
+description: "Rutekan permintaan Anthropic Claude melalui Flatkey dengan menyetel base URL di Anthropic SDK. Akses Claude dengan diskon hingga 50% dari harga resmi."
+---
+
+Anda dapat mengakses model Claude dengan diskon hingga 50% dari harga resmi Anthropic dengan merutekan Anthropic Python SDK melalui Flatkey. Setel parameter `base_url` sekali saja dan kode SDK Anda yang sudah ada akan berjalan seperti biasa — tidak diperlukan perubahan lain.
+
+## Instalasi
+
+```bash pip
+pip install anthropic
+```
+
+## Pengaturan dasar
+
+```python python
+import os
+import anthropic
+
+client = anthropic.Anthropic(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai",
+)
+```
+
+<Note>
+  Saat menggunakan Anthropic SDK, setel `base_url` ke `https://router.flatkey.ai` (tanpa `/v1`). SDK akan menambahkan path-nya secara otomatis.
+</Note>
+
+## Mengirim pesan
+
+```python python
+message = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=1024,
+    messages=[
+        {"role": "user", "content": "Write a Python function to reverse a linked list."}
+    ],
+)
+
+print(message.content[0].text)
+```
+
+## System prompt
+
+```python python
+message = client.messages.create(
+    model="claude-opus-4-5",
+    max_tokens=2048,
+    system="You are a senior software engineer. Provide concise, idiomatic code.",
+    messages=[
+        {"role": "user", "content": "Implement a rate limiter in Python."}
+    ],
+)
+
+print(message.content[0].text)
+```
+
+## Streaming
+
+```python python
+with client.messages.stream(
+    model="claude-haiku-4-5-20251001",
+    max_tokens=512,
+    messages=[{"role": "user", "content": "Explain how HTTPS works."}],
+) as stream:
+    for text in stream.text_stream:
+        print(text, end="", flush=True)
+print()
+```
+
+## Percakapan multi-giliran
+
+```python python
+conversation = [
+    {"role": "user", "content": "What is the capital of France?"},
+    {"role": "assistant", "content": "The capital of France is Paris."},
+    {"role": "user", "content": "What is its population?"},
+]
+
+response = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=256,
+    messages=conversation,
+)
+
+print(response.content[0].text)
+```
+
+## Model Claude yang tersedia
+
+| Model | Terbaik untuk | Harga input (setelah bonus) |
+|---|---|---|
+| `claude-opus-4-5` | Penalaran kompleks, penulisan panjang | ~$3 / 1 juta token |
+| `claude-sonnet-4-5` | Kualitas dan kecepatan seimbang | ~$1.6 / 1 juta token |
+| `claude-haiku-4-5-20251001` | Tugas cepat dan hemat biaya | ~$0.53 / 1 juta token |
+
+Lihat [Direktori Model](https://flatkey.ai/models) untuk semua model Claude dan harga terkini.
+
+<Tip>
+  Anda juga dapat menggunakan model Claude dengan OpenAI SDK melalui Flatkey — cukup setel `model="claude-sonnet-4-5"` dalam panggilan `client.chat.completions.create()`. Gunakan SDK mana pun yang sesuai dengan proyek Anda.
+</Tip>

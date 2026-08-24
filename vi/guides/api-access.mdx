@@ -1,0 +1,92 @@
+---
+title: "Gọi trực tiếp Flatkey API"
+sidebarTitle: "Truy cập API"
+description: "Sử dụng REST API với HTTP thuần túy, không cần SDK. Bao gồm base URL, xác thực, các endpoint hiện có và xử lý lỗi."
+---
+
+Base URL: `https://router.flatkey.ai`
+
+Flatkey cung cấp một REST API tương thích với OpenAI. Nếu bạn đã có HTTP client, bạn không cần SDK. Trang này là con đường ngắn nhất từ một key đến một request hoạt động được.
+
+## Xác thực
+
+Mỗi request mang theo key của bạn dưới dạng bearer token:
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+Tạo key trong [console](https://console.flatkey.ai). Các key bắt đầu bằng `sk-fk-`. Lưu trữ nó trong biến môi trường và giữ nó tránh xa source control và code trên trình duyệt.
+
+```bash
+export FLATKEY_API_KEY="sk-fk-..."
+```
+
+## Gửi một request
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-5",
+    "messages": [{ "role": "user", "content": "Hello!" }]
+  }'
+```
+
+Một lời gọi thành công trả về đối tượng chat completion chuẩn với `choices` và `usage`.
+
+## Các endpoint hiện có
+
+| Endpoint | Mục đích |
+| --- | --- |
+| `POST /v1/chat/completions` | [Tạo văn bản và chat](/vi/api-reference/chat-completions) |
+| `POST /v1/responses` | [Responses API](/vi/api-reference/responses), dành cho các mô hình OpenAI |
+| `POST /v1/images/generations` | [Tạo và chỉnh sửa ảnh](/vi/api-reference/image-generation) |
+| `POST /v1/videos` | [Tạo video](/vi/api-reference/seedance-video-generation), bất đồng bộ |
+| `GET /v1/videos/{task_id}` | Kiểm tra trạng thái một video task |
+| `GET /v1/models` | [Liệt kê các mô hình hiện có](/vi/api-reference/models) |
+| `GET /v1/credits` | Số dư còn lại |
+
+<Warning>
+  `POST /v1/responses` hiện tại chỉ hoạt động với các mô hình OpenAI. Các dòng mô hình khác trả về lỗi trên endpoint này — hãy dùng `POST /v1/chat/completions` cho chúng.
+</Warning>
+
+## Kiểm tra số dư của bạn
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/credits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY"
+```
+
+```json
+{ "remaining": 34.18, "used": 185.13 }
+```
+
+## Xử lý lỗi
+
+Lỗi trả về một body JSON với thông báo bạn có thể xử lý:
+
+```json
+{ "error": { "message": "No available channel for model ..." } }
+```
+
+| Trạng thái | Ý nghĩa | Cần làm gì |
+| --- | --- | --- |
+| `400` | Request không đúng định dạng | Đọc thông báo; nó chỉ ra trường gây lỗi |
+| `401` | Key không hợp lệ | Kiểm tra header `Authorization` và giá trị key |
+| `429` | Quá nhiều request | Dừng lại và thử lại sau |
+| `500`, `503` | Mô hình hoặc route không khả dụng | Chuyển sang mô hình khác. Thử lại cùng mô hình hiếm khi giải quyết được |
+
+Danh sách đầy đủ trong [tài liệu tham khảo lỗi](/vi/api-reference/errors).
+
+## Các bước tiếp theo
+
+<CardGroup cols={2}>
+  <Card title="Tài liệu tham khảo API" icon="code" href="/vi/api-reference/overview">
+    Mọi endpoint, tham số và trường response.
+  </Card>
+  <Card title="Dùng SDK thay thế" icon="plug" href="/vi/guides/openai-sdk">
+    Giữ nguyên client OpenAI hoặc Anthropic của bạn và chỉ thay đổi một dòng.
+  </Card>
+</CardGroup>

@@ -1,0 +1,277 @@
+---
+title: "Bilder mit GPT- und Gemini-Modellen über Flatkey generieren und bearbeiten"
+sidebarTitle: "Bildgenerierung & -bearbeitung"
+description: "Generieren und bearbeiten Sie Bilder über Flatkey mit gpt-image-2 und Gemini-Bildmodellen unter Verwendung der OpenAI Images-kompatiblen oder nativen Gemini-APIs."
+---
+
+Flatkey stellt zwei Bild-API-Familien bereit. Verwenden Sie die OpenAI-kompatiblen Endpunkte `/v1/images/generations` und `/v1/images/edits` für `gpt-image-2`. Verwenden Sie den nativen Gemini-Endpunkt `generateContent` für Gemini-Bildmodelle.
+
+<Warning>
+  Sie können Gemini-Bildmodelle nicht mit dem OpenAI Images SDK, `/v1/images/generations` oder `/v1/images/edits` aufrufen. Verwenden Sie die nativen Gemini-API-Beispiele auf dieser Seite. Andernfalls kann die Anfrage `get_channel_failed` zurückgeben.
+</Warning>
+
+## Unterstützte Bildmodelle
+
+| Modell | API | Offizieller Preis | Preis nach Bonus |
+|---|---|---|---|
+| `gpt-image-2` | OpenAI Images API | $6.65 / 1M Tokens | ~$3.99 / 1M Tokens |
+| `gemini-3-pro-image` | Native Gemini API | $2.00 / 1M Tokens | ~$1.20 / 1M Tokens |
+| `gemini-2.5-flash-image` | Native Gemini API | $0.30 / 1M Tokens | ~$0.18 / 1M Tokens |
+| `gemini-3.1-flash-image` | Native Gemini API | Siehe Dashboard | Siehe Dashboard |
+| `gemini-3.1-flash-lite-image` | Native Gemini API | Siehe Dashboard | Siehe Dashboard |
+| `nano-banana-pro-preview` | Native Gemini API | Siehe Dashboard | Siehe Dashboard |
+
+Die vollständige Modellliste und aktuelle Preise finden Sie im [Modellverzeichnis](https://flatkey.ai/models).
+
+## gpt-image-2 verwenden
+
+### Das OpenAI SDK verwenden
+
+<CodeGroup>
+```python python
+import base64
+import os
+from pathlib import Path
+
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.images.generate(
+    model="gpt-image-2",
+    prompt="A serene mountain lake at sunset, photorealistic",
+    size="1024x1024",
+)
+
+Path("generated.png").write_bytes(
+    base64.b64decode(response.data[0].b64_json)
+)
+```
+```javascript node
+import { writeFileSync } from "node:fs";
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const response = await client.images.generate({
+  model: "gpt-image-2",
+  prompt: "A serene mountain lake at sunset, photorealistic",
+  size: "1024x1024",
+});
+
+writeFileSync(
+  "generated.png",
+  Buffer.from(response.data[0].b64_json, "base64"),
+);
+```
+</CodeGroup>
+
+### Ein Bild mit curl generieren
+
+```bash
+curl https://router.flatkey.ai/v1/images/generations \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-2",
+    "prompt": "A futuristic cityscape at night, neon lights, wide angle",
+    "size": "1024x1024"
+  }'
+```
+
+Dieser Endpunkt gibt das generierte Bild in `data[0].b64_json` zurück; `gpt-image-2` stellt keine gehostete Bild-URL bereit. Alle Felder finden Sie in der [Images-API-Referenz](/de/api-reference/image-generation#ein-bild-generieren).
+
+### Ein Bild mit curl bearbeiten
+
+Verwenden Sie `/v1/images/edits`, um ein Eingabebild zusammen mit Bearbeitungsanweisungen hochzuladen. Dieser Endpunkt verwendet `multipart/form-data`; `image` ist erforderlich, `mask` ist optional.
+
+```bash
+curl https://router.flatkey.ai/v1/images/edits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -F "model=gpt-image-2" \
+  -F "prompt=add a small yellow star in the center" \
+  -F "image=@input.png" \
+  -F "mask=@mask.png"
+```
+
+`image` unterstützt PNG, JPEG und WebP. Lassen Sie `mask` weg, um das gesamte Bild anhand des Prompts zu bearbeiten. Wenn eine Maske angegeben wird, kennzeichnen ihre transparenten Bereiche die Regionen, die neu gezeichnet werden sollen. Das bearbeitete Bild wird in `data[0].b64_json` zurückgegeben. Alle Felder finden Sie in der [Bearbeitungs-API-Referenz](/de/api-reference/image-generation#ein-bild-bearbeiten).
+
+## Gemini-Bildmodelle verwenden
+
+Gemini-Bildmodelle verwenden den folgenden Endpunkt. Ersetzen Sie `{model}` durch eine Modell-ID:
+
+```text
+POST https://router.flatkey.ai/v1beta/models/{model}:generateContent
+```
+
+Die Anfrage muss `"IMAGE"` in `generationConfig.responseModalities` enthalten. Generierte Bilder werden in `candidates[].content.parts[].inlineData` zurückgegeben.
+
+### curl verwenden
+
+```bash
+curl https://router.flatkey.ai/v1beta/models/gemini-2.5-flash-image:generateContent \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contents": [{
+      "parts": [{
+        "text": "A product photo of a translucent purple glass bottle on a white background"
+      }]
+    }],
+    "generationConfig": {
+      "responseModalities": ["TEXT", "IMAGE"]
+    }
+  }'
+```
+
+### Python verwenden und das Bild speichern
+
+Installieren Sie einen HTTP-Client:
+
+```bash
+pip install requests
+```
+
+```python
+import base64
+import os
+from pathlib import Path
+
+import requests
+
+model = "gemini-2.5-flash-image"
+response = requests.post(
+    f"https://router.flatkey.ai/v1beta/models/{model}:generateContent",
+    headers={
+        "Authorization": f"Bearer {os.environ['FLATKEY_API_KEY']}",
+        "Content-Type": "application/json",
+    },
+    json={
+        "contents": [{
+            "parts": [{
+                "text": "A product photo of a translucent purple glass bottle on a white background"
+            }]
+        }],
+        "generationConfig": {
+            "responseModalities": ["TEXT", "IMAGE"]
+        },
+    },
+    timeout=180,
+)
+response.raise_for_status()
+
+parts = response.json()["candidates"][0]["content"]["parts"]
+image = next(part["inlineData"] for part in parts if "inlineData" in part)
+suffix = ".jpg" if image["mimeType"] == "image/jpeg" else ".png"
+output = Path(f"generated{suffix}")
+output.write_bytes(base64.b64decode(image["data"]))
+print(output)
+```
+
+### Node.js verwenden und das Bild speichern
+
+```javascript
+import { writeFileSync } from "node:fs";
+
+const model = "gemini-2.5-flash-image";
+const response = await fetch(
+  `https://router.flatkey.ai/v1beta/models/${model}:generateContent`,
+  {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.FLATKEY_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      contents: [{
+        parts: [{
+          text: "A product photo of a translucent purple glass bottle on a white background",
+        }],
+      }],
+      generationConfig: {
+        responseModalities: ["TEXT", "IMAGE"],
+      },
+    }),
+  },
+);
+
+if (!response.ok) {
+  throw new Error(`${response.status}: ${await response.text()}`);
+}
+
+const result = await response.json();
+const image = result.candidates[0].content.parts.find(
+  (part) => part.inlineData,
+).inlineData;
+const suffix = image.mimeType === "image/jpeg" ? "jpg" : "png";
+writeFileSync(`generated.${suffix}`, Buffer.from(image.data, "base64"));
+```
+
+## Gemini-Anforderungsfelder
+
+<ParamField body="contents" type="array" required>
+  Gesprächsinhalt. Für die Text-zu-Bild-Generierung geben Sie die Bildbeschreibung in `parts[].text` an.
+</ParamField>
+
+<ParamField body="generationConfig.responseModalities" type="array" required>
+  Antwort-Modalitäten. Verwenden Sie `["TEXT", "IMAGE"]` für Text und Bilder oder `["IMAGE"]`, um nur Bilder anzufordern.
+</ParamField>
+
+<ParamField body="model" type="string" required>
+  Die Modell-ID erscheint im URL-Pfad, nicht im Anfrage-Body. Zum Beispiel `gemini-3-pro-image`.
+</ParamField>
+
+## Gemini-Antwortformat
+
+```json
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "Here is the generated image."
+          },
+          {
+            "inlineData": {
+              "mimeType": "image/png",
+              "data": "iVBORw0KGgoAAA..."
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+<Note>
+  `inlineData.data` enthält das base64-kodierte Bild. Eine Antwort kann Text und mehrere Bildteile enthalten. Iterieren Sie über `parts`, anstatt anzunehmen, dass das Bild immer das erste Element ist.
+</Note>
+
+## Fehlerbehebung
+
+### Die API gibt get_channel_failed zurück
+
+Stellen Sie sicher, dass der Endpunkt zum Modell passt:
+
+- Verwenden Sie `/v1/images/generations`, um mit `gpt-image-2` zu generieren.
+- Verwenden Sie `/v1/images/edits`, um mit `gpt-image-2` zu bearbeiten.
+- Verwenden Sie `/v1beta/models/{model}:generateContent` für Gemini-Bildmodelle.
+
+### Die Gemini-Antwort enthält kein Bild
+
+Stellen Sie sicher, dass `generationConfig.responseModalities` den Wert `"IMAGE"` enthält. Prüfen Sie die Antwort außerdem auf einen Fehler oder eine Sicherheitssperre.
+
+## Effektive Prompts schreiben
+
+- Geben Sie den Stil an: *fotorealistisch, Ölgemälde, Aquarell, 3D-Rendering*
+- Fügen Sie Beleuchtungsdetails hinzu: *goldene Stunde, Studiobeleuchtung, dramatische Schatten*
+- Geben Sie die Komposition an: *Nahaufnahme, Weitwinkel, Vogelperspektive, Hochformat*
+- Fügen Sie Qualitätsmodifikatoren hinzu: *sehr detailliert, 4K, professionelle Fotografie*

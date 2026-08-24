@@ -1,0 +1,54 @@
+---
+title: "Buat dan Kelola API Key Flatkey Anda di Konsol"
+sidebarTitle: "API Keys"
+description: "Pelajari cara membuat, memberi nama, dan mencabut API key Flatkey di konsol. Kelola beberapa key per lingkungan dan jaga keamanan integrasi Anda."
+---
+
+API key Flatkey Anda mengautentikasi setiap permintaan ke `https://router.flatkey.ai/v1`. Anda membuat dan mengelola key dari bagian **Keys** di konsol. Anda dapat membuat beberapa key — satu per lingkungan, aplikasi, atau anggota tim — dan mencabut key mana pun secara instan jika key tersebut disusupi.
+
+## Membuat key
+
+<Steps>
+  <Step title="Buka halaman Keys">
+    Masuk ke [console.flatkey.ai](https://console.flatkey.ai) dan klik **Keys** di sidebar kiri.
+  </Step>
+  <Step title="Klik Buat Key">
+    Masukkan nama deskriptif untuk key tersebut. Pilih sesuatu yang bermakna seperti `production-api`, `staging-test`, atau `john-dev`. Nama ini hanya terlihat oleh Anda.
+  </Step>
+  <Step title="Salin dan simpan rahasia">
+    Key lengkap (dimulai dengan `sk-fk-`) ditampilkan **hanya sekali**. Salin segera dan simpan di manajer rahasia, manajer kata sandi, atau variabel lingkungan. Anda tidak dapat mengambilnya lagi setelah menutup dialog.
+  </Step>
+</Steps>
+
+<Warning>
+  Jika Anda kehilangan API key, Anda harus membuat yang baru. Tidak ada cara untuk melihat rahasia tersebut lagi setelah pembuatan. Key lama akan terus berfungsi hingga Anda mencabutnya.
+</Warning>
+
+## Praktik terbaik
+
+- **Satu key per lingkungan**: Gunakan key terpisah untuk pengembangan, staging, dan produksi. Jika sebuah key bocor, Anda hanya perlu mencabut lingkungan tersebut tanpa memengaruhi yang lain.
+- **Nama deskriptif**: Sertakan lingkungan dan tujuan (mis., `prod-customer-chatbot`, `dev-local`).
+- **Gunakan variabel lingkungan**: Jangan pernah hardcode key di kode sumber. Gunakan `FLATKEY_API_KEY` sebagai nama variabel.
+- **Rotasi secara berkala**: Cabut dan ganti key secara terjadwal, terutama untuk beban kerja produksi.
+
+## Melihat key Anda
+
+Halaman **Keys** menampilkan semua key aktif Anda beserta:
+- Nama key
+- Tanggal pembuatan
+- Stempel waktu terakhir digunakan
+- Prefiks key yang disamarkan (mis., `sk-fk-****abcd`)
+
+Anda tidak dapat melihat nilai key lengkap setelah pembuatan — hanya prefiks-nya.
+
+## Mencabut key
+
+Untuk mencabut key, klik ikon **Delete** (tempat sampah) di sebelahnya pada halaman Keys. Pencabutan bersifat langsung — setiap permintaan yang menggunakan key tersebut akan segera menerima respons `401 Unauthorized`. Tidak ada soft-delete atau masa tenggang.
+
+<Tip>
+  Sebelum mencabut key yang digunakan di produksi, deploy key pengganti ke aplikasi Anda terlebih dahulu. Mencabut key lama sebelum key baru Anda aktif akan menyebabkan downtime.
+</Tip>
+
+## Izin key
+
+Semua key berbagi saldo akun yang sama dan dapat mengakses semua model secara default. Jika Anda perlu membatasi key ke model tertentu atau menetapkan kuota pengeluaran, gunakan **Groups** di konsol untuk menerapkan kebijakan perutean dan akses.

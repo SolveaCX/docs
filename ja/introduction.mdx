@@ -1,0 +1,74 @@
+---
+title: "Flatkey: 1つのキーで300以上の公式AIモデルと1000以上のツール、最大50%オフ"
+sidebarTitle: "はじめに"
+description: "Flatkeyは、GPT、Claude、Gemini、DeepSeek、その他300以上のモデルと1000以上のツールに、1つのOpenAI互換キーでアクセスできるAI APIゲートウェイです。公式モデルに最大50%オフでアクセスできます。"
+---
+
+Flatkeyは、OpenAI、Anthropic、Google、DeepSeek、Qwen、GLMなど300以上の公式モデルと1000以上のツールに、単一のOpenAI互換APIキーでアクセスできるAI APIゲートウェイです。あらゆるOpenAI互換クライアントのドロップイン代替として機能します。コード1行（`base_url`）を変更するだけで、リクエストが公式価格の最大50%オフでFlatkey経由でルーティングされます。
+
+## Flatkeyが提供するもの
+
+<CardGroup cols={2}>
+  <Card title="1つのキーで全モデル対応" icon="key">
+    単一のAPIキーとベースURLで、GPT、Claude、Gemini、DeepSeek、Qwen、GLMなどにルーティングされます。プロバイダーごとにキーを管理する必要はありません。
+  </Card>
+  <Card title="最大50%の節約" icon="piggy-bank">
+    モデルの価格は公式定価の60〜90%。200ドルのチャージで100ドルのボーナスクレジットが付与され、重ねると公式価格の半額以下になります。
+  </Card>
+  <Card title="99.9%の信頼性" icon="shield-check">
+    上流プロバイダー間での自動フェイルオーバー。ライブヘルスダッシュボードに本番トラフィックからのリアルタイム成功率が表示されます。
+  </Card>
+  <Card title="データ保持なし" icon="lock">
+    プロンプトと補完結果は一切保存されません。GDPRに準拠し、SOC 2およびISO 27001に沿ったコントロールを採用しています。
+  </Card>
+  <Card title="プリペイド残高" icon="receipt">
+    一度チャージするだけで使った分だけ消費されます。サブスクリプションも予期しない請求もありません。
+  </Card>
+  <Card title="完全なAPI互換性" icon="plug">
+    OpenAI互換エンドポイント：チャット補完、レスポンス、埋め込み、画像生成、モデル一覧に対応。
+  </Card>
+</CardGroup>
+
+## 対応プロバイダー
+
+Flatkeyは主要なAIベンダー全社の公式APIにルーティングします。
+
+| プロバイダー | モデル例 |
+|---|---|
+| OpenAI | gpt-4o, gpt-4o-mini, gpt-5, gpt-image-2 |
+| Anthropic | claude-opus-4, claude-sonnet-4, claude-haiku-4 |
+| Google | gemini-2.5-pro, gemini-2.5-flash, gemini-flash-latest |
+| DeepSeek | deepseek-v3, deepseek-v4-pro, deepseek-v4-flash |
+| Qwen | qwen3.5-plus, qwen3.7-max, qwen3.5-flash |
+| Z.ai / GLM | glm-4.7, glm-5-turbo, glm-5.2 |
+| ByteDance | seedance-2.0, seedance-2.5 |
+
+300以上の全モデルのライブ価格とヘルスデータは[モデルディレクトリ](https://flatkey.ai/models)をご覧ください。
+
+## 仕組み
+
+FlatkeyはアプリケーションとAIプロバイダーの間に位置します。リクエストを送信すると：
+
+1. クライアントがFlatkey APIキーを使って`https://router.flatkey.ai/v1`を呼び出します。
+2. Flatkeyがリクエストを認証し、プリペイド残高からコストを差し引きます。
+3. リクエストが公式プロバイダーAPI（OpenAI、Anthropicなど）に転送されます。
+4. レスポンスがコンテンツを変換することなく直接クライアントに返されます。
+
+プロンプトと補完結果は一切保存されません。Flatkeyは課金と分析のためにメタデータ（モデル、トークン数、タイムスタンプ）のみを記録します。
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="クイックスタート" icon="bolt" href="/ja/quickstart">
+    アカウントを作成し、5分以内に最初のAPIコールを実行しましょう
+  </Card>
+  <Card title="認証" icon="lock-keyhole" href="/ja/api-reference/authentication">
+    Flatkey APIキーの作成と使い方を確認しましょう
+  </Card>
+  <Card title="OpenAI SDKガイド" icon="python" href="/ja/guides/openai-sdk">
+    公式OpenAI SDK（PythonまたはNode.js）でFlatkeyを使用する方法
+  </Card>
+  <Card title="APIリファレンス" icon="code" href="/ja/api-reference/overview">
+    対応する全APIメソッドの完全なエンドポイントリファレンス
+  </Card>
+</CardGroup>

@@ -1,0 +1,68 @@
+---
+title: "Autenticación en la API de Flatkey: tokens Bearer y claves API"
+sidebarTitle: "Autenticación"
+description: "Autentica las solicitudes a la API de Flatkey enviando tu clave API como token Bearer en la cabecera Authorization. Aprende los formatos de clave, errores y buenas prácticas."
+---
+
+Cada solicitud a la API de Flatkey debe incluir una clave API válida en la cabecera `Authorization` como token Bearer. Puedes crear y gestionar claves en la [consola de Flatkey](https://console.flatkey.ai/keys).
+
+## Formato de la cabecera
+
+```http
+Authorization: Bearer sk-fk-your-api-key
+```
+
+Las claves API de Flatkey comienzan por `sk-fk-`. Las claves distinguen entre mayúsculas y minúsculas y deben enviarse exactamente tal como se generaron.
+
+## Ejemplo de solicitud
+
+```bash
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+## Crear una clave API
+
+1. Inicia sesión en [console.flatkey.ai](https://console.flatkey.ai)
+2. Haz clic en **Claves** en la barra lateral izquierda
+3. Haz clic en **Crear clave** e introduce un nombre
+4. Copia la clave: se muestra **una sola vez**
+
+Si pierdes una clave, debes crear una nueva. Las claves antiguas permanecen activas hasta que se revocan explícitamente.
+
+## Errores de autenticación
+
+| Estado HTTP | Condición | Solución |
+|---|---|---|
+| `401 Unauthorized` | Falta la clave en la solicitud | Añade la cabecera `Authorization: Bearer sk-fk-...` |
+| `401 Unauthorized` | La clave no es válida o ha sido revocada | Genera una nueva clave en la consola |
+| `401 Unauthorized` | El saldo es $0.00 | Recarga saldo en [console.flatkey.ai](https://console.flatkey.ai) |
+| `403 Forbidden` | La clave no tiene acceso al modelo | Revisa los permisos de la clave en la consola |
+
+### Formato de respuesta de error
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided.",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## Buenas prácticas de seguridad
+
+- Guarda las claves en variables de entorno, no en el código fuente
+- Usa una clave por entorno de despliegue
+- Revoca las claves de inmediato si se ven comprometidas
+- Rota las claves periódicamente en cargas de trabajo de producción
+
+<Warning>
+  Nunca incluyas claves API en JavaScript del lado del cliente, paquetes de aplicaciones móviles ni repositorios públicos. Las claves pueden utilizarse de forma indebida para agotar tu saldo.
+</Warning>

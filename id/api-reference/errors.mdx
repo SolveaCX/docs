@@ -1,0 +1,194 @@
+---
+title: "Kesalahan API Flatkey: Kode Status HTTP dan Pemecahan Masalah"
+sidebarTitle: "Kesalahan"
+description: "Referensi untuk semua kode kesalahan HTTP API Flatkey, format respons kesalahan, dan perbaikan yang direkomendasikan untuk respons 400, 401, 403, 429, 500, dan 503."
+---
+
+Flatkey mengembalikan kode status HTTP standar beserta body kesalahan JSON yang menjelaskan apa yang salah. Respons kesalahan mengikuti format yang sama dengan OpenAI API, sehingga kode penanganan kesalahan yang sudah ada dapat bekerja tanpa modifikasi.
+
+## Format respons kesalahan
+
+Semua kesalahan mengembalikan objek JSON dengan field `error`:
+
+```json
+{
+  "error": {
+    "message": "A human-readable description of the error.",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## Kode status HTTP
+
+### 400 Bad Request
+
+Body permintaan tidak sesuai format atau tidak memiliki field yang wajib diisi.
+
+```json
+{
+  "error": {
+    "message": "Missing required field: model",
+    "type": "invalid_request_error",
+    "code": "missing_required_field"
+  }
+}
+```
+
+**Penyebab umum:**
+- Field `model` atau `messages` tidak ada dalam chat completions
+- JSON tidak valid dalam body permintaan
+- Array `messages` kosong
+
+---
+
+### 401 Unauthorized
+
+Autentikasi gagal. Kunci tidak valid, tidak ada, atau saldo akun nol.
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided.",
+    "type": "authentication_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+**Penyebab umum dan perbaikan:**
+
+| Nilai `code` | Penyebab | Perbaikan |
+|---|---|---|
+| `invalid_api_key` | Kunci tidak ada, tidak sesuai format, atau telah dicabut | Periksa dan buat ulang kunci Anda |
+| `insufficient_balance` | Saldo akun adalah $0.00 | Isi ulang di [console.flatkey.ai](https://console.flatkey.ai) |
+
+---
+
+### 403 Forbidden
+
+Kunci API tidak memiliki izin untuk mengakses model yang diminta.
+
+```json
+{
+  "error": {
+    "message": "This key does not have access to model claude-opus-4-5.",
+    "type": "permission_error",
+    "code": "model_not_allowed"
+  }
+}
+```
+
+**Perbaikan:** Periksa pengaturan akses model untuk kunci ini di [konsol](https://console.flatkey.ai/keys).
+
+---
+
+### 404 Not Found
+
+ID model tidak dikenali oleh Flatkey.
+
+```json
+{
+  "error": {
+    "message": "Model 'gpt-unknown' not found.",
+    "type": "invalid_request_error",
+    "code": "model_not_found"
+  }
+}
+```
+
+**Perbaikan:** Verifikasi ID model di [Direktori Model](https://flatkey.ai/models). ID bersifat case-sensitive.
+
+---
+
+### 429 Too Many Requests
+
+Kunci Anda telah melampaui batas rate limit.
+
+```json
+{
+  "error": {
+    "message": "Rate limit exceeded. Please retry after 1 second.",
+    "type": "rate_limit_error",
+    "code": "rate_limit_exceeded"
+  }
+}
+```
+
+**Perbaikan:** Terapkan exponential backoff dan coba lagi. Hubungi [support@flatkey.ai](mailto:support@flatkey.ai) jika Anda membutuhkan rate limit yang lebih tinggi.
+
+---
+
+### 500 Internal Server Error
+
+Terjadi kesalahan tak terduga saat memproses permintaan Anda.
+
+```json
+{
+  "error": {
+    "message": "The model encountered an error processing your request.",
+    "type": "api_error",
+    "code": "internal_error"
+  }
+}
+```
+
+**Perbaikan:** Coba lagi permintaan tersebut. Jika kesalahan terus berlanjut, hubungi [support@flatkey.ai](mailto:support@flatkey.ai).
+
+---
+
+### 503 Service Unavailable
+
+Penyedia model untuk sementara tidak tersedia.
+
+```json
+{
+  "error": {
+    "message": "Upstream provider temporarily unavailable. Please retry.",
+    "type": "service_error",
+    "code": "upstream_unavailable"
+  }
+}
+```
+
+**Perbaikan:** Coba lagi dengan exponential backoff. Masalah ini biasanya teratasi dalam hitungan detik. Jika terus berlanjut, hubungi [support@flatkey.ai](mailto:support@flatkey.ai).
+
+---
+
+## Strategi percobaan ulang
+
+Untuk kesalahan `429`, `500`, dan `503`, terapkan exponential backoff:
+
+```python python
+import time
+import random
+from openai import OpenAI, RateLimitError, APIStatusError
+
+client = OpenAI(
+    api_key="sk-fk-your-key",
+    base_url="https://router.flatkey.ai/v1",
+)
+
+def call_with_retry(model, messages, max_retries=5):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model=model,
+                messages=messages,
+            )
+        except RateLimitError:
+            wait = (2 ** attempt) + random.uniform(0, 1)
+            time.sleep(wait)
+        except APIStatusError as e:
+            if e.status_code in (500, 503):
+                wait = (2 ** attempt) + random.uniform(0, 1)
+                time.sleep(wait)
+            else:
+                raise
+    raise RuntimeError("Max retries exceeded")
+```
+
+<Note>
+  OpenAI SDK memiliki logika percobaan ulang bawaan melalui parameter `max_retries`. Atur `max_retries=3` di konstruktor klien OpenAI untuk secara otomatis mencoba ulang pada kesalahan sementara.
+</Note>

@@ -11,7 +11,7 @@ Codex 桌面端与 Codex CLI 读取同一份用户级 Codex 配置。你可以�
 - 已安装 Codex 桌面端
 - 已在桌面应用中完成至少一次官方 ChatGPT 或 Codex 登录
 - Flatkey API 密钥——[在 Flatkey 控制台中创建](https://console.flatkey.ai/keys?lng=zh)
-- [Flatkey 模型目录](/zh/reference/model-list)中的受支持模型 ID
+- [Flatkey 模型目录](https://flatkey.ai/models)中的受支持模型 ID
 - 如果使用 CC Switch 配置，需要先安装 CC Switch
 
 ## 手工配置
@@ -103,14 +103,14 @@ wire_api = "responses"
 | 供应商名称 | `flatkey` |
 | API 密钥 | `sk-fk-...` |
 | API 请求地址 | `https://router.flatkey.ai/v1` |
-| 默认模型 | 截图中使用 `gpt-5.6-sol`——请在 [Flatkey 模型目录](/zh/reference/model-list)中确认当前准确的模型 ID |
+| 默认模型 | 截图中使用 `gpt-5.6-sol`——请在 [Flatkey 模型目录](https://flatkey.ai/models)中确认当前准确的模型 ID |
 | 上游格式 | **Responses（原生）** |
 
 ![在 CC Switch 中填写当前 Flatkey 供应商字段](/images/guides/cc-switch/zh/codex-provider-form.png)
 
 ### 4. 配置模型
 
-将供应商的**默认模型**设置为你要使用的准确 Flatkey 模型 ID。截图中的示例是 `gpt-5.6-sol`。选择 ID 前，请先查看 [Flatkey 模型目录](/zh/reference/model-list)。
+将供应商的**默认模型**设置为你要使用的准确 Flatkey 模型 ID。截图中的示例是 `gpt-5.6-sol`。选择 ID 前，请先查看 [Flatkey 模型目录](https://flatkey.ai/models)。
 
 点击**获取模型列表**加载当前模型 ID。要让模型出现在 Codex `/model` 菜单中，请将其添加到供应商的**模型映射**。你也可以将准确 ID 设置为供应商的**默认模型**，或在 Codex CLI 中通过 `codex --model <id>` 传入该 ID。验证 Codex 桌面端时，即使选择器没有列出自定义模型，也应将当前供应商和默认模型视为预期路由。发送请求后，请通过 Flatkey 用量日志确认实际路由。
 
@@ -161,7 +161,7 @@ Codex 桌面端可能显示官方模型目录，而不在选择器中显示自�
 | 官方登录缺失或已过期 | 通过 Codex 桌面端重新登录，然后在启用 Flatkey 前打开**非接管切换时保留官方登录** |
 | 身份验证失败或 Flatkey 密钥被拒绝 | 确认 API 密钥仍有效，并已填入自定义供应商的 API 密钥字段；如果密钥已经暴露，请轮换或撤销 |
 | API 请求地址或 Responses 报错 | 将**API 请求地址**设置为 `https://router.flatkey.ai/v1`，选择 **Responses（原生）**，并关闭**本地路由** |
-| 出现 `Model not found`、自定义模型不可见或缺少 `/model` 映射 | 从[模型目录](/zh/reference/model-list)复制准确 ID，将其设为**默认模型**，并使用**获取模型列表**或模型映射 |
+| 出现 `Model not found`、自定义模型不可见或缺少 `/model` 映射 | 从[模型目录](https://flatkey.ai/models)复制准确 ID，将其设为**默认模型**，并使用**获取模型列表**或模型映射 |
 | 用量日志显示错误的供应商或模型 | 启用 Flatkey 自定义供应商，并确认其默认模型以及共享 `config.toml` 中的当前值 |
 | 更改未生效 | 完全退出 Codex 桌面端，结束所有残留的 Codex 桌面端进程，然后重新打开 |
 | Flatkey 余额不足 | 充值或改用有可用额度的 Flatkey 密钥，然后重试一条最简提示 |

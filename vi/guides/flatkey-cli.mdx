@@ -1,0 +1,131 @@
+---
+title: "Sử dụng Flatkey CLI với AI agent"
+sidebarTitle: "Flatkey CLI với AI Agent"
+description: "Tạo hình ảnh, video, âm thanh và văn bản từ terminal, đồng thời điều khiển các lệnh tương tự từ script, CI job hoặc AI agent với đầu ra JSON."
+---
+
+Flatkey CLI mang khả năng tạo nội dung đa phương tiện vào terminal của bạn với một số dư duy nhất. Mọi lệnh đều chấp nhận `--json`, giúp gọi an toàn từ script, CI job hoặc AI agent phân tích stdout.
+
+## Cài đặt và xác thực
+
+```bash
+npm install -g @flatkey-ai/cli
+flatkey login
+```
+
+Yêu cầu Node.js 18 trở lên. Với CI, hãy đặt biến môi trường thay vì đăng nhập:
+
+```bash
+export FLATKEY_API_KEY="sk-fk-..."
+```
+
+Kiểm tra những gì CLI đang sử dụng:
+
+```bash
+flatkey auth status --json
+```
+
+## Tạo file đầu tiên của bạn
+
+<Warning>
+  Luôn truyền `--model`. Model hình ảnh mặc định tích hợp hiện không thể định tuyến và trả về `No available channel`.
+</Warning>
+
+```bash
+flatkey image generate \
+  --prompt "editorial cover, neon city at dawn" \
+  --model gpt-image-2 \
+  --output cover.png
+```
+
+```json
+{
+  "kind": "image",
+  "artifacts": [{ "path": "cover.png" }],
+  "response": { "data": [{ "url": "https://..." }] }
+}
+```
+
+## Các lệnh
+
+| Lệnh | Mục đích |
+| --- | --- |
+| `flatkey image generate --prompt <txt>` | Tạo hình ảnh |
+| `flatkey image upload --file <path>` | Tải lên hình ảnh cục bộ, nhận URL tạm thời |
+| `flatkey video generate --prompt <txt>` | Tạo video |
+| `flatkey audio generate --prompt <txt>` | Tạo giọng nói |
+| `flatkey audio sfx --prompt <txt>` | Tạo hiệu ứng âm thanh |
+| `flatkey audio music --prompt <txt>` | Tạo nhạc |
+| `flatkey audio voices` | Liệt kê các giọng nói có sẵn |
+| `flatkey text generate --prompt <txt>` | Tạo văn bản một lần |
+| `flatkey models` | Liệt kê các model, lọc với `--type image\|video\|audio\|text` |
+| `flatkey credits` | Hiển thị số dư còn lại |
+| `flatkey help --ai` | In hướng dẫn giao thức agent |
+
+### Tùy chọn toàn cục
+
+| Cờ | Ý nghĩa |
+| --- | --- |
+| `--json` | Đầu ra có thể đọc bằng máy, tắt hoạt ảnh |
+| `--output`, `-o <file>` | Ghi artifact ra đường dẫn này |
+| `--model <id>` | Model cần sử dụng |
+| `--verbose` | Ghi log request và response ra stderr |
+
+<Warning>
+  Đặt `-o` **trước** `--json`. Dạng rút gọn bị từ chối là đối số không mong muốn khi xuất hiện sau `--json`. `--output` hoạt động ở bất kỳ vị trí nào.
+</Warning>
+
+### Tùy chọn video
+
+```bash
+flatkey video generate \
+  --prompt "cinematic product launch clip" \
+  --model seedance2 --ratio 16:9 --resolution 720p --output launch.mp4
+```
+
+`--ratio` chấp nhận `16:9`, `9:16`, `4:3`, `3:4`, `21:9` và `1:1`. `--resolution` chấp nhận `480p`, `720p` và `1080p`, nhưng mỗi model chỉ hỗ trợ một phần trong dải đó — xem [Tạo video](/vi/guides/video-generation).
+
+### Tùy chọn âm thanh
+
+```bash
+flatkey audio generate --prompt "Welcome to Flatkey" --output welcome.mp3
+flatkey audio sfx --prompt "heavy door closing" --duration 4 --output door.mp3
+flatkey audio music --prompt "warm lo-fi loop, 80 bpm" --music-length-ms 30000 --output loop.mp3
+```
+
+Chạy `flatkey audio voices --json` và truyền `voice_id` được liệt kê vào `--voice-id`.
+
+## Điều khiển từ agent
+
+Ở chế độ `--json`, stdout chứa đúng một đối tượng JSON và stderr chứa lỗi JSON. Chạy `flatkey help --ai` để in mô tả giao thức ngắn gọn mà agent có thể đọc lúc chạy.
+
+```python
+import json, subprocess
+
+def flatkey(*args):
+    p = subprocess.run(["flatkey", *args, "--json"], capture_output=True, text=True)
+    if p.returncode != 0:
+        raise RuntimeError(json.loads(p.stderr or "{}").get("error", {}).get("message"))
+    return json.loads(p.stdout)
+
+models = [m["id"] for m in flatkey("models", "--type", "image")["models"]]
+out = flatkey("image", "generate", "--prompt", "a paper boat on still water",
+              "--model", models[0], "--output", "boat.png")
+print(out["artifacts"][0]["path"])
+```
+
+Liệt kê các model trước, rồi mới tạo. Model id được mã hóa cứng là nguyên nhân phổ biến nhất gây ra lỗi khi chạy.
+
+### Khôi phục
+
+| Lỗi | Khôi phục |
+| --- | --- |
+| Thiếu key | Tạo một key tại [console.flatkey.ai](https://console.flatkey.ai), sau đó dùng `flatkey onboard --api-key <key>` |
+| `No available channel` | Chạy `flatkey models --json`, thử lại với id được liệt kê. Không thử lại cùng một model |
+| Giọng nói không xác định | `flatkey audio voices --json`, thử lại với id được liệt kê |
+| Không đủ credit | `flatkey credits --json`, sau đó nạp thêm |
+| `unsupported resolution` | Dùng `720p` thay thế |
+
+<Warning>
+  Chỉ thử lại sau khi đã thay đổi request. Các lỗi này mang tính xác định, vì vậy lặp lại các đối số giống hệt sẽ tốn thời gian mà không thay đổi kết quả.
+</Warning>

@@ -1,0 +1,166 @@
+---
+title: "Flatkey mit dem OpenAI Codex CLI Terminal-Agenten verwenden"
+sidebarTitle: "Codex CLI"
+description: "Leiten Sie OpenAI Codex CLI-Datenverkehr über Flatkey, um auf kompatible GPT-, Claude-, Gemini- und andere Textmodelle zuzugreifen, sofern verfügbar."
+---
+
+OpenAIs Codex CLI ist ein KI-Coding-Assistent, der in Ihrem Terminal läuft. Durch das Setzen zweier Umgebungsvariablen können Sie Codex-CLI-Anfragen über Flatkey leiten, um kompatible GPT-, Claude-, Gemini- und andere Textmodelle zu nutzen, sofern diese über Flatkey verfügbar sind.
+
+## Voraussetzungen
+
+- Codex CLI installiert: `npm install -g @openai/codex`
+- Ein Flatkey-Konto mit einem API-Schlüssel — [hier erhalten Sie einen](https://console.flatkey.ai/sign-up)
+
+## Konfiguration
+
+Setzen Sie die folgenden Umgebungsvariablen, bevor Sie Codex CLI ausführen:
+
+```bash
+export OPENAI_BASE_URL="https://router.flatkey.ai/v1"
+export OPENAI_API_KEY="sk-fk-..."
+```
+
+Oder fügen Sie sie zu Ihrem Shell-Profil (`~/.bashrc`, `~/.zshrc`) hinzu, um die Einstellung dauerhaft zu machen:
+
+```bash ~/.zshrc
+export OPENAI_BASE_URL="https://router.flatkey.ai/v1"
+export OPENAI_API_KEY="sk-fk-..."
+```
+
+## Konfiguration mit CC Switch
+
+[CC Switch](https://ccswitch.io) ist ein Desktop-Konfigurationsmanager für Coding-Assistenten von Drittanbietern. Es ist kein Flatkey-Produkt, und Flatkey ist keine integrierte Voreinstellung. Die folgenden Schritte folgen der aktuellen CC Switch-Benutzeroberfläche.
+
+Die oben beschriebene manuelle Methode mit `OPENAI_BASE_URL` und `OPENAI_API_KEY` und CC Switch sind alternative Möglichkeiten, Codex zu konfigurieren. Für einen eindeutigen CC-Switch-Test entfernen Sie nur veraltete `OPENAI_BASE_URL`- oder `OPENAI_API_KEY`-Werte, die auf einen anderen Anbieter oder Schlüssel verweisen. Von Ihrer Shell übernommene Werte können den in CC Switch aktivierten Anbieter überschreiben oder mit ihm in Konflikt geraten.
+
+### 1. CC Switch installieren
+
+Laden Sie CC Switch von [ccswitch.io](https://ccswitch.io) oder dem [offiziellen GitHub-Repository](https://github.com/farion1231/cc-switch) herunter. Installieren Sie es für Ihr Betriebssystem und öffnen Sie dann die App.
+
+### 2. Öffnen Sie das Codex-Anbieter-Panel
+
+Wählen Sie **Codex** in CC Switch aus. Dadurch wird das Anbieter-Panel geöffnet, das die Konfiguration steuert, die von neuen Codex-Sitzungen verwendet wird.
+
+![Öffnen Sie das Codex-Anbieter-Panel und wählen Sie die Schaltfläche „Anbieter hinzufügen“ in CC Switch aus](/images/guides/cc-switch/en/codex-provider-list.png)
+
+### 3. Flatkey als benutzerdefinierten Anbieter hinzufügen
+
+Wählen Sie **Custom Provider** und fügen Sie einen Anbieter mit diesen Werten hinzu:
+
+| Feld | Wert |
+|---|---|
+| Provider Name | `flatkey` |
+| API Key | Ihr Flatkey-Schlüssel, z. B. `sk-fk-...` |
+| API Request URL | `https://router.flatkey.ai/v1` |
+| Default Model | `gpt-5.6-sol` im Screenshot. Bestätigen und kopieren Sie vor der Verwendung eine aktuelle, exakte ID aus dem Flatkey [Model Directory](https://flatkey.ai/models). |
+| Upstream Format | `Responses (native)` |
+
+![Geben Sie die aktuellen Flatkey-Anbieterfelder in CC Switch ein](/images/guides/cc-switch/en/codex-provider-form.png)
+
+<Warning>
+  Behandeln Sie Ihren API-Schlüssel als vertraulich. Nehmen Sie ihn nicht in Screenshots oder exportierte oder geteilte Anbieterkonfigurationen auf. Falls er offengelegt wird, widerrufen oder erneuern Sie den Schlüssel in Flatkey und ersetzen Sie ihn dann in CC Switch.
+</Warning>
+
+Flatkey unterstützt die Responses-API nativ. **Local Routing** in CC Switch ist für diese Einrichtung nicht erforderlich, lassen Sie es also deaktiviert.
+
+### 4. Modell konfigurieren
+
+Suchen Sie **Flatkey** im Codex-Anbieter-Panel in CC Switch und klicken Sie dann auf **Edit**. Um das von neuen Codex-Sitzungen verwendete Modell zu ändern, setzen Sie **Default Model** auf eine exakte Modell-ID aus dem Flatkey [Model Directory](https://flatkey.ai/models). Verwenden Sie keinen Anzeigenamen und raten Sie keine ID.
+
+Zum Beispiel können Sie eines dieser Textgenerierungsmodelle in das Feld **Default Model** von CC Switch eingeben:
+
+```text
+gpt-5.4
+claude-sonnet-4-6
+gemini-2.5-flash
+```
+
+Um weitere Modelle in CC Switch hinzuzufügen oder zu bearbeiten und sie im `/model`-Menü der Codex CLI anzuzeigen, verwenden Sie **Model Mapping**:
+
+1. Klicken Sie auf **Fetch Models**, um verfügbare Modelle von Flatkey zu laden. Falls das benötigte Modell fehlt, klicken Sie auf **Add Model**.
+2. Bearbeiten Sie den **Menu Display Name** der Zuordnung. Dies ist die im `/model`-Menü angezeigte Bezeichnung.
+3. Setzen Sie **Actual Request Model** auf die exakte ID aus dem Model Directory, z. B. `claude-sonnet-4-6` oder `gemini-2.5-flash`. Codex sendet diese ID in Anfragen, nicht die Menübezeichnung.
+
+Model Mapping steuert den Eintrag im `/model`-Menü und die zugehörige Anfrage-ID. Es sorgt nicht dafür, dass ein inkompatibles Modell mit Codex funktioniert. Nach dem Ändern einer Zuordnung folgen Sie den unten stehenden Schritten, um den Anbieter zu speichern und Codex neu zu starten, bevor die aktualisierte Modellliste wirksam wird.
+
+Nachdem Sie Flatkey gespeichert und aktiviert haben, verwenden neue Codex-Sitzungen das in CC Switch festgelegte **Default Model**. Um es nur für einen Befehl zu überschreiben, übergeben Sie dieselbe exakte ID:
+
+```bash
+codex --model gpt-5.4 "Review this change"
+codex --model claude-sonnet-4-6 "Review this change"
+codex --model gemini-2.5-flash "Review this change"
+```
+
+Wählen Sie ein Textgenerierungsmodell, das über Flatkey verfügbar und mit dem Codex-Anfrageformat kompatibel ist. Verwenden Sie keine Bild-, Audio- oder Embedding-Modelle mit Codex CLI. Betrachten Sie nach dem Senden einer Anfrage die Flatkey [Usage Logs](https://console.flatkey.ai/usage-logs/common) als maßgeblich für das tatsächlich verwendete Modell.
+
+![Weitere Modelle abrufen oder hinzufügen und ihre Codex-CLI-Modellzuordnungen konfigurieren](/images/guides/cc-switch/en/codex-model-mapping.png)
+
+### 5. Flatkey speichern und aktivieren
+
+Speichern Sie den Anbieter und aktivieren Sie dann **Flatkey** im Codex-Anbieter-Panel. Bestätigen Sie, dass Flatkey der aktive Anbieter ist, bevor Sie Codex starten.
+
+![Bestätigen Sie, dass der Flatkey-Codex-Anbieter verwendet wird](/images/guides/cc-switch/en/codex-provider-active.png)
+
+### 6. Neu starten und überprüfen
+
+Beenden Sie die bestehende Codex-Sitzung und deren Prozess. Schließen Sie das spezifische Terminalfenster oder den Tab, in dem Codex ausgeführt wurde, nicht unbeteiligte Terminals. Öffnen Sie ein neues Terminal, das keine veralteten relevanten `OPENAI_BASE_URL`- oder `OPENAI_API_KEY`-Werte übernimmt. Wechseln Sie in ein kleines oder leeres Verzeichnis und starten Sie eine neue Codex-Sitzung. Geben Sie `/model` ein, bestätigen Sie, dass das hinzugefügte oder bearbeitete Modell erscheint, und wählen Sie das gewünschte Modell aus. Senden Sie dann eine minimale Anfrage.
+
+![Überprüfen Sie eine neue Codex-CLI-Sitzung mit einer minimalen OK-Antwort](/images/guides/cc-switch/en/codex-cli-verify.png)
+
+Öffnen Sie dann die Flatkey [Usage Logs](https://console.flatkey.ai/usage-logs/common) und bestätigen Sie die tatsächliche Anfrage. Überprüfen Sie deren Modell, Eingabe- und Ausgabe-Tokens, Latenz und Kosten.
+
+<Note>
+  Eine Agenten-Anfrage kann Systemprompts, Tool-Definitionen, Konversationsverlauf, Dateien und Befehlsergebnisse enthalten. Verwenden Sie für Konnektivitätsprüfungen einen kleinen Kontext, damit die Token-Anzahl und die Kosten leicht überprüfbar bleiben.
+</Note>
+
+### Zurück zu einem anderen Anbieter wechseln
+
+Öffnen Sie das Codex-Anbieter-Panel in CC Switch, wählen Sie den gewünschten Anbieter aus und aktivieren Sie ihn. Beenden Sie bestehende Codex-Sitzungen und -Prozesse und öffnen Sie dann ein neues Terminal, das keine veralteten relevanten `OPENAI_BASE_URL`- oder `OPENAI_API_KEY`-Werte übernimmt. Starten Sie eine neue Sitzung.
+
+### CC Switch Fehlerbehebung
+
+| Problem | Lösung |
+|---|---|
+| Authentifizierungs- oder Fehler „ungültiger Schlüssel“ | Geben Sie Ihren Flatkey-Schlüssel erneut ein und bestätigen Sie, dass er mit `sk-fk-` beginnt. Entfernen Sie nur veraltete `OPENAI_API_KEY`-Werte, bevor Sie erneut testen. |
+| Endpunkt- oder Verbindungsfehler | Setzen Sie **API Request URL** exakt auf `https://router.flatkey.ai/v1`. Prüfen Sie die neue Shell auf eine veraltete `OPENAI_BASE_URL`. |
+| Modell nicht gefunden oder fehlt im `/model`-Menü | Kopieren Sie die exakte ID aus dem [Model Directory](https://flatkey.ai/models). Klicken Sie in **Model Mapping** auf **Fetch Models** oder **Add Model**, legen Sie den **Menu Display Name** fest und geben Sie die exakte ID als **Actual Request Model** ein. Speichern Sie den Anbieter, starten Sie Codex vollständig neu und geben Sie erneut `/model` ein. Sie können die exakte ID auch als **Default Model** des Anbieters festlegen oder sie temporär mit `codex --model <id>` übergeben. |
+| Anfragen verwenden den falschen Anbieter | Kehren Sie zum Codex-Anbieter-Panel zurück und aktivieren Sie **Flatkey**. Prüfen Sie, dass manuelle `OPENAI_*`-Werte nicht auf einen anderen Anbieter verweisen. |
+| Änderungen wirken sich nicht auf die aktuelle Sitzung aus | Beenden Sie die bestehende Codex-Sitzung und deren Prozess. Schließen Sie das spezifische Terminalfenster oder den Tab, in dem Codex ausgeführt wurde, nicht unbeteiligte Terminals. Öffnen Sie ein neues Terminal, das keine veralteten relevanten `OPENAI_BASE_URL`- oder `OPENAI_API_KEY`-Werte übernimmt, und starten Sie dann eine neue Sitzung. |
+| Unzureichendes Guthaben | Laden Sie Ihr Flatkey-Guthaben auf und versuchen Sie die minimale Anfrage erneut. |
+| **Local Routing** ist aktiviert | Deaktivieren Sie **Local Routing**. Flatkey akzeptiert das Responses-Format nativ. |
+| Keine Anfrage erscheint in den Usage Logs | Senden Sie eine neue minimale Anfrage, bestätigen Sie, dass **Flatkey** aktiv ist, und prüfen Sie Endpunkt, Schlüssel, Guthaben und die oben genannten Schritte für neue Sitzungen. |
+
+## Codex CLI ausführen
+
+Sobald die Umgebungsvariablen gesetzt sind, verwenden Sie Codex wie gewohnt:
+
+```bash
+codex "Refactor this function to use async/await"
+```
+
+oder im interaktiven Modus:
+
+```bash
+codex
+```
+
+Alle Anfragen werden über Flatkey geleitet und gegen Ihr Prepaid-Guthaben zu den vergünstigten Flatkey-Tarifen abgerechnet.
+
+## Manuelle Einrichtung der Umgebungsvariablen überprüfen
+
+Dieser Abschnitt gilt nur für die manuelle Methode mit `OPENAI_BASE_URL` und `OPENAI_API_KEY`. Wenn Sie Codex mit CC Switch konfiguriert haben, folgen Sie stattdessen dem obigen Abschnitt [Neu starten und überprüfen](#6-neu-starten-und-überprüfen). Führen Sie für die manuelle Methode einen Codex-Befehl aus und prüfen Sie die [Usage Logs](https://console.flatkey.ai/usage-logs/common). Sie sollten die Anfrage mit Modell und Token-Anzahl protokolliert sehen. Falls keine Anfrage erscheint, bestätigen Sie, dass beide Variablen in der aktuellen Shell-Sitzung korrekt gesetzt sind.
+
+<Tip>
+  Nutzen Sie die 200-$-Aufladestufe für den besten effektiven Tarif bei anhaltender Codex-Nutzung — der gestaffelte Bonus senkt die Kosten auf bis zu 50 % des offiziellen GPT-Preises.
+</Tip>
+
+## Fehlerbehebung bei der manuellen Einrichtung der Umgebungsvariablen
+
+Die folgende Tabelle gilt nur für die manuelle Methode mit `OPENAI_BASE_URL` und `OPENAI_API_KEY`. Wenn Sie Codex mit CC Switch konfiguriert haben, verwenden Sie den obigen Abschnitt [CC Switch Fehlerbehebung](#cc-switch-fehlerbehebung).
+
+| Problem | Lösung |
+|---|---|
+| `Authentication error` | Überprüfen Sie, ob `OPENAI_API_KEY` auf Ihren Flatkey-Schlüssel gesetzt ist (beginnt mit `sk-fk-`) |
+| `Model not found` | Überprüfen Sie die Modell-ID im [Model Directory](https://flatkey.ai/models) |
+| `Insufficient balance` | Laden Sie Ihr Guthaben unter [console.flatkey.ai](https://console.flatkey.ai) auf |
+| Anfragen erscheinen nicht im Dashboard | Bestätigen Sie, dass `OPENAI_BASE_URL` in der aktiven Shell gesetzt ist |

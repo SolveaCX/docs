@@ -1,0 +1,92 @@
+---
+title: "直接调用 Flatkey API"
+sidebarTitle: "API 接入"
+description: "用普通 HTTP 调用 REST API，不需要 SDK。涵盖 Base URL、鉴权、可用端点和错误处理。"
+---
+
+Base URL: `https://router.flatkey.ai`
+
+Flatkey 提供 OpenAI 兼容的 REST API。你只要有 HTTP 客户端，就不需要 SDK。这一页是从拿到密钥到发出第一个请求的最短路径。
+
+## 鉴权
+
+每个请求都用 bearer token 携带密钥：
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+在[控制台](https://console.flatkey.ai)创建密钥。密钥以 `sk-fk-` 开头。把它放进环境变量，不要提交到代码仓库，也不要写进浏览器端代码。
+
+```bash
+export FLATKEY_API_KEY="sk-fk-..."
+```
+
+## 发出请求
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-5",
+    "messages": [{ "role": "user", "content": "你好！" }]
+  }'
+```
+
+调用成功会返回标准的 chat completion 对象，包含 `choices` 和 `usage`。
+
+## 可用端点
+
+| 端点 | 用途 |
+| --- | --- |
+| `POST /v1/chat/completions` | [文本与对话生成](/zh/api-reference/chat-completions) |
+| `POST /v1/responses` | [Responses API](/zh/api-reference/responses)，用于 OpenAI 系模型 |
+| `POST /v1/images/generations` | [图像生成与编辑](/zh/api-reference/image-generation) |
+| `POST /v1/videos` | [视频生成](/zh/api-reference/seedance-video-generation)，异步 |
+| `GET /v1/videos/{task_id}` | 轮询视频任务 |
+| `GET /v1/models` | [列出可用模型](/zh/api-reference/models) |
+| `GET /v1/credits` | 剩余余额 |
+
+<Warning>
+  `POST /v1/responses` 目前支持 OpenAI 系模型。其他系列在这个端点上会报错，请改用 `POST /v1/chat/completions`。
+</Warning>
+
+## 查询余额
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/credits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY"
+```
+
+```json
+{ "remaining": 34.18, "used": 185.13 }
+```
+
+## 错误处理
+
+错误返回带说明的 JSON：
+
+```json
+{ "error": { "message": "No available channel for model ..." } }
+```
+
+| 状态码 | 含义 | 怎么做 |
+| --- | --- | --- |
+| `400` | 请求格式有误 | 看 message，它会指出问题字段 |
+| `401` | 密钥无效 | 检查 `Authorization` 头和密钥内容 |
+| `429` | 请求过于频繁 | 退避后重试 |
+| `500`、`503` | 模型或线路不可用 | 换模型。重试同一个通常不会恢复 |
+
+完整清单见[错误参考](/zh/api-reference/errors)。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="API 参考" icon="code" href="/zh/api-reference/overview">
+    全部端点、参数和响应字段。
+  </Card>
+  <Card title="改用 SDK" icon="plug" href="/zh/guides/openai-sdk">
+    保留 OpenAI 或 Anthropic 客户端，只改一行。
+  </Card>
+</CardGroup>

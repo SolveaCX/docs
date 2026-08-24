@@ -52,7 +52,7 @@ export OPENAI_API_KEY="sk-fk-..."
 | 供应商名称 | `flatkey` |
 | API 密钥 | 你的 Flatkey 密钥，例如 `sk-fk-...` |
 | API 请求地址 | `https://router.flatkey.ai/v1` |
-| 默认模型 | 截图中使用 `gpt-5.6-sol`。使用前请在 Flatkey [模型目录](/zh/reference/model-list)中确认并复制当前准确 ID。 |
+| 默认模型 | 截图中使用 `gpt-5.6-sol`。使用前请在 Flatkey [模型目录](https://flatkey.ai/models)中确认并复制当前准确 ID。 |
 | 上游格式 | `Responses（原生）` |
 
 ![在 CC Switch 中填写当前 Flatkey 供应商字段](/images/guides/cc-switch/zh/codex-provider-form.png)
@@ -65,7 +65,7 @@ Flatkey 原生支持 Responses API。此配置不需要 CC Switch **本地路由
 
 ### 4. 配置模型
 
-在 CC Switch 的 Codex 供应商面板中找到 **Flatkey**，然后点击**编辑**。要更换 Codex 新会话默认使用的模型，请将**默认模型**改为 Flatkey [模型目录](/zh/reference/model-list)中的准确模型 ID。请勿使用显示名称或猜测模型 ID。
+在 CC Switch 的 Codex 供应商面板中找到 **Flatkey**，然后点击**编辑**。要更换 Codex 新会话默认使用的模型，请将**默认模型**改为 Flatkey [模型目录](https://flatkey.ai/models)中的准确模型 ID。请勿使用显示名称或猜测模型 ID。
 
 例如，你可以在 CC Switch 的**默认模型**中填写以下任一文本生成模型：
 
@@ -123,7 +123,7 @@ codex --model gemini-2.5-flash "Review this change"
 |---|---|
 | 身份验证失败或密钥无效 | 重新输入 Flatkey 密钥，并确认它以 `sk-fk-` 开头。再次测试前，只清除过期的 `OPENAI_API_KEY` 值。 |
 | API 请求地址或连接错误 | 将**API 请求地址**准确设置为 `https://router.flatkey.ai/v1`。检查新 shell 中是否存在过期的 `OPENAI_BASE_URL`。 |
-| 找不到模型或 `/model` 中没有模型 | 从[模型目录](/zh/reference/model-list)复制准确 ID。在**模型映射**中点击**获取模型列表**或**添加模型**，设置**菜单显示名**，并将**实际请求模型**填写为准确 ID。保存供应商并完全重启 Codex 后，再次输入 `/model`。也可以将准确 ID 设为供应商的**默认模型**，或通过 `codex --model <id>` 临时传入。 |
+| 找不到模型或 `/model` 中没有模型 | 从[模型目录](https://flatkey.ai/models)复制准确 ID。在**模型映射**中点击**获取模型列表**或**添加模型**，设置**菜单显示名**，并将**实际请求模型**填写为准确 ID。保存供应商并完全重启 Codex 后，再次输入 `/model`。也可以将准确 ID 设为供应商的**默认模型**，或通过 `codex --model <id>` 临时传入。 |
 | 请求使用了错误的供应商 | 返回 Codex 供应商面板并启用 **Flatkey**。检查手动设置的 `OPENAI_*` 值是否指向其他供应商。 |
 | 更改未影响当前会话 | 退出现有 Codex 会话并结束其进程。关闭运行 Codex 的特定终端窗口或标签页，不要关闭其他无关终端。打开一个不会继承过期相关 `OPENAI_BASE_URL` 或 `OPENAI_API_KEY` 值的新终端，然后启动新会话。 |
 | 余额不足 | 充值 Flatkey 余额，然后重试最小请求。 |
@@ -161,6 +161,6 @@ codex
 | 问题 | 解决方法 |
 |---|---|
 | `Authentication error` | 确认 `OPENAI_API_KEY` 已设为以 `sk-fk-` 开头的 Flatkey 密钥 |
-| `Model not found` | 在[模型目录](/zh/reference/model-list)中核对模型 ID |
+| `Model not found` | 在[模型目录](https://flatkey.ai/models)中核对模型 ID |
 | `Insufficient balance` | 前往 [console.flatkey.ai](https://console.flatkey.ai?lng=zh)充值余额 |
 | 控制台中没有请求记录 | 确认当前 shell 中已设置 `OPENAI_BASE_URL` |

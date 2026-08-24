@@ -1,0 +1,68 @@
+---
+title: "Flatkey API 認証：ベアラートークンと API キー"
+sidebarTitle: "認証"
+description: "Authorization ヘッダーに API キーをベアラートークンとして渡すことで、Flatkey API リクエストを認証します。キーの形式、エラー、ベストプラクティスについて説明します。"
+---
+
+Flatkey API へのすべてのリクエストには、`Authorization` ヘッダーにベアラートークンとして有効な API キーを含める必要があります。キーの作成と管理は [Flatkey コンソール](https://console.flatkey.ai/keys) で行います。
+
+## ヘッダー形式
+
+```http
+Authorization: Bearer sk-fk-your-api-key
+```
+
+Flatkey の API キーは `sk-fk-` から始まります。キーは大文字・小文字を区別するため、生成されたとおりに正確に渡す必要があります。
+
+## リクエスト例
+
+```bash
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+## API キーの作成
+
+1. [console.flatkey.ai](https://console.flatkey.ai) にサインインする
+2. 左サイドバーの **Keys** をクリックする
+3. **Create Key** をクリックして名前を入力する
+4. キーをコピーする — **一度だけ** 表示されます
+
+キーを紛失した場合は、新しいキーを作成する必要があります。古いキーは明示的に失効されるまで有効のままです。
+
+## 認証エラー
+
+| HTTP ステータス | 条件 | 対処法 |
+|---|---|---|
+| `401 Unauthorized` | リクエストにキーがない | `Authorization: Bearer sk-fk-...` ヘッダーを追加する |
+| `401 Unauthorized` | キーが無効または失効している | コンソールで新しいキーを生成する |
+| `401 Unauthorized` | 残高が $0.00 | [console.flatkey.ai](https://console.flatkey.ai) でチャージする |
+| `403 Forbidden` | キーにモデルへのアクセス権がない | コンソールでキーのアクセス権限を確認する |
+
+### エラーレスポンスの形式
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided.",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## セキュリティのベストプラクティス
+
+- キーはソースコードではなく環境変数に保存する
+- デプロイ環境ごとに異なるキーを使用する
+- キーが漏洩した場合はただちに失効させる
+- 本番環境のワークロードではキーを定期的にローテーションする
+
+<Warning>
+  API キーをクライアントサイドの JavaScript、モバイルアプリのバンドル、または公開リポジトリに含めないでください。キーが悪用されると残高が消費される可能性があります。
+</Warning>

@@ -1,0 +1,245 @@
+---
+title: "Tạo video với Flatkey"
+sidebarTitle: "Tạo Video"
+description: "Gửi tác vụ video, polling và tải xuống file MP4. Bao gồm hai định dạng request, độ phân giải theo từng model, và các tham số có hoặc không có tác dụng."
+---
+
+URL cơ sở: `https://router.flatkey.ai`
+
+Flatkey tạo video thông qua một endpoint bất đồng bộ duy nhất. Bạn gửi một tác vụ, polling cho đến khi hoàn thành, rồi tải xuống file MP4. Trang này trình bày những gì chung cho mọi model video. Để xem các tùy chọn riêng của từng model, tiếp tục đến [Seedance](/vi/guides/seedance) hoặc [MiniMax H3](/vi/guides/minimax-h3).
+
+<CardGroup cols={2}>
+  <Card title="Một quy trình async" icon="video">
+    Tạo tác vụ với `POST /v1/videos`, polling với `GET /v1/videos/{task_id}`, và tải xuống MP4 từ `metadata.url`.
+  </Card>
+  <Card title="Hai dạng request" icon="code-branch">
+    Một số model dùng mảng `content`, một số khác dùng chuỗi `prompt`. Gửi sai dạng sẽ trả về `400`.
+  </Card>
+</CardGroup>
+
+Sử dụng header xác thực này cho mọi request trên trang này, kể cả khi tải xuống:
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+## Tìm model video
+
+Liệt kê tất cả model và giữ lại những model có `type` là `video`:
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/models \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  | jq '.data[] | select(.type == "video") | .id'
+```
+
+```json
+"grok-imagine-video"
+"grok-imagine-video-1.5"
+"MiniMax-H3"
+"seedance-2.5"
+"veo-3.1-fast-generate-preview"
+"veo-3.1-generate-preview"
+```
+
+<Warning>
+  `/v1/models` bỏ qua các query parameter. Việc lọc được thực hiện trong code của bạn, như ví dụ `jq` ở trên.
+</Warning>
+
+Bạn cũng có thể duyệt danh sách tương tự kèm giá trên [danh mục model](https://flatkey.ai/models).
+
+## Chọn đúng dạng request
+
+Endpoint chấp nhận hai dạng khác nhau, và mỗi model chỉ dùng đúng một trong số đó.
+
+| Model | Trường prompt |
+| --- | --- |
+| `seedance-2.5` | Mảng `content` |
+| `seedance-2.0-pro` | Mảng `content` |
+| `MiniMax-H3` | Mảng `content` |
+| `grok-imagine-video` | Chuỗi `prompt` |
+| `grok-imagine-video-1.5` | Chuỗi `prompt` |
+| `veo-3.1-generate-preview` | Chuỗi `prompt` |
+| `veo-3.1-fast-generate-preview` | Chuỗi `prompt` |
+
+Gửi mảng `content` đến một model dùng `prompt` sẽ trả về:
+
+```json
+{ "code": "invalid_request", "message": "prompt is required" }
+```
+
+### Dạng `content`
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.5",
+    "content": [
+      { "type": "text", "text": "a quiet neon-lit street at dusk, slow camera drift" }
+    ],
+    "duration": 5,
+    "resolution": "720p"
+  }'
+```
+
+Mảng này cũng chứa hình ảnh. Thêm một mục `image_url` để nội suy giữa các khung hình hoặc cung cấp ảnh tham chiếu. Tên trường khác nhau theo từng model, vì vậy hãy theo hướng dẫn riêng của model đó.
+
+### Dạng `prompt`
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "grok-imagine-video",
+    "prompt": "a quiet neon-lit street at dusk, slow camera drift",
+    "duration": 10
+  }'
+```
+
+## Độ phân giải khác nhau theo model
+
+Không có tập hợp giá trị độ phân giải chung. Gửi giá trị không được hỗ trợ sẽ trả về `400` trước khi tác vụ được tạo.
+
+| Model | Giá trị được chấp nhận | Ghi chú |
+| --- | --- | --- |
+| `seedance-2.5` | `480p`, `720p` | `1080p` trả về `unsupported resolution` |
+| `MiniMax-H3` | `768P`, `2K` | Chữ `P` viết hoa. Các giá trị khác trả về `resolution must be 768P or 2K` |
+| `grok-imagine-video` | `720p` | Đầu ra là `848x480` bất kể giá trị nào |
+| `veo-3.1-*` | `720p` | |
+
+<Warning>
+  Kiểm tra hướng dẫn riêng của model trước khi chọn độ phân giải. `1080p` bị từ chối bởi `seedance-2.5`, và `720p` bị từ chối bởi `MiniMax-H3`.
+</Warning>
+
+## Tham số request
+
+| Tham số | Kiểu | Bắt buộc | Mô tả |
+| --- | --- | --- | --- |
+| `model` | string | Có | ID model từ `/v1/models` |
+| `content` | array | Có điều kiện | Prompt và media cho các model dùng dạng `content` |
+| `prompt` | string | Có điều kiện | Prompt cho các model dùng dạng `prompt` |
+| `duration` | integer | Không | Độ dài tính bằng giây. `MiniMax-H3` chấp nhận từ `4` đến `15` |
+| `resolution` | string | Không | Xem bảng ở trên |
+
+<Warning>
+  `aspect_ratio` và `seed` được chấp nhận mà không báo lỗi nhưng không thay đổi đầu ra trên mọi model. Với `grok-imagine-video`, yêu cầu `9:16` vẫn trả về clip ngang `848x480`, và cùng một `seed` sẽ tạo ra file khác nhau mỗi lần. Khi một model hỗ trợ hướng hiển thị, điều đó được ghi lại trên trang riêng của model đó. Không nên dựa vào hai trường này cho hành vi nhất quán giữa các model.
+</Warning>
+
+## Polling tác vụ
+
+Một submission thành công sẽ trả về tác vụ ngay lập tức:
+
+```json
+{
+  "id": "task_aaaaaaaaaaaaaaaa",
+  "task_id": "task_aaaaaaaaaaaaaaaa",
+  "object": "video",
+  "model": "seedance-2.5",
+  "status": "queued",
+  "progress": 0,
+  "created_at": 1787110914
+}
+```
+
+Polling với task id cho đến khi trạng thái là trạng thái kết thúc:
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+
+```json
+{
+  "id": "task_aaaaaaaaaaaaaaaa",
+  "status": "completed",
+  "progress": 100,
+  "completed_at": 1787111135,
+  "metadata": {
+    "url": "https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa/content"
+  }
+}
+```
+
+| Trạng thái | Ý nghĩa |
+| --- | --- |
+| `queued` | Đã chấp nhận và đang chờ |
+| `in_progress` | Đang tạo |
+| `completed` | Sẵn sàng tải xuống từ `metadata.url` |
+| `failed` | Tạo thất bại. Đọc trường error |
+
+Polling khoảng 15 giây một lần. Một clip năm giây thường hoàn thành trong hai đến bốn phút.
+
+## Tải xuống file MP4
+
+URL tải xuống xuất hiện trong `metadata.url`, và cần cùng một header xác thực:
+
+```bash
+curl -L "https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa/content" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -o output.mp4
+```
+
+## Ví dụ đầu-đến-cuối
+
+```python
+import os, time, requests
+
+BASE = "https://router.flatkey.ai/v1"
+HEAD = {"Authorization": f"Bearer {os.environ['FLATKEY_API_KEY']}",
+        "Content-Type": "application/json"}
+
+task = requests.post(f"{BASE}/videos", headers=HEAD, json={
+    "model": "seedance-2.5",
+    "content": [{"type": "text", "text": "a quiet neon-lit street at dusk"}],
+    "duration": 5,
+    "resolution": "720p",
+}).json()
+
+task_id = task["task_id"]
+
+while True:
+    time.sleep(15)
+    state = requests.get(f"{BASE}/videos/{task_id}", headers=HEAD).json()
+    if state["status"] == "completed":
+        mp4 = requests.get(state["metadata"]["url"], headers=HEAD).content
+        open("output.mp4", "wb").write(mp4)
+        break
+    if state["status"] == "failed":
+        raise RuntimeError(state)
+```
+
+## Xử lý sự cố
+
+**`prompt is required`**
+
+Bạn đã gửi mảng `content` đến một model mong đợi `prompt`. Kiểm tra bảng trong [Chọn đúng dạng request](#chọn-đúng-dạng-request).
+
+**`unsupported resolution` hoặc `resolution must be 768P or 2K`**
+
+Giá trị hợp lệ cho một model khác. Xem [Độ phân giải khác nhau theo model](#độ-phân-giải-khác-nhau-theo-model).
+
+**`No available channel for model ...`**
+
+Model hiện không thể định tuyến. Chọn model video khác thay vì thử lại — lỗi này không tự biến mất. Kiểm tra [danh mục model](https://flatkey.ai/models) để biết tình trạng hiện tại.
+
+**`duration must be between 4 and 15`**
+
+`MiniMax-H3` yêu cầu `duration` trong khoảng đó. Hãy gửi giá trị một cách tường minh.
+
+**Tác vụ vẫn ở trạng thái `queued`**
+
+Tạo video mất vài phút, không phải vài giây. Tiếp tục polling với khoảng cách 15 giây trước khi coi là bị treo.
+
+## Hướng dẫn theo model
+
+<CardGroup cols={2}>
+  <Card title="Seedance" icon="film" href="/vi/guides/seedance">
+    Chuyển văn bản thành video cùng thư viện nhân vật ảo và người thật.
+  </Card>
+  <Card title="MiniMax H3" icon="wand-magic-sparkles" href="/vi/guides/minimax-h3">
+    Kiểm soát khung đầu và cuối, media tham chiếu, và cài đặt tác vụ.
+  </Card>
+</CardGroup>

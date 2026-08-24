@@ -1,0 +1,166 @@
+---
+title: "OpenAI Codex CLIターミナルエージェントでFlatkeyを使用する"
+sidebarTitle: "Codex CLI"
+description: "OpenAI Codex CLIのトラフィックをFlatkey経由でルーティングし、利用可能な場合に互換性のあるGPT、Claude、Gemini、その他のテキストモデルにアクセスします。"
+---
+
+OpenAIのCodex CLIは、ターミナルで動作するAIコーディングアシスタントです。2つの環境変数を設定することで、Codex CLIのリクエストをFlatkey経由でルーティングし、Flatkeyを通じて利用可能な場合に互換性のあるGPT、Claude、Gemini、その他のテキストモデルを使用できます。
+
+## 前提条件
+
+- Codex CLIがインストールされていること: `npm install -g @openai/codex`
+- APIキーを持つFlatkeyアカウント — [こちらから取得](https://console.flatkey.ai/sign-up)
+
+## 設定
+
+Codex CLIを実行する前に、以下の環境変数を設定します。
+
+```bash
+export OPENAI_BASE_URL="https://router.flatkey.ai/v1"
+export OPENAI_API_KEY="sk-fk-..."
+```
+
+または、設定を永続化するために、シェルプロファイル（`~/.bashrc`、`~/.zshrc`）に追加します。
+
+```bash ~/.zshrc
+export OPENAI_BASE_URL="https://router.flatkey.ai/v1"
+export OPENAI_API_KEY="sk-fk-..."
+```
+
+## CC Switchでの設定
+
+[CC Switch](https://ccswitch.io)は、コーディングアシスタント用のサードパーティ製デスクトップ設定管理ツールです。Flatkeyの製品ではなく、Flatkeyは組み込みのプリセットではありません。以下の手順は、現行のCC Switchインターフェースに沿ったものです。
+
+上記の`OPENAI_BASE_URL`と`OPENAI_API_KEY`を手動で設定する方法と、CC Switchは、Codexを設定するための代替の方法です。CC Switchを正しくテストするには、他のプロバイダーやキーを指す古い`OPENAI_BASE_URL`または`OPENAI_API_KEY`の値のみを解除してください。シェルから継承された値は、CC Switchでアクティブ化したプロバイダーを上書きしたり、競合したりする可能性があります。
+
+### 1. CC Switchをインストールする
+
+[ccswitch.io](https://ccswitch.io)または[公式GitHubリポジトリ](https://github.com/farion1231/cc-switch)からCC Switchをダウンロードします。お使いのオペレーティングシステム用にインストールし、アプリを開きます。
+
+### 2. Codexプロバイダーパネルを開く
+
+CC Switchで**Codex**を選択します。これにより、新しいCodexセッションで使用される設定を制御するプロバイダーパネルが開きます。
+
+![CC SwitchでCodexプロバイダーパネルを開き、プロバイダー追加ボタンを選択する](/images/guides/cc-switch/en/codex-provider-list.png)
+
+### 3. カスタムプロバイダーとしてFlatkeyを追加する
+
+**Custom Provider**を選択し、以下の値でプロバイダーを追加します。
+
+| フィールド | 値 |
+|---|---|
+| Provider Name | `flatkey` |
+| API Key | あなたのFlatkeyキー（例：`sk-fk-...`） |
+| API Request URL | `https://router.flatkey.ai/v1` |
+| Default Model | スクリーンショットでは`gpt-5.6-sol`。使用前にFlatkeyの[モデルディレクトリ](https://flatkey.ai/models)で現行の正確なIDを確認しコピーしてください。 |
+| Upstream Format | `Responses (native)` |
+
+![CC Switchに現行のFlatkeyプロバイダーのフィールドを入力する](/images/guides/cc-switch/en/codex-provider-form.png)
+
+<Warning>
+  APIキーは機密情報として扱ってください。スクリーンショットや、エクスポート・共有されるプロバイダー設定に含めないようにしてください。もし漏洩した場合は、Flatkeyでキーを無効化または再発行し、CC Switch内で置き換えてください。
+</Warning>
+
+FlatkeyはResponses APIをネイティブにサポートしています。この設定にはCC Switchの**Local Routing**は不要なので、オフのままにしてください。
+
+### 4. モデルを設定する
+
+CC SwitchのCodexプロバイダーパネルで**Flatkey**を見つけ、**Edit**をクリックします。新しいCodexセッションで使用するモデルを変更するには、Flatkeyの[モデルディレクトリ](https://flatkey.ai/models)の正確なモデルIDを**Default Model**に設定してください。表示名を使用したり、IDを推測したりしないでください。
+
+例えば、CC Switchの**Default Model**フィールドには以下のようなテキスト生成モデルを入力できます。
+
+```text
+gpt-5.4
+claude-sonnet-4-6
+gemini-2.5-flash
+```
+
+CC Switchで他のモデルを追加・編集し、Codex CLIの`/model`メニューに表示するには、**Model Mapping**を使用します。
+
+1. **Fetch Models**をクリックしてFlatkeyから利用可能なモデルを読み込みます。必要なモデルが見当たらない場合は、**Add Model**をクリックします。
+2. マッピングの**Menu Display Name**を編集します。これは`/model`メニューに表示されるラベルです。
+3. **Actual Request Model**に、モデルディレクトリの正確なID（例：`claude-sonnet-4-6`や`gemini-2.5-flash`）を設定します。Codexはリクエスト時にこのIDを送信します。メニューラベルは送信されません。
+
+Model Mappingは、`/model`メニューの項目とそれに対応するリクエストIDを制御します。互換性のないモデルをCodexで動作させるものではありません。マッピングを変更した後は、更新されたモデルリストが反映される前に、以下の手順に従ってプロバイダーを保存し、Codexを再起動してください。
+
+保存してFlatkeyをアクティブ化すると、新しいCodexセッションはCC Switchで設定された**Default Model**を使用します。1回のコマンドだけ上書きするには、同じ正確なIDを渡します。
+
+```bash
+codex --model gpt-5.4 "Review this change"
+codex --model claude-sonnet-4-6 "Review this change"
+codex --model gemini-2.5-flash "Review this change"
+```
+
+Flatkeyで利用可能で、かつCodexのリクエスト形式と互換性のあるテキスト生成モデルを選択してください。画像、音声、埋め込みモデルをCodex CLIで使用しないでください。リクエストを送信した後は、実際にどのモデルが処理したかについてFlatkeyの[使用ログ](https://console.flatkey.ai/usage-logs/common)を正としてください。
+
+![他のモデルを取得または追加し、そのCodex CLIモデルマッピングを設定する](/images/guides/cc-switch/en/codex-model-mapping.png)
+
+### 5. Flatkeyを保存してアクティブ化する
+
+プロバイダーを保存し、Codexプロバイダーパネルで**Flatkey**をアクティブ化します。Codexを起動する前に、Flatkeyがアクティブなプロバイダーになっていることを確認してください。
+
+![Flatkey Codexプロバイダーが使用中であることを確認する](/images/guides/cc-switch/en/codex-provider-active.png)
+
+### 6. 再起動と確認
+
+既存のCodexセッションを終了し、そのプロセスを終了させます。Codexを実行していた特定のターミナルウィンドウまたはタブを閉じてください（関係のないターミナルは閉じないでください）。古い`OPENAI_BASE_URL`または`OPENAI_API_KEY`の値を継承しない、新しいターミナルを開いてください。小さいディレクトリまたは空のディレクトリに移動し、新しいCodexセッションを開始します。`/model`と入力し、追加または編集したモデルが表示されることを確認し、使用したいモデルを選択します。その後、最小限のリクエストを送信します。
+
+![最小限のOK応答で新しいCodex CLIセッションを確認する](/images/guides/cc-switch/en/codex-cli-verify.png)
+
+その後、Flatkeyの[使用ログ](https://console.flatkey.ai/usage-logs/common)を開き、実際のリクエストを確認します。モデル、入力・出力トークン数、レイテンシ、コストを確認してください。
+
+<Note>
+  エージェントのリクエストには、システムプロンプト、ツール定義、会話履歴、ファイル、コマンド結果が含まれることがあります。接続確認には小さいコンテキストを使用すると、トークン数とコストの確認が容易になります。
+</Note>
+
+### 別のプロバイダーに切り替える
+
+CC SwitchでCodexプロバイダーパネルを開き、使用したいプロバイダーを選択してアクティブ化します。既存のCodexセッションとプロセスを終了させ、古い`OPENAI_BASE_URL`または`OPENAI_API_KEY`の値を継承しない、新しいターミナルを開いてください。新しいセッションを開始します。
+
+### CC Switchのトラブルシューティング
+
+| 問題 | 対処法 |
+|---|---|
+| 認証エラーまたは無効なキーエラー | Flatkeyキーを再入力し、`sk-fk-`で始まっていることを確認してください。再テストする前に、古い`OPENAI_API_KEY`の値のみを解除してください。 |
+| エンドポイントまたは接続エラー | **API Request URL**を`https://router.flatkey.ai/v1`と正確に設定してください。新しいシェルに古い`OPENAI_BASE_URL`が残っていないか確認してください。 |
+| モデルが見つからない、または`/model`に表示されない | [モデルディレクトリ](https://flatkey.ai/models)から正確なIDをコピーしてください。**Model Mapping**で**Fetch Models**または**Add Model**をクリックし、**Menu Display Name**を設定して、**Actual Request Model**に正確なIDを入力します。プロバイダーを保存し、Codexを完全に再起動してから、再度`/model`と入力してください。または、正確なIDをプロバイダーの**Default Model**に設定するか、`codex --model <id>`で一時的に渡すこともできます。 |
+| リクエストが間違ったプロバイダーを使用している | Codexプロバイダーパネルに戻り、**Flatkey**をアクティブ化してください。手動で設定した`OPENAI_*`の値が他を指していないか確認してください。 |
+| 変更が現在のセッションに反映されない | 既存のCodexセッションを終了し、そのプロセスを終了させます。Codexを実行していた特定のターミナルウィンドウまたはタブを閉じてください（関係のないターミナルは閉じないでください）。古い`OPENAI_BASE_URL`または`OPENAI_API_KEY`の値を継承しない、新しいターミナルを開いてから、新しいセッションを開始してください。 |
+| 残高不足 | Flatkeyの残高をチャージしてから、最小限のリクエストを再試行してください。 |
+| **Local Routing**が有効になっている | **Local Routing**をオフにしてください。FlatkeyはResponses形式をネイティブに受け付けます。 |
+| 使用ログにリクエストが表示されない | 新しく最小限のリクエストを送信し、**Flatkey**がアクティブであることを確認し、上記のエンドポイント、キー、残高、新しいセッションの手順を確認してください。 |
+
+## Codex CLIの実行
+
+環境変数を設定したら、通常どおりCodexを使用できます。
+
+```bash
+codex "Refactor this function to use async/await"
+```
+
+またはインタラクティブモードで:
+
+```bash
+codex
+```
+
+すべてのリクエストはFlatkeyを経由してルーティングされ、Flatkeyの割引レートに基づいてあなたのプリペイド残高に課金されます。
+
+## 手動での環境変数設定を確認する
+
+このセクションは、`OPENAI_BASE_URL`と`OPENAI_API_KEY`を手動で設定する方法にのみ適用されます。CC SwitchでCodexを設定した場合は、代わりに上記の[再起動と確認](#6-再起動と確認)を参照してください。手動の方法の場合は、Codexコマンドを実行し、[使用ログ](https://console.flatkey.ai/usage-logs/common)を確認してください。モデル名とトークン数が記録されたリクエストが表示されるはずです。リクエストが表示されない場合は、現在のシェルセッションで両方の変数が正しく設定されているか確認してください。
+
+<Tip>
+  持続的なCodex利用で最良の実効レートを得るには、200ドルのチャージ層を利用してください。積み重なるボーナスにより、コストはGPTの公式価格の50%まで下がります。
+</Tip>
+
+## 手動での環境変数設定のトラブルシューティング
+
+以下の表は、`OPENAI_BASE_URL`と`OPENAI_API_KEY`を手動で設定する方法にのみ適用されます。CC SwitchでCodexを設定した場合は、上記の[CC Switchのトラブルシューティング](#cc-switchのトラブルシューティング)を使用してください。
+
+| 問題 | 対処法 |
+|---|---|
+| `Authentication error` | `OPENAI_API_KEY`がFlatkeyキー（`sk-fk-`で始まる）に設定されていることを確認してください |
+| `Model not found` | [モデルディレクトリ](https://flatkey.ai/models)でモデルIDを確認してください |
+| `Insufficient balance` | [console.flatkey.ai](https://console.flatkey.ai)で残高をチャージしてください |
+| ダッシュボードにリクエストが表示されない | アクティブなシェルで`OPENAI_BASE_URL`が設定されているか確認してください |

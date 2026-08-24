@@ -1,0 +1,93 @@
+---
+title: "Gunakan Flatkey dengan Claude Code untuk Coding AI Berhemat"
+sidebarTitle: "Claude Code"
+description: "Arahkan lalu lintas Claude Code CLI melalui Flatkey untuk mengakses model Claude dengan diskon hingga 50% dari harga resmi Anthropic hanya dengan dua perubahan variabel lingkungan."
+---
+
+Claude Code milik Anthropic adalah asisten coding AI agentik yang berjalan di terminal Anda. Dengan mengatur variabel lingkungan `ANTHROPIC_BASE_URL`, Anda dapat mengarahkan semua permintaan Claude Code melalui Flatkey dan membayar tarif diskon Flatkey untuk penggunaan model Claude.
+
+## Prasyarat
+
+- Claude Code terpasang: `npm install -g @anthropic-ai/claude-code`
+- Akun Flatkey dengan API key — [dapatkan di sini](https://console.flatkey.ai/sign-up)
+
+## Konfigurasi
+
+Atur dua variabel lingkungan berikut:
+
+```bash
+export ANTHROPIC_BASE_URL="https://router.flatkey.ai"
+export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
+```
+
+Untuk membuat pengaturan permanen, tambahkan ke profil shell Anda:
+
+```bash ~/.zshrc
+export ANTHROPIC_BASE_URL="https://router.flatkey.ai"
+export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
+```
+
+<Warning>
+  Atur `ANTHROPIC_BASE_URL` ke `https://router.flatkey.ai` — tanpa garis miring `/v1` di akhir. CLI Claude Code menambahkan jalur yang benar secara otomatis.
+</Warning>
+
+## Konfigurasi dengan CC Switch
+
+[CC Switch](https://ccswitch.io) adalah manajer konfigurasi desktop pihak ketiga untuk asisten coding. Anda juga dapat mengunduhnya dari [repositori GitHub resmi](https://github.com/farion1231/cc-switch).
+
+1. Buka CC Switch dan pilih **Claude Code**.
+2. Tambahkan **Custom Provider** bernama `Flatkey`.
+3. Atur URL dasar ke `https://router.flatkey.ai` tanpa garis miring `/v1` di akhir.
+4. Masukkan API key Flatkey Anda (`sk-fk-...`) dan aktifkan provider.
+5. Tutup sepenuhnya lalu buka kembali Claude Code agar pengaturan provider dimuat ulang.
+6. Kirim permintaan kecil, lalu konfirmasi di **Usage Logs** di [Flatkey Console](https://console.flatkey.ai/usage-logs/common).
+
+<Note>
+  Jika versi CC Switch Anda tidak menyertakan preset Flatkey, gunakan **Custom Provider**. CC Switch bukan produk Flatkey.
+</Note>
+
+## Menjalankan Claude Code
+
+Gunakan Claude Code persis seperti biasanya:
+
+```bash
+claude "Fix the bug in this file"
+```
+
+atau secara interaktif:
+
+```bash
+claude
+```
+
+Semua permintaan diarahkan ke Flatkey dan ditagih dari saldo prabayar Anda dengan tarif diskon.
+
+## Memverifikasi pengaturan
+
+Jalankan permintaan sederhana lalu periksa **Usage Logs** di [Flatkey Console](https://console.flatkey.ai/usage-logs/common) Anda. Anda akan melihat permintaan Claude tercatat beserta ID model, jumlah token, dan biayanya.
+
+## Estimasi penghematan
+
+Menggunakan Claude Sonnet (pilihan populer untuk Claude Code) melalui Flatkey:
+
+| | Harga resmi | Flatkey (setelah bonus $200) |
+|---|---|---|
+| Input `claude-sonnet-4-5` | $3 / 1 juta token | ~$1,6 / 1 juta token |
+| Input `claude-haiku-4-5-20251001` | $1 / 1 juta token | ~$0,53 / 1 juta token |
+
+Dalam sesi Claude Code tipikal sebesar 50 ribu token input menggunakan Sonnet, perbandingannya adalah:
+- Resmi: ~$0,15 per sesi
+- Flatkey: ~$0,08 per sesi
+
+<Tip>
+  Pengguna Claude Code yang intensif paling banyak mendapat manfaat dari paket top-up $200 — kredit bonus secara efektif memberi Anda satu bulan penggunaan ekstra di atas diskon model.
+</Tip>
+
+## Pemecahan masalah
+
+| Masalah | Solusi |
+|---|---|
+| `Authentication failed` | Konfirmasi bahwa `ANTHROPIC_API_KEY` adalah kunci Flatkey Anda (`sk-fk-...`) |
+| `Could not connect` | Verifikasi bahwa `ANTHROPIC_BASE_URL` diatur ke `https://router.flatkey.ai` |
+| `Insufficient balance` | Tambahkan kredit di [console.flatkey.ai](https://console.flatkey.ai) |
+| Permintaan tidak muncul di dasbor | Periksa apakah variabel lingkungan sudah diekspor di shell saat ini |

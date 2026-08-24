@@ -1,0 +1,178 @@
+---
+title: "Chat Completions — POST /v1/chat/completions"
+sidebarTitle: "Chat Completions"
+description: "Générez des complétions de chat et de texte via Flatkey en envoyant un tableau de messages à n'importe quel modèle pris en charge. Retourne des choix avec le texte généré et le nombre de tokens utilisés."
+---
+
+Le point de terminaison `/v1/chat/completions` génère une complétion de texte à partir d'une liste de messages. C'est le point de terminaison principal pour le chat, le suivi d'instructions et les tâches de génération de texte. Le format de la requête est identique à celui de l'API OpenAI Chat Completions, de sorte que tout SDK compatible OpenAI fonctionne sans modification.
+
+## Point de terminaison
+
+```
+POST https://router.flatkey.ai/v1/chat/completions
+```
+
+## Requête
+
+### En-têtes
+
+| En-tête | Valeur |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### Paramètres du corps
+
+<ParamField body="model" type="string" required>
+  L'identifiant du modèle à utiliser. Consultez le [Répertoire des modèles](https://flatkey.ai/models) pour toutes les valeurs valides. Exemple : `"gpt-4o"`, `"claude-sonnet-4-5"`, `"gemini-2.5-flash"`.
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  Un tableau d'objets de messages représentant la conversation. Chaque objet doit avoir un `role` (`"system"`, `"user"` ou `"assistant"`) et un `content` (chaîne de caractères).
+</ParamField>
+
+<ParamField body="max_tokens" type="integer">
+  Nombre maximum de tokens à générer. Les valeurs par défaut varient selon le modèle.
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  Température d'échantillonnage entre 0 et 2. Des valeurs plus élevées produisent une sortie plus aléatoire. Par défaut : 1.
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  Si `true`, la réponse est retournée sous forme de flux d'événements envoyés par le serveur (SSE). Par défaut : `false`.
+</ParamField>
+
+<ParamField body="top_p" type="number">
+  Échantillonnage nucléaire — seuls les tokens dans la masse de probabilité `top_p` supérieure sont pris en compte. Par défaut : 1.
+</ParamField>
+
+<ParamField body="stop" type="string | array">
+  Une ou plusieurs séquences où le modèle arrête de générer. Peut être une chaîne de caractères ou un tableau de chaînes.
+</ParamField>
+
+<ParamField body="tools" type="array">
+  Une liste de définitions d'outils pour l'appel de fonctions. Chaque outil doit avoir `type: "function"` et un objet `function` avec `name`, `description` et `parameters`.
+</ParamField>
+
+<ParamField body="tool_choice" type="string | object">
+  Contrôle la sélection des outils : `"none"`, `"auto"`, `"required"`, ou un outil spécifique `{"type": "function", "function": {"name": "..."}}`.
+</ParamField>
+
+## Exemple de requête
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "What is the speed of light?"},
+    ],
+    max_tokens=256,
+    temperature=0.7,
+)
+
+print(response.choices[0].message.content)
+```
+```bash curl
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant."},
+      {"role": "user", "content": "What is the speed of light?"}
+    ],
+    "max_tokens": 256
+  }'
+```
+</CodeGroup>
+
+## Réponse
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1710000000,
+  "model": "gpt-4o",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The speed of light in a vacuum is approximately 299,792,458 meters per second."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 28,
+    "completion_tokens": 22,
+    "total_tokens": 50
+  }
+}
+```
+
+### Champs de la réponse
+
+<ResponseField name="id" type="string">
+  Identifiant unique de la complétion.
+</ResponseField>
+
+<ResponseField name="choices" type="array">
+  Tableau des choix de complétion générés.
+  <Expandable title="propriétés d'un choix">
+    <ResponseField name="message.content" type="string">
+      Le texte généré.
+    </ResponseField>
+    <ResponseField name="message.role" type="string">
+      Toujours `"assistant"` pour les messages générés.
+    </ResponseField>
+    <ResponseField name="finish_reason" type="string">
+      Raison de l'arrêt de la génération : `"stop"` (fin naturelle), `"length"` (max_tokens atteint), `"tool_calls"` (outil invoqué).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Nombre de tokens pour la facturation.
+  <Expandable title="propriétés d'utilisation">
+    <ResponseField name="prompt_tokens" type="integer">Nombre de tokens en entrée.</ResponseField>
+    <ResponseField name="completion_tokens" type="integer">Nombre de tokens en sortie.</ResponseField>
+    <ResponseField name="total_tokens" type="integer">Somme des tokens de prompt et de complétion.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Streaming
+
+Définissez `stream: true` pour recevoir un flux de fragments SSE. Chaque fragment a la même structure, mais avec un contenu `delta` partiel à la place d'un message complet :
+
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+stream = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Tell me a story."}],
+    stream=True,
+)
+
+for chunk in stream:
+    print(chunk.choices[0].delta.content or "", end="", flush=True)
+```

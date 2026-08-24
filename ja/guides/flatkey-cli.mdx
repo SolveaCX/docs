@@ -1,0 +1,131 @@
+---
+title: "AIエージェントでFlatkey CLIを使う"
+sidebarTitle: "AIエージェントとFlatkey CLI"
+description: "ターミナルから画像、動画、音声、テキストを生成し、スクリプト、CIジョブ、またはJSON出力を使うAIエージェントから同じコマンドを実行します。"
+---
+
+Flatkey CLIは、ひとつの残高でメディア生成をターミナルから利用できるようにします。すべてのコマンドは `--json` を受け付けるため、スクリプト、CIジョブ、またはstdoutを解析するAIエージェントから安全に呼び出せます。
+
+## インストールと認証
+
+```bash
+npm install -g @flatkey-ai/cli
+flatkey login
+```
+
+Node.js 18以上が必要です。CIの場合、ログインする代わりに環境変数を設定してください：
+
+```bash
+export FLATKEY_API_KEY="sk-fk-..."
+```
+
+CLIが使用している内容を確認する：
+
+```bash
+flatkey auth status --json
+```
+
+## 最初のファイルを生成する
+
+<Warning>
+  必ず `--model` を指定してください。デフォルトの画像モデルは現在ルーティングできないため、`No available channel` が返されます。
+</Warning>
+
+```bash
+flatkey image generate \
+  --prompt "editorial cover, neon city at dawn" \
+  --model gpt-image-2 \
+  --output cover.png
+```
+
+```json
+{
+  "kind": "image",
+  "artifacts": [{ "path": "cover.png" }],
+  "response": { "data": [{ "url": "https://..." }] }
+}
+```
+
+## コマンド
+
+| コマンド | 目的 |
+| --- | --- |
+| `flatkey image generate --prompt <txt>` | 画像を生成する |
+| `flatkey image upload --file <path>` | ローカル画像をアップロードし、一時URLを取得する |
+| `flatkey video generate --prompt <txt>` | 動画を生成する |
+| `flatkey audio generate --prompt <txt>` | 音声を生成する |
+| `flatkey audio sfx --prompt <txt>` | 効果音を生成する |
+| `flatkey audio music --prompt <txt>` | 音楽を生成する |
+| `flatkey audio voices` | 利用可能な音声を一覧表示する |
+| `flatkey text generate --prompt <txt>` | ワンショットテキスト生成 |
+| `flatkey models` | モデルを一覧表示し、`--type image\|video\|audio\|text` でフィルタリングする |
+| `flatkey credits` | 残高を表示する |
+| `flatkey help --ai` | エージェントプロトコルガイドを出力する |
+
+### グローバルオプション
+
+| フラグ | 意味 |
+| --- | --- |
+| `--json` | 機械可読な出力、アニメーション無効 |
+| `--output`, `-o <file>` | アーティファクトをこのパスに書き出す |
+| `--model <id>` | 使用するモデル |
+| `--verbose` | リクエストとレスポンスのログをstderrに出力する |
+
+<Warning>
+  `-o` は `--json` の**前**に置いてください。短縮形は `--json` の後に置くと予期しない引数として拒否されます。`--output` はどの位置でも使用できます。
+</Warning>
+
+### 動画オプション
+
+```bash
+flatkey video generate \
+  --prompt "cinematic product launch clip" \
+  --model seedance2 --ratio 16:9 --resolution 720p --output launch.mp4
+```
+
+`--ratio` は `16:9`、`9:16`、`4:3`、`3:4`、`21:9`、`1:1` を受け付けます。`--resolution` は `480p`、`720p`、`1080p` を受け付けますが、各モデルはその範囲の一部のみサポートしています。詳細は[動画生成](/ja/guides/video-generation)を参照してください。
+
+### 音声オプション
+
+```bash
+flatkey audio generate --prompt "Welcome to Flatkey" --output welcome.mp3
+flatkey audio sfx --prompt "heavy door closing" --duration 4 --output door.mp3
+flatkey audio music --prompt "warm lo-fi loop, 80 bpm" --music-length-ms 30000 --output loop.mp3
+```
+
+`flatkey audio voices --json` を実行し、一覧に表示された `voice_id` を `--voice-id` に渡してください。
+
+## エージェントから実行する
+
+`--json` モードでは、stdoutにはJSONオブジェクトがひとつだけ、stderrにはJSONエラーが入ります。`flatkey help --ai` を実行すると、エージェントが実行時に読み取れるコンパクトなプロトコル説明が出力されます。
+
+```python
+import json, subprocess
+
+def flatkey(*args):
+    p = subprocess.run(["flatkey", *args, "--json"], capture_output=True, text=True)
+    if p.returncode != 0:
+        raise RuntimeError(json.loads(p.stderr or "{}").get("error", {}).get("message"))
+    return json.loads(p.stdout)
+
+models = [m["id"] for m in flatkey("models", "--type", "image")["models"]]
+out = flatkey("image", "generate", "--prompt", "a paper boat on still water",
+              "--model", models[0], "--output", "boat.png")
+print(out["artifacts"][0]["path"])
+```
+
+最初にモデルを一覧表示してから生成してください。ハードコードされたモデルIDは実行失敗の最も一般的な原因です。
+
+### リカバリー
+
+| 失敗 | リカバリー |
+| --- | --- |
+| キーがない | [console.flatkey.ai](https://console.flatkey.ai) で作成し、`flatkey onboard --api-key <key>` を実行する |
+| `No available channel` | `flatkey models --json` を実行し、一覧に表示されたIDで再試行する。同じモデルで再試行しないこと |
+| 不明な音声 | `flatkey audio voices --json` を実行し、一覧に表示されたIDで再試行する |
+| クレジット不足 | `flatkey credits --json` を実行してからチャージする |
+| `unsupported resolution` | `720p` にフォールバックする |
+
+<Warning>
+  リクエストを変更してからのみ再試行してください。これらのエラーは確定的なので、同じ引数を繰り返すと時間を無駄にするだけで結果は変わりません。
+</Warning>

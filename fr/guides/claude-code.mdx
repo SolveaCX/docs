@@ -1,0 +1,93 @@
+---
+title: "Utiliser Flatkey avec Claude Code pour un codage IA à prix réduit"
+sidebarTitle: "Claude Code"
+description: "Routez le trafic de la CLI Claude Code via Flatkey pour accéder aux modèles Claude à jusqu'à 50 % de réduction par rapport aux tarifs officiels Anthropic, en modifiant deux variables d'environnement."
+---
+
+Claude Code d'Anthropic est un assistant de codage IA agentique qui s'exécute dans votre terminal. En définissant la variable d'environnement `ANTHROPIC_BASE_URL`, vous pouvez router toutes les requêtes Claude Code via Flatkey et bénéficier des tarifs réduits de Flatkey sur l'utilisation des modèles Claude.
+
+## Prérequis
+
+- Claude Code installé : `npm install -g @anthropic-ai/claude-code`
+- Un compte Flatkey avec une clé API — [obtenez-en une ici](https://console.flatkey.ai/sign-up)
+
+## Configuration
+
+Définissez ces deux variables d'environnement :
+
+```bash
+export ANTHROPIC_BASE_URL="https://router.flatkey.ai"
+export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
+```
+
+Pour rendre le paramètre permanent, ajoutez-les à votre profil shell :
+
+```bash ~/.zshrc
+export ANTHROPIC_BASE_URL="https://router.flatkey.ai"
+export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
+```
+
+<Warning>
+  Définissez `ANTHROPIC_BASE_URL` sur `https://router.flatkey.ai` — sans barre oblique finale `/v1`. La CLI Claude Code ajoute automatiquement le bon chemin.
+</Warning>
+
+## Configurer avec CC Switch
+
+[CC Switch](https://ccswitch.io) est un gestionnaire de configuration desktop tiers pour les assistants de codage. Vous pouvez également le télécharger depuis le [dépôt GitHub officiel](https://github.com/farion1231/cc-switch).
+
+1. Ouvrez CC Switch et sélectionnez **Claude Code**.
+2. Ajoutez un **Fournisseur personnalisé** nommé `Flatkey`.
+3. Définissez l'URL de base sur `https://router.flatkey.ai` sans barre oblique finale `/v1`.
+4. Saisissez votre clé API Flatkey (`sk-fk-...`) et activez le fournisseur.
+5. Quittez complètement puis rouvrez Claude Code afin qu'il recharge les paramètres du fournisseur.
+6. Envoyez une petite requête, puis confirmez-la dans les **Journaux d'utilisation** de la [console Flatkey](https://console.flatkey.ai/usage-logs/common).
+
+<Note>
+  Si votre version de CC Switch n'inclut pas de préréglage Flatkey, utilisez **Fournisseur personnalisé**. CC Switch n'est pas un produit Flatkey.
+</Note>
+
+## Utiliser Claude Code
+
+Utilisez Claude Code exactement comme vous le faites habituellement :
+
+```bash
+claude "Fix the bug in this file"
+```
+
+ou en mode interactif :
+
+```bash
+claude
+```
+
+Toutes les requêtes sont routées vers Flatkey et facturées depuis votre solde prépayé aux tarifs réduits.
+
+## Vérifier la configuration
+
+Exécutez une requête simple, puis consultez les **Journaux d'utilisation** dans votre [console Flatkey](https://console.flatkey.ai/usage-logs/common). Vous devriez voir la requête Claude enregistrée avec son identifiant de modèle, le nombre de tokens et le coût.
+
+## Estimation des économies
+
+En utilisant Claude Sonnet (un choix populaire pour Claude Code) via Flatkey :
+
+| | Prix officiel | Flatkey (après bonus de 200 $) |
+|---|---|---|
+| Entrée `claude-sonnet-4-5` | 3 $ / 1M tokens | ~1,6 $ / 1M tokens |
+| Entrée `claude-haiku-4-5-20251001` | 1 $ / 1M tokens | ~0,53 $ / 1M tokens |
+
+Pour une session Claude Code typique de 50 000 tokens en entrée, avec Sonnet, cela donne :
+- Officiel : ~0,15 $ par session
+- Flatkey : ~0,08 $ par session
+
+<Tip>
+  Les utilisateurs intensifs de Claude Code bénéficient le plus du palier de recharge à 200 $ — le crédit bonus vous offre effectivement un mois d'utilisation supplémentaire en plus de la remise sur le modèle.
+</Tip>
+
+## Résolution des problèmes
+
+| Problème | Solution |
+|---|---|
+| `Authentication failed` | Vérifiez que `ANTHROPIC_API_KEY` correspond à votre clé Flatkey (`sk-fk-...`) |
+| `Could not connect` | Vérifiez que `ANTHROPIC_BASE_URL` est défini sur `https://router.flatkey.ai` |
+| `Insufficient balance` | Ajoutez du crédit sur [console.flatkey.ai](https://console.flatkey.ai) |
+| Requêtes absentes du tableau de bord | Vérifiez que les variables d'environnement sont exportées dans le shell actuel |

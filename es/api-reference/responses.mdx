@@ -1,0 +1,165 @@
+---
+title: "Responses API — POST /v1/responses"
+sidebarTitle: "Responses"
+description: "Usa POST /v1/responses para ejecutar conversaciones multi-turno con estado en el formato de la Responses API de OpenAI. Flatkey actúa como proxy de este endpoint para los modelos compatibles."
+---
+
+El endpoint `/v1/responses` implementa la Responses API de OpenAI, que admite conversaciones multi-turno con estado y gestión integrada del historial de conversación. Es una alternativa a `/v1/chat/completions` para flujos de trabajo que requieren el formato de respuesta más reciente de OpenAI. Pasa un `previous_response_id` para continuar una conversación sin necesidad de reenviar el historial completo de mensajes.
+
+## Endpoint
+
+```
+POST https://router.flatkey.ai/v1/responses
+```
+
+## Cuándo usar este endpoint
+
+Usa `/v1/responses` si:
+- Tu aplicación está construida sobre la Responses API de OpenAI
+- Necesitas gestión de conversaciones con estado
+- Usas el parámetro `previous_response_id` para conversaciones multi-turno
+
+Para la mayoría de las nuevas integraciones, `/v1/chat/completions` es el endpoint recomendado y tiene una compatibilidad más amplia con modelos.
+
+## Solicitud
+
+### Cabeceras
+
+| Cabecera | Valor |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### Parámetros del cuerpo
+
+<ParamField body="model" type="string" required>
+  ID del modelo a utilizar. Aquí solo son válidos los modelos que admiten el formato de la Responses API.
+</ParamField>
+
+<ParamField body="input" type="string | array" required>
+  La entrada del usuario para este turno. Puede ser una cadena de texto o un array de objetos de contenido.
+</ParamField>
+
+<ParamField body="instructions" type="string">
+  Instrucciones a nivel de sistema para el modelo (equivalente al mensaje `system` en las completions de chat).
+</ParamField>
+
+<ParamField body="previous_response_id" type="string">
+  El `id` de una respuesta anterior. Cuando se proporciona, el modelo continúa la conversación desde ese punto sin que el cliente tenga que enviar el historial.
+</ParamField>
+
+<ParamField body="max_output_tokens" type="integer">
+  Número máximo de tokens a generar.
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  Si es `true`, devuelve un flujo de eventos enviados por el servidor. Por defecto: `false`.
+</ParamField>
+
+## Ejemplo de solicitud
+
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.responses.create(
+    model="gpt-4o",
+    input="What is the capital of Japan?",
+    instructions="Answer concisely.",
+)
+
+print(response.output_text)
+```
+
+## Multi-turno con previous_response_id
+
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+# First turn
+response1 = client.responses.create(
+    model="gpt-4o",
+    input="My name is Alice.",
+)
+
+# Second turn — continue from the first
+response2 = client.responses.create(
+    model="gpt-4o",
+    input="What is my name?",
+    previous_response_id=response1.id,
+)
+
+print(response2.output_text)  # "Your name is Alice."
+```
+
+## Respuesta
+
+```json
+{
+  "id": "resp_abc123",
+  "object": "response",
+  "created_at": 1710000000,
+  "model": "gpt-4o",
+  "output": [
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {"type": "output_text", "text": "The capital of Japan is Tokyo."}
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 15,
+    "output_tokens": 9,
+    "total_tokens": 24
+  }
+}
+```
+
+### Campos de la respuesta
+
+<ResponseField name="id" type="string">
+  Identificador único de esta respuesta. Pásalo como `previous_response_id` para continuar la conversación.
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  Siempre `"response"`.
+</ResponseField>
+
+<ResponseField name="created_at" type="integer">
+  Marca de tiempo Unix de cuándo se creó la respuesta.
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  El modelo que generó la respuesta.
+</ResponseField>
+
+<ResponseField name="output" type="array">
+  Array de objetos de salida producidos por el modelo.
+  <Expandable title="propiedades del elemento de salida">
+    <ResponseField name="type" type="string">El tipo de salida. `"message"` para respuestas de texto.</ResponseField>
+    <ResponseField name="role" type="string">Siempre `"assistant"` para la salida generada.</ResponseField>
+    <ResponseField name="content" type="array">Array de bloques de contenido. Cada bloque tiene un `type` (`"output_text"`) y una cadena `text`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Conteo de tokens para facturación.
+  <Expandable title="propiedades de uso">
+    <ResponseField name="input_tokens" type="integer">Número de tokens de entrada procesados.</ResponseField>
+    <ResponseField name="output_tokens" type="integer">Número de tokens de salida generados.</ResponseField>
+    <ResponseField name="total_tokens" type="integer">Suma de tokens de entrada y salida.</ResponseField>
+  </Expandable>
+</ResponseField>

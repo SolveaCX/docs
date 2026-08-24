@@ -1,0 +1,205 @@
+---
+title: "Gerar texto com Flatkey"
+sidebarTitle: "Geração de Texto"
+description: "Chame qualquer modelo de chat por meio de um único endpoint. Abrange escolha de modelo, streaming, chamada de ferramentas, saídas estruturadas e leitura de uso de tokens."
+---
+
+URL base: `https://router.flatkey.ai`
+
+A geração de texto é feita por meio de `POST /v1/chat/completions`, que corresponde exatamente à API de Chat Completions da OpenAI. Qualquer cliente compatível com OpenAI funciona após você alterar a URL base.
+
+<CardGroup cols={2}>
+  <Card title="Sem reescrita necessária" icon="plug">
+    Mantenha seu código de requisição existente e aponte `base_url` para `https://router.flatkey.ai/v1`.
+  </Card>
+  <Card title="Uma chave, todos os modelos" icon="key">
+    Troque de modelos alterando o campo `model`. Nada mais muda.
+  </Card>
+</CardGroup>
+
+## Faça sua primeira chamada
+
+<CodeGroup>
+```python Python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.chat.completions.create(
+    model="claude-sonnet-5",
+    messages=[{"role": "user", "content": "Explain vector databases in two sentences."}],
+)
+
+print(response.choices[0].message.content)
+```
+
+```typescript TypeScript
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const response = await client.chat.completions.create({
+  model: "claude-sonnet-5",
+  messages: [{ role: "user", content: "Explain vector databases in two sentences." }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```bash cURL
+curl --fail-with-body -sS https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-5",
+    "messages": [
+      { "role": "user", "content": "Explain vector databases in two sentences." }
+    ]
+  }'
+```
+</CodeGroup>
+
+## Escolha um modelo
+
+Liste tudo que sua conta pode acessar e mantenha os modelos de texto:
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/models \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  | jq '.data[] | select(.type == "text") | .id'
+```
+
+Navegue pela mesma lista com preços, tamanho do contexto e latência no [diretório de modelos](https://flatkey.ai/models).
+
+Um ponto de partida prático:
+
+| Necessidade | Tente |
+| --- | --- |
+| Codificação e raciocínio do dia a dia | `claude-sonnet-5`, `gpt-5.6-sol` |
+| Documentos longos ou repositórios inteiros | `deepseek-v4-pro`, `kimi-k3` |
+| Alto volume a baixo custo | `deepseek-v4-flash`, `gemini-2.5-flash-lite` |
+| Codificação agêntica | `glm-5.3`, `claude-opus-5` |
+
+## Transmita a resposta
+
+Defina `stream: true` para receber tokens conforme são produzidos:
+
+```python
+stream = client.chat.completions.create(
+    model="gemini-2.5-flash",
+    messages=[{"role": "user", "content": "Write a haiku about routing."}],
+    stream=True,
+)
+
+for chunk in stream:
+    print(chunk.choices[0].delta.content or "", end="", flush=True)
+```
+
+Cada chunk carrega um `delta` parcial em vez de uma mensagem completa.
+
+## Chame suas próprias funções
+
+Passe definições de ferramentas e o modelo decide quando invocá-las:
+
+```python
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "get_weather",
+        "description": "Current weather for a city",
+        "parameters": {
+            "type": "object",
+            "properties": {"city": {"type": "string"}},
+            "required": ["city"],
+        },
+    },
+}]
+
+response = client.chat.completions.create(
+    model="claude-sonnet-5",
+    messages=[{"role": "user", "content": "What is the weather in Paris?"}],
+    tools=tools,
+)
+
+print(response.choices[0].message.tool_calls)
+```
+
+Para fechar o loop, anexe a mensagem do assistente, depois uma mensagem por resultado de ferramenta identificada por `tool_call_id`, e envie toda a thread de volta.
+
+<Warning>
+  Quando uma ferramenta é acionada, `finish_reason` é `tool_calls`, não `stop`. Código que verifica apenas `stop` vai descartar a chamada silenciosamente.
+</Warning>
+
+A chamada de ferramentas é uma capacidade do modelo, não do Flatkey. As famílias GPT, Claude, Gemini, Qwen, DeepSeek e GLM oferecem suporte. Modelos de imagem, vídeo e áudio ignoram um array `tools`.
+
+## Force um formato JSON
+
+Use `response_format` quando precisar analisar a resposta:
+
+```python
+response = client.chat.completions.create(
+    model="gpt-5.6-sol",
+    messages=[{"role": "user", "content": "Extract the city and country."}],
+    response_format={
+        "type": "json_schema",
+        "json_schema": {
+            "name": "location",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {"city": {"type": "string"}, "country": {"type": "string"}},
+                "required": ["city", "country"],
+                "additionalProperties": False,
+            },
+        },
+    },
+)
+```
+
+`{"type": "json_object"}` também funciona quando você precisa apenas de JSON válido sem um esquema fixo.
+
+## Leia o uso de tokens
+
+Cada resposta traz as contagens que são cobradas:
+
+```json
+"usage": {
+  "prompt_tokens": 28,
+  "completion_tokens": 22,
+  "total_tokens": 50
+}
+```
+
+Famílias de modelos diferentes tokenizam de forma diferente, portanto o mesmo texto custa um número diferente de tokens em modelos diferentes. Use `usage` em vez de estimar com base na contagem de caracteres. O custo por requisição também aparece nos [Registros de uso](/pt/dashboard/usage).
+
+## Solução de problemas
+
+**`No available channel for model ...`**
+
+Esse modelo não está roteável no momento. Escolha outro id em `/v1/models`. Tentar novamente com o mesmo modelo não resolve isso.
+
+**A resposta para no meio de uma frase**
+
+`finish_reason` é `length`. Aumente `max_tokens`.
+
+**As chamadas de ferramentas nunca são acionadas**
+
+Confirme se o modelo suporta ferramentas e verifique se `tool_choice` não está definido como `none`.
+
+## Próximos passos
+
+<CardGroup cols={2}>
+  <Card title="Referência da API" icon="code" href="/pt/api-reference/chat-completions">
+    Todos os parâmetros e campos de resposta.
+  </Card>
+  <Card title="Guia do SDK OpenAI" icon="plug" href="/pt/guides/openai-sdk">
+    Integre Flatkey em um projeto OpenAI existente.
+  </Card>
+</CardGroup>

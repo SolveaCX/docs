@@ -1,0 +1,205 @@
+---
+title: "Flatkey でテキストを生成する"
+sidebarTitle: "テキスト生成"
+description: "1 つのエンドポイントからあらゆるチャットモデルを呼び出せます。モデルの選択、ストリーミング、ツール呼び出し、構造化出力、トークン使用量の読み取りについて説明します。"
+---
+
+ベース URL: `https://router.flatkey.ai`
+
+テキスト生成は `POST /v1/chat/completions` を通じて実行されます。これは OpenAI Chat Completions API と完全に一致します。ベース URL を変更するだけで、OpenAI 互換のクライアントはそのまま動作します。
+
+<CardGroup cols={2}>
+  <Card title="書き換え不要" icon="plug">
+    既存のリクエストコードをそのまま使い、`base_url` を `https://router.flatkey.ai/v1` に向けるだけです。
+  </Card>
+  <Card title="1 つのキーで全モデル" icon="key">
+    `model` フィールドを変更するだけでモデルを切り替えられます。それ以外は何も変わりません。
+  </Card>
+</CardGroup>
+
+## 最初の呼び出しを行う
+
+<CodeGroup>
+```python Python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.chat.completions.create(
+    model="claude-sonnet-5",
+    messages=[{"role": "user", "content": "Explain vector databases in two sentences."}],
+)
+
+print(response.choices[0].message.content)
+```
+
+```typescript TypeScript
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const response = await client.chat.completions.create({
+  model: "claude-sonnet-5",
+  messages: [{ role: "user", content: "Explain vector databases in two sentences." }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```bash cURL
+curl --fail-with-body -sS https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-5",
+    "messages": [
+      { "role": "user", "content": "Explain vector databases in two sentences." }
+    ]
+  }'
+```
+</CodeGroup>
+
+## モデルを選ぶ
+
+アカウントからアクセスできるすべてのモデルを一覧表示し、テキストモデルを絞り込みます：
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/models \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  | jq '.data[] | select(.type == "text") | .id'
+```
+
+同じ一覧を、価格・コンテキスト長・レイテンシ付きで[モデルディレクトリ](https://flatkey.ai/models)で確認できます。
+
+実用的な出発点として：
+
+| 用途 | 候補 |
+| --- | --- |
+| 日常的なコーディングと推論 | `claude-sonnet-5`, `gpt-5.6-sol` |
+| 長いドキュメントやリポジトリ全体 | `deepseek-v4-pro`, `kimi-k3` |
+| 低コストの大量処理 | `deepseek-v4-flash`, `gemini-2.5-flash-lite` |
+| エージェント型コーディング | `glm-5.3`, `claude-opus-5` |
+
+## レスポンスをストリーミングする
+
+`stream: true` を設定すると、トークンが生成されるたびに受信できます：
+
+```python
+stream = client.chat.completions.create(
+    model="gemini-2.5-flash",
+    messages=[{"role": "user", "content": "Write a haiku about routing."}],
+    stream=True,
+)
+
+for chunk in stream:
+    print(chunk.choices[0].delta.content or "", end="", flush=True)
+```
+
+各チャンクには、完全なメッセージではなく部分的な `delta` が含まれます。
+
+## 独自の関数を呼び出す
+
+ツール定義を渡すと、モデルがいつ呼び出すかを判断します：
+
+```python
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "get_weather",
+        "description": "Current weather for a city",
+        "parameters": {
+            "type": "object",
+            "properties": {"city": {"type": "string"}},
+            "required": ["city"],
+        },
+    },
+}]
+
+response = client.chat.completions.create(
+    model="claude-sonnet-5",
+    messages=[{"role": "user", "content": "What is the weather in Paris?"}],
+    tools=tools,
+)
+
+print(response.choices[0].message.tool_calls)
+```
+
+ループを完了させるには、アシスタントメッセージを追加し、次に `tool_call_id` をキーとするツール結果を 1 メッセージずつ追加して、スレッド全体を送り返します。
+
+<Warning>
+  ツールが実行されると、`finish_reason` は `stop` ではなく `tool_calls` になります。`stop` のみを確認するコードは、呼び出しを無言でスキップしてしまいます。
+</Warning>
+
+ツール呼び出しは Flatkey の機能ではなく、モデルの機能です。GPT、Claude、Gemini、Qwen、DeepSeek、GLM ファミリーがサポートしています。画像・動画・音声モデルは `tools` 配列を無視します。
+
+## JSON の形式を強制する
+
+回答をパースする必要がある場合は `response_format` を使います：
+
+```python
+response = client.chat.completions.create(
+    model="gpt-5.6-sol",
+    messages=[{"role": "user", "content": "Extract the city and country."}],
+    response_format={
+        "type": "json_schema",
+        "json_schema": {
+            "name": "location",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {"city": {"type": "string"}, "country": {"type": "string"}},
+                "required": ["city", "country"],
+                "additionalProperties": False,
+            },
+        },
+    },
+)
+```
+
+`{"type": "json_object"}` は、固定スキーマなしで有効な JSON のみが必要な場合にも使えます。
+
+## トークン使用量を読み取る
+
+すべてのレスポンスには課金対象のカウントが含まれています：
+
+```json
+"usage": {
+  "prompt_tokens": 28,
+  "completion_tokens": 22,
+  "total_tokens": 50
+}
+```
+
+モデルファミリーによってトークン化の方法が異なるため、同じテキストでもモデルによってトークン数が変わります。文字数から推定するのではなく、`usage` を使ってください。リクエストごとのコストは[使用ログ](/ja/dashboard/usage)でも確認できます。
+
+## トラブルシューティング
+
+**`No available channel for model ...`**
+
+そのモデルは現在ルーティングできません。`/v1/models` から別の ID を選んでください。同じモデルをリトライしても解消しません。
+
+**レスポンスが文の途中で止まる**
+
+`finish_reason` が `length` になっています。`max_tokens` を増やしてください。
+
+**ツール呼び出しが一度も実行されない**
+
+モデルがツールをサポートしているか確認し、`tool_choice` が `none` に設定されていないか確認してください。
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="API リファレンス" icon="code" href="/ja/api-reference/chat-completions">
+    すべてのパラメータとレスポンスフィールド。
+  </Card>
+  <Card title="OpenAI SDK ガイド" icon="plug" href="/ja/guides/openai-sdk">
+    既存の OpenAI プロジェクトに Flatkey を組み込む。
+  </Card>
+</CardGroup>

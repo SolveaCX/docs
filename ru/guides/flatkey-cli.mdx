@@ -1,0 +1,131 @@
+---
+title: "Использование Flatkey CLI с ИИ-агентом"
+sidebarTitle: "Flatkey CLI с ИИ-агентом"
+description: "Генерируйте изображения, видео, аудио и текст из терминала, а также запускайте те же команды из скрипта, задания CI или ИИ-агента с выводом в формате JSON."
+---
+
+Flatkey CLI обеспечивает генерацию медиаконтента в вашем терминале с единым балансом. Каждая команда принимает `--json`, что делает её безопасной для вызова из скрипта, задания CI или ИИ-агента, который разбирает stdout.
+
+## Установка и аутентификация
+
+```bash
+npm install -g @flatkey-ai/cli
+flatkey login
+```
+
+Требуется Node.js версии 18 или новее. Для CI установите переменную окружения вместо входа в систему:
+
+```bash
+export FLATKEY_API_KEY="sk-fk-..."
+```
+
+Проверьте, что использует CLI:
+
+```bash
+flatkey auth status --json
+```
+
+## Сгенерируйте первый файл
+
+<Warning>
+  Всегда передавайте `--model`. Встроенная модель изображений по умолчанию в настоящее время недоступна для маршрутизации и возвращает `No available channel`.
+</Warning>
+
+```bash
+flatkey image generate \
+  --prompt "editorial cover, neon city at dawn" \
+  --model gpt-image-2 \
+  --output cover.png
+```
+
+```json
+{
+  "kind": "image",
+  "artifacts": [{ "path": "cover.png" }],
+  "response": { "data": [{ "url": "https://..." }] }
+}
+```
+
+## Команды
+
+| Команда | Назначение |
+| --- | --- |
+| `flatkey image generate --prompt <txt>` | Сгенерировать изображение |
+| `flatkey image upload --file <path>` | Загрузить локальное изображение, получить временный URL |
+| `flatkey video generate --prompt <txt>` | Сгенерировать видео |
+| `flatkey audio generate --prompt <txt>` | Сгенерировать речь |
+| `flatkey audio sfx --prompt <txt>` | Сгенерировать звуковой эффект |
+| `flatkey audio music --prompt <txt>` | Сгенерировать музыку |
+| `flatkey audio voices` | Список доступных голосов |
+| `flatkey text generate --prompt <txt>` | Однократная генерация текста |
+| `flatkey models` | Список моделей, фильтрация с помощью `--type image\|video\|audio\|text` |
+| `flatkey credits` | Показать оставшийся баланс |
+| `flatkey help --ai` | Вывести руководство по протоколу агента |
+
+### Глобальные параметры
+
+| Флаг | Значение |
+| --- | --- |
+| `--json` | Машиночитаемый вывод, анимация отключена |
+| `--output`, `-o <file>` | Записать артефакт по указанному пути |
+| `--model <id>` | Используемая модель |
+| `--verbose` | Логи запросов и ответов в stderr |
+
+<Warning>
+  Размещайте `-o` **перед** `--json`. Краткая форма отклоняется как неожиданный аргумент, если она стоит после `--json`. `--output` работает в любой позиции.
+</Warning>
+
+### Параметры видео
+
+```bash
+flatkey video generate \
+  --prompt "cinematic product launch clip" \
+  --model seedance2 --ratio 16:9 --resolution 720p --output launch.mp4
+```
+
+`--ratio` принимает значения `16:9`, `9:16`, `4:3`, `3:4`, `21:9` и `1:1`. `--resolution` принимает значения `480p`, `720p` и `1080p`, однако каждая модель поддерживает лишь часть этого диапазона — см. [Генерация видео](/ru/guides/video-generation).
+
+### Параметры аудио
+
+```bash
+flatkey audio generate --prompt "Welcome to Flatkey" --output welcome.mp3
+flatkey audio sfx --prompt "heavy door closing" --duration 4 --output door.mp3
+flatkey audio music --prompt "warm lo-fi loop, 80 bpm" --music-length-ms 30000 --output loop.mp3
+```
+
+Запустите `flatkey audio voices --json` и передайте указанный `voice_id` в `--voice-id`.
+
+## Управление с помощью агента
+
+В режиме `--json` stdout содержит ровно один JSON-объект, а stderr — JSON-ошибку. Запустите `flatkey help --ai`, чтобы вывести компактное описание протокола, которое агент может прочитать во время выполнения.
+
+```python
+import json, subprocess
+
+def flatkey(*args):
+    p = subprocess.run(["flatkey", *args, "--json"], capture_output=True, text=True)
+    if p.returncode != 0:
+        raise RuntimeError(json.loads(p.stderr or "{}").get("error", {}).get("message"))
+    return json.loads(p.stdout)
+
+models = [m["id"] for m in flatkey("models", "--type", "image")["models"]]
+out = flatkey("image", "generate", "--prompt", "a paper boat on still water",
+              "--model", models[0], "--output", "boat.png")
+print(out["artifacts"][0]["path"])
+```
+
+Сначала получите список моделей, затем выполните генерацию. Жёстко заданный идентификатор модели — наиболее распространённая причина неудачного запуска.
+
+### Восстановление после ошибок
+
+| Ошибка | Восстановление |
+| --- | --- |
+| Отсутствует ключ | Создайте его на [console.flatkey.ai](https://console.flatkey.ai), затем выполните `flatkey onboard --api-key <key>` |
+| `No available channel` | Запустите `flatkey models --json`, повторите попытку с указанным идентификатором. Не повторяйте запрос с той же моделью |
+| Неизвестный голос | `flatkey audio voices --json`, повторите попытку с указанным идентификатором |
+| Недостаточно кредитов | `flatkey credits --json`, затем пополните баланс |
+| `unsupported resolution` | Используйте `720p` как запасной вариант |
+
+<Warning>
+  Повторяйте попытку только после изменения запроса. Эти ошибки детерминированы, поэтому повторение идентичных аргументов тратит время, не меняя результата.
+</Warning>

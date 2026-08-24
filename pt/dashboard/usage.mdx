@@ -1,0 +1,69 @@
+---
+title: "Monitore o Uso e os Custos da API Flatkey no Dashboard"
+sidebarTitle: "Uso"
+description: "Acompanhe cada requisição da API Flatkey com contagens de tokens, nomes de modelos e custos por requisição. Filtre, pesquise e exporte logs de uso para conciliação de cobranças."
+---
+
+O dashboard de **Uso** da Flatkey oferece visibilidade completa de cada requisição de API feita com sua conta. Cada entrada de log mostra o modelo utilizado, contagens de tokens de entrada e saída, o custo debitado do seu saldo e o timestamp. Use esta visualização para entender seus padrões de gastos, depurar erros e conciliar custos.
+
+## Acessando os logs de uso
+
+<Steps>
+  <Step title="Abra o console">
+    Faça login em [console.flatkey.ai](https://console.flatkey.ai) e clique em **Uso** na barra lateral esquerda.
+  </Step>
+  <Step title="Defina um intervalo de datas">
+    Use o seletor de datas no topo para filtrar logs por dia, semana, mês ou um intervalo personalizado. A visualização padrão mostra os últimos 7 dias.
+  </Step>
+  <Step title="Filtre por modelo ou chave">
+    Use os menus suspensos **Modelo** e **Chave de API** para focar em um modelo ou chave específica. Isso é útil para comparar custos entre modelos ou auditar uma integração específica.
+  </Step>
+</Steps>
+
+## O que cada entrada de log exibe
+
+| Campo | Descrição |
+|---|---|
+| **Timestamp** | Quando a requisição foi recebida pela Flatkey |
+| **Modelo** | O ID do modelo utilizado (ex.: `gpt-4o-mini`, `claude-sonnet-4-5`) |
+| **Tokens de entrada** | Número de tokens no prompt |
+| **Tokens de saída** | Número de tokens na resposta |
+| **Custo** | Valor debitado do seu saldo por esta requisição |
+| **Chave de API** | Qual chave foi usada (exibida como nome + prefixo mascarado) |
+| **Status** | Se a requisição foi bem-sucedida ou falhou |
+
+## Entendendo os custos
+
+Cada requisição exibe o custo real cobrado, que reflete:
+- O preço de entrada e saída do modelo (com a taxa com desconto da Flatkey)
+- Seu bônus de recarga atual aplicado automaticamente
+
+A soma de todos os custos de requisições equivale ao saldo total consumido naquele período.
+
+## Monitorando seu saldo
+
+Seu saldo atual é exibido no topo da página de Uso e na seção **Saldo**. Quando o saldo cair abaixo de um limite que você definir, você receberá um alerta por e-mail. Para configurar alertas, acesse **Configurações → Notificações**.
+
+<Note>
+  O saldo é debitado em tempo real conforme as requisições são concluídas. Se uma requisição falhar no lado do provedor, o custo ainda pode ser parcialmente debitado dependendo de quantos tokens foram processados antes da falha.
+</Note>
+
+## Exportando logs
+
+Para exportar dados de uso:
+1. Defina o intervalo de datas e os filtros desejados.
+2. Clique em **Exportar** no canto superior direito.
+3. Escolha o formato CSV ou JSON.
+4. O arquivo será baixado no seu navegador.
+
+Os logs exportados contêm todos os campos exibidos no dashboard e são adequados para upload em planilhas ou ferramentas financeiras.
+
+## Alertas de alto uso
+
+Para evitar gastos descontrolados:
+- Defina um **limite de gastos mensais** em **Configurações → Cobrança** — as requisições são bloqueadas quando o limite é atingido.
+- Use **Grupos** para definir cotas por chave ou por aplicação.
+
+<Tip>
+  Durante o desenvolvimento, use uma chave separada com uma cota de gastos definida para um valor pequeno (ex.: $5). Isso evita que requisições acidentais de alto custo esgotem seu saldo de produção.
+</Tip>

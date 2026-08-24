@@ -1,0 +1,83 @@
+---
+title: "FAQ Flatkey: Pertanyaan Umum dan Jawabannya"
+sidebarTitle: "FAQ"
+description: "Jawaban atas pertanyaan paling umum tentang Flatkey — termasuk kompatibilitas model, penagihan, privasi, manajemen kunci API, dan opsi enterprise."
+---
+
+Halaman ini mencakup pertanyaan paling umum seputar penggunaan Flatkey. Jika ada pertanyaan yang belum terjawab di sini, hubungi [support@flatkey.ai](mailto:support@flatkey.ai) atau gunakan live chat di konsol.
+
+## Memulai
+
+<Accordion title="Apa itu Flatkey?">
+  Flatkey adalah gateway API AI yang menyediakan akses ke 300+ model AI resmi dari OpenAI, Anthropic, Google, DeepSeek, Qwen, GLM, dan lainnya, ditambah 1000+ alat — semua melalui satu kunci API yang kompatibel dengan OpenAI. Ini adalah pengganti langsung untuk klien mana pun yang kompatibel dengan OpenAI: ubah `base_url` ke `https://router.flatkey.ai/v1`, gunakan kunci Flatkey Anda, dan arahkan ke model apa pun dengan harga diskon.
+</Accordion>
+
+<Accordion title="Apakah saya memerlukan kunci API terpisah untuk setiap penyedia?">
+  Tidak. Satu kunci API Flatkey merutekan ke semua 300+ model dari semua penyedia. Anda tidak memerlukan kunci API terpisah dari OpenAI, Anthropic, atau Google.
+</Accordion>
+
+<Accordion title="Apakah model-model tersebut merupakan versi resmi dari penyedia aslinya?">
+  Ya. Flatkey merutekan permintaan Anda ke API vendor resmi — OpenAI, Anthropic, Google, DeepSeek, dan lainnya. Output model berasal langsung dari infrastruktur penyedia asli. Flatkey tidak meng-host, melakukan fine-tune, atau memodifikasi model apa pun.
+</Accordion>
+
+## Penagihan dan harga
+
+<Accordion title="Bagaimana cara kerja penagihan?">
+  Flatkey menggunakan sistem prabayar. Anda mengisi saldo Anda ($10, $20, $200, atau enterprise kustom) dan biaya setiap permintaan API dipotong dari saldo Anda secara real time. Tidak ada langganan atau biaya berulang.
+</Accordion>
+
+<Accordion title="Bagaimana cara kerja bonus isi ulang?">
+  Setiap isi ulang mendapatkan bonus kredit: +$3 untuk $10, +$8 untuk $20, +$100 untuk $200. Kredit bonus ditambahkan ke saldo Anda secara instan, tidak pernah kedaluwarsa, dan digunakan sama seperti kredit berbayar. Ini bukan kode diskon — ini adalah kredit nyata yang muncul di saldo Anda.
+</Accordion>
+
+<Accordion title="Bisakah saya mengisi ulang beberapa kali?">
+  Ya. Anda dapat mengisi ulang sebanyak yang Anda inginkan, dan Anda mendapatkan bonus kredit di setiap isi ulang. Tiga kali isi ulang $200 menghasilkan total $300 bonus kredit.
+</Accordion>
+
+<Accordion title="Apa yang terjadi jika saldo saya mencapai nol?">
+  Permintaan API mengembalikan error `401 Insufficient Balance`. Tidak ada biaya otomatis. Isi ulang saldo Anda untuk melanjutkan. Aktifkan notifikasi saldo rendah di **Settings → Notifications** untuk menghindari gangguan.
+</Accordion>
+
+## Kompatibilitas dan model
+
+<Accordion title="Apakah Flatkey kompatibel dengan SDK resmi OpenAI?">
+  Ya. SDK Python dan Node.js OpenAI mendukung parameter `base_url`. Atur ke `https://router.flatkey.ai/v1` dan gunakan kunci API Flatkey Anda. Tidak ada perubahan lain yang diperlukan.
+</Accordion>
+
+<Accordion title="Bisakah saya menggunakan Flatkey dengan SDK Anthropic?">
+  Ya. Atur `base_url` ke `https://router.flatkey.ai` (tanpa `/v1`) di konstruktor SDK Anthropic dan gunakan kunci API Flatkey Anda. Lihat [panduan SDK Anthropic](/id/guides/anthropic-sdk) untuk detailnya.
+</Accordion>
+
+<Accordion title="Nama model mana yang harus saya gunakan?">
+  Gunakan ID model kanonik yang sama seperti yang Anda gunakan dengan penyedia asli — misalnya `gpt-4o`, `claude-sonnet-4-5`, `gemini-2.5-flash`. Daftar lengkapnya ada di [Direktori Model](https://flatkey.ai/models).
+</Accordion>
+
+<Accordion title="Apakah Flatkey mendukung streaming?">
+  Ya. Atur `stream: true` dalam permintaan Anda. Flatkey mengembalikan server-sent events (SSE) dalam format yang sama dengan API OpenAI. Streaming berfungsi untuk semua model chat dan pembuatan teks.
+</Accordion>
+
+## Privasi dan keamanan
+
+<Accordion title="Apakah Flatkey menyimpan prompt atau hasil respons saya?">
+  Tidak. Flatkey memiliki zero retention terhadap konten permintaan — prompt dan respons tidak pernah ditulis ke disk atau disimpan. Hanya metadata (model, jumlah token, cap waktu, biaya) yang dicatat untuk keperluan penagihan dan analitik.
+</Accordion>
+
+<Accordion title="Sertifikasi kepatuhan apa yang dimiliki Flatkey?">
+  Flatkey beroperasi di bawah infrastruktur yang patuh GDPR dan memelihara kontrol yang selaras dengan standar SOC 2 dan ISO 27001.
+</Accordion>
+
+<Accordion title="Apa yang harus saya lakukan jika kunci API saya bocor?">
+  Cabut kunci tersebut segera dari halaman **Keys** di konsol. Pencabutan berlaku instan. Kemudian buat kunci baru dan perbarui aplikasi Anda. Lihat [Manajemen Kunci API](/id/dashboard/api-keys) untuk detailnya.
+</Accordion>
+
+## Enterprise
+
+Diskon volume berkomitmen, perutean kustom, faktur, dan pengadaan dibahas di halaman [Enterprise](/id/reference/enterprise).
+
+## Dukungan
+
+<Accordion title="Bagaimana cara menghubungi dukungan?">
+  - **Email**: [support@flatkey.ai](mailto:support@flatkey.ai)
+  - **Live chat**: Tersedia di [flatkey.ai](https://flatkey.ai) dan di konsol
+  - **X (Twitter)**: [@flatkey101](https://x.com/flatkey101)
+</Accordion>

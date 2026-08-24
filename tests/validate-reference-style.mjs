@@ -25,15 +25,47 @@ assert.equal(config.favicon, "/favicon.svg");
 assert.deepEqual(config.appearance, { default: "system", strict: false });
 assert.equal(config.styling.codeblocks, "dark");
 
+// A nested group's `root` is a real page too, and must never also appear in its
+// own `pages` — listing it twice makes its "Next" link point back at itself.
+const collectPages = (entries) =>
+  entries.flatMap((entry) => {
+    if (typeof entry === "string") return [entry];
+    const nested = Array.isArray(entry.pages) ? collectPages(entry.pages) : [];
+    if (!entry.root) return nested;
+    assert.ok(!nested.includes(entry.root), `${entry.root} is listed under its own root`);
+    return [entry.root, ...nested];
+  });
 const navigationPages = config.navigation.languages.flatMap((language) =>
-  language.tabs.flatMap((tab) => tab.groups.flatMap((group) => group.pages)),
+  language.tabs.flatMap((tab) => tab.groups.flatMap((group) => collectPages(group.pages))),
 );
-assert.equal(navigationPages.length, 60);
-const pages = ["index", "zh/index", ...navigationPages];
-assert.equal(pages.length, 62);
-assert.equal(new Set(pages).size, 62);
+const languageCodes = config.navigation.languages.map((language) => language.language);
+assert.deepEqual(languageCodes, ["en", "zh", "es", "fr", "pt", "ru", "ja", "vi", "de", "id"]);
+// Every locale carries the same 31 navigation pages plus an unlisted index.
+assert.equal(navigationPages.length, languageCodes.length * 31);
+const indexPages = languageCodes.map((code) => (code === "en" ? "index" : `${code}/index`));
+const pages = [...indexPages, ...navigationPages];
+assert.equal(pages.length, languageCodes.length * 32);
+assert.equal(new Set(pages).size, pages.length);
 for (const page of pages) {
   assert.ok(existsSync(resolve(root, `${page}.mdx`)), page);
+}
+
+// script.js relabels the bottom pagination with each page's sidebarTitle.
+// Its lookup table is written by hand, so verify it still matches frontmatter.
+const script = read("script.js");
+const scriptTitles = Object.fromEntries(
+  [...script.matchAll(/^\s{2}"([^"]+)":\s*"([^"]*)",$/gm)].map(([, route, label]) => [
+    route,
+    label,
+  ]),
+);
+for (const page of pages) {
+  const sidebarTitle = read(`${page}.mdx`).match(
+    /^sidebarTitle:\s*"(.+)"\s*$/m,
+  )?.[1];
+  assert.ok(sidebarTitle, `${page} needs a sidebarTitle`);
+  const route = `/${page}`.replace(/\/index$/, "") || "/";
+  assert.equal(scriptTitles[route], sidebarTitle, `script.js: ${route}`);
 }
 
 const seedanceAssetGuides = ["guides/seedance", "zh/guides/seedance"];
@@ -529,4 +561,6 @@ assert.match(
   css,
   /#mobile-nav \[role="group"\] button\[aria-pressed\]\s*\{[^}]*min-width:\s*44px[^}]*min-height:\s*44px/s,
 );
-console.log("Reference style contract validated for 60 routes.");
+console.log(
+  `Reference style contract validated for ${pages.length} routes across ${languageCodes.length} locales.`,
+);

@@ -1,0 +1,104 @@
+---
+title: "Daftar Model — GET /v1/models"
+sidebarTitle: "Model"
+description: "Ambil semua model AI yang tersedia melalui akun Flatkey Anda dengan GET /v1/models. Mengembalikan ID model, penyedia, dan cap waktu dalam format yang kompatibel dengan OpenAI."
+---
+
+Endpoint `/v1/models` mengembalikan daftar semua model yang tersedia melalui akun Flatkey Anda. Respons mengikuti format OpenAI API — ID model yang sama yang dikembalikan di sini dapat digunakan di `/v1/chat/completions`, `/v1/embeddings`, dan endpoint lainnya.
+
+## Endpoint
+
+```
+GET https://router.flatkey.ai/v1/models
+```
+
+## Permintaan
+
+### Header
+
+| Header | Nilai |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+
+Tidak diperlukan isi permintaan.
+
+## Contoh permintaan
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+models = client.models.list()
+
+for model in models.data:
+    print(model.id)
+```
+```javascript node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const models = await client.models.list();
+
+for (const model of models.data) {
+  console.log(model.id);
+}
+```
+```bash curl
+curl https://router.flatkey.ai/v1/models \
+  -H "Authorization: Bearer $FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+## Respons
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-4o",
+      "object": "model",
+      "created": 1710000000,
+      "owned_by": "openai"
+    },
+    {
+      "id": "claude-sonnet-4-5",
+      "object": "model",
+      "created": 1710000000,
+      "owned_by": "anthropic"
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "object": "model",
+      "created": 1710000000,
+      "owned_by": "google"
+    }
+  ]
+}
+```
+
+### Kolom respons
+
+<ResponseField name="data" type="array">
+  Array objek model.
+  <Expandable title="objek model">
+    <ResponseField name="id" type="string">Pengenal model yang digunakan dalam permintaan.</ResponseField>
+    <ResponseField name="object" type="string">Selalu `"model"`.</ResponseField>
+    <ResponseField name="created" type="integer">Cap waktu Unix saat model ditambahkan.</ResponseField>
+    <ResponseField name="owned_by" type="string">Penyedia: `"openai"`, `"anthropic"`, `"google"`, dll.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Tip>
+  Untuk informasi harga, data kesehatan, dan spesifikasi model terperinci, kunjungi [flatkey.ai/models](https://flatkey.ai/models) atau [Direktori Model](https://flatkey.ai/models).
+</Tip>
