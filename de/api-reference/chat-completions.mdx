@@ -1,0 +1,178 @@
+---
+title: "Chat Completions — POST /v1/chat/completions"
+sidebarTitle: "Chat Completions"
+description: "Generieren Sie Chat- und Textvervollständigungen über Flatkey, indem Sie ein Messages-Array an ein unterstütztes Modell senden. Gibt Choices mit generiertem Text und Token-Nutzung zurück."
+---
+
+Der Endpunkt `/v1/chat/completions` generiert eine Textvervollständigung auf Basis einer Liste von Nachrichten. Er ist der primäre Endpunkt für Chat-, Instruction-Following- und Textgenerierungsaufgaben. Das Anfrageformat ist identisch mit der OpenAI Chat Completions API, sodass jedes OpenAI-kompatible SDK ohne Änderungen funktioniert.
+
+## Endpunkt
+
+```
+POST https://router.flatkey.ai/v1/chat/completions
+```
+
+## Anfrage
+
+### Header
+
+| Header | Wert |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### Body-Parameter
+
+<ParamField body="model" type="string" required>
+  Die zu verwendende Modell-ID. Alle gültigen Werte finden Sie im [Modellverzeichnis](https://flatkey.ai/models). Beispiel: `"gpt-4o"`, `"claude-sonnet-4-5"`, `"gemini-2.5-flash"`.
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  Ein Array von Nachrichtenobjekten, das die Konversation repräsentiert. Jedes Objekt muss `role` (`"system"`, `"user"` oder `"assistant"`) und `content` (String) enthalten.
+</ParamField>
+
+<ParamField body="max_tokens" type="integer">
+  Maximale Anzahl der zu generierenden Token. Standardwerte variieren je nach Modell.
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  Sampling-Temperatur zwischen 0 und 2. Höhere Werte erzeugen zufälligere Ausgaben. Standard: 1.
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  Wenn `true`, wird die Antwort als Stream von Server-Sent Events (SSE) zurückgegeben. Standard: `false`.
+</ParamField>
+
+<ParamField body="top_p" type="number">
+  Nucleus-Sampling — es werden nur Token aus der obersten `top_p`-Wahrscheinlichkeitsmasse berücksichtigt. Standard: 1.
+</ParamField>
+
+<ParamField body="stop" type="string | array">
+  Eine oder mehrere Sequenzen, bei denen das Modell die Generierung stoppt. Kann ein String oder ein Array von Strings sein.
+</ParamField>
+
+<ParamField body="tools" type="array">
+  Eine Liste von Tool-Definitionen für Function Calling. Jedes Tool muss `type: "function"` und ein `function`-Objekt mit `name`, `description` und `parameters` enthalten.
+</ParamField>
+
+<ParamField body="tool_choice" type="string | object">
+  Steuert die Tool-Auswahl: `"none"`, `"auto"`, `"required"` oder ein spezifisches Tool `{"type": "function", "function": {"name": "..."}}`.
+</ParamField>
+
+## Beispielanfrage
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "What is the speed of light?"},
+    ],
+    max_tokens=256,
+    temperature=0.7,
+)
+
+print(response.choices[0].message.content)
+```
+```bash curl
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant."},
+      {"role": "user", "content": "What is the speed of light?"}
+    ],
+    "max_tokens": 256
+  }'
+```
+</CodeGroup>
+
+## Antwort
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1710000000,
+  "model": "gpt-4o",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The speed of light in a vacuum is approximately 299,792,458 meters per second."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 28,
+    "completion_tokens": 22,
+    "total_tokens": 50
+  }
+}
+```
+
+### Antwortfelder
+
+<ResponseField name="id" type="string">
+  Eindeutiger Bezeichner für die Vervollständigung.
+</ResponseField>
+
+<ResponseField name="choices" type="array">
+  Array der generierten Vervollständigungs-Choices.
+  <Expandable title="Choice-Eigenschaften">
+    <ResponseField name="message.content" type="string">
+      Der generierte Text.
+    </ResponseField>
+    <ResponseField name="message.role" type="string">
+      Für generierte Nachrichten immer `"assistant"`.
+    </ResponseField>
+    <ResponseField name="finish_reason" type="string">
+      Grund für den Generierungsstopp: `"stop"` (natürliches Ende), `"length"` (max_tokens erreicht), `"tool_calls"` (Tool aufgerufen).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Token-Anzahl für die Abrechnung.
+  <Expandable title="Usage-Eigenschaften">
+    <ResponseField name="prompt_tokens" type="integer">Anzahl der Eingabe-Token.</ResponseField>
+    <ResponseField name="completion_tokens" type="integer">Anzahl der Ausgabe-Token.</ResponseField>
+    <ResponseField name="total_tokens" type="integer">Summe aus Prompt- und Completion-Token.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Streaming
+
+Setzen Sie `stream: true`, um einen Stream von SSE-Chunks zu empfangen. Jeder Chunk hat dieselbe Struktur, enthält jedoch partiellen `delta`-Inhalt anstelle einer vollständigen Nachricht:
+
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+stream = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Tell me a story."}],
+    stream=True,
+)
+
+for chunk in stream:
+    print(chunk.choices[0].delta.content or "", end="", flush=True)
+```

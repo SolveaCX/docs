@@ -1,0 +1,171 @@
+---
+title: "Embeddings — POST /v1/embeddings"
+sidebarTitle: "Embeddings"
+description: "POST /v1/embeddings を使用してテキストのベクトル埋め込みを生成します。バッチ入力と複数の埋め込みモデルに対応し、セマンティック検索、クラスタリング、RAG に活用できます。"
+---
+
+`/v1/embeddings` エンドポイントは、テキスト入力のベクトル埋め込みを生成します。埋め込みはテキストの意味を高次元の浮動小数点配列として表現し、類似検索、クラスタリング、検索拡張生成（RAG）を可能にします。このエンドポイントは OpenAI Embeddings API と互換性があります。
+
+## エンドポイント
+
+```
+POST https://router.flatkey.ai/v1/embeddings
+```
+
+## サポートされている埋め込みモデル
+
+| モデル | 次元数 | プロバイダー |
+|---|---|---|
+| `gemini-embedding-001` | 3072 | Google |
+| `text-embedding-3-small` | 1536 | OpenAI |
+| `text-embedding-3-large` | 3072 | OpenAI |
+
+現在の提供状況と料金については、[モデルディレクトリ](https://flatkey.ai/models)をご覧ください。
+
+## リクエスト
+
+### ヘッダー
+
+| ヘッダー | 値 |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### ボディパラメーター
+
+<ParamField body="model" type="string" required>
+  埋め込みモデルの ID。例：`"gemini-embedding-001"`、`"text-embedding-3-small"`。
+</ParamField>
+
+<ParamField body="input" type="string | array" required>
+  埋め込むテキスト。単一の文字列、またはバッチ埋め込み用の文字列の配列を指定できます。
+</ParamField>
+
+<ParamField body="encoding_format" type="string">
+  `"float"`（デフォルト）は浮動小数点配列を返します。`"base64"` は Base64 エンコードされた文字列を返します。
+</ParamField>
+
+<ParamField body="dimensions" type="integer">
+  出力埋め込みの次元数。すべてのモデルでサポートされているわけではありません。
+</ParamField>
+
+## リクエスト例
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+# Single text
+response = client.embeddings.create(
+    model="gemini-embedding-001",
+    input="The quick brown fox jumps over the lazy dog",
+)
+
+embedding = response.data[0].embedding
+print(f"Embedding dimensions: {len(embedding)}")
+print(f"First 5 values: {embedding[:5]}")
+```
+```python python batch
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+# Batch embedding
+texts = [
+    "What is machine learning?",
+    "How does neural network training work?",
+    "Explain gradient descent",
+]
+
+response = client.embeddings.create(
+    model="gemini-embedding-001",
+    input=texts,
+)
+
+for i, item in enumerate(response.data):
+    print(f"{texts[i]}: {len(item.embedding)} dimensions")
+```
+```bash curl
+curl https://router.flatkey.ai/v1/embeddings \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini-embedding-001",
+    "input": "The quick brown fox jumps over the lazy dog"
+  }'
+```
+</CodeGroup>
+
+## レスポンス
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "object": "embedding",
+      "index": 0,
+      "embedding": [0.0023064255, -0.009327292, ...]
+    }
+  ],
+  "model": "gemini-embedding-001",
+  "usage": {
+    "prompt_tokens": 9,
+    "total_tokens": 9
+  }
+}
+```
+
+### レスポンスフィールド
+
+<ResponseField name="data" type="array">
+  埋め込みオブジェクトの配列。入力文字列ごとに 1 つ返されます。
+  <Expandable title="embedding オブジェクト">
+    <ResponseField name="index" type="integer">入力配列内の位置。</ResponseField>
+    <ResponseField name="embedding" type="array">埋め込みベクトルの浮動小数点配列。</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage.prompt_tokens" type="integer">
+  処理されたトークン数。
+</ResponseField>
+
+## コサイン類似度の例
+
+```python python
+import os
+import numpy as np
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+def embed(text):
+    return client.embeddings.create(
+        model="gemini-embedding-001",
+        input=text,
+    ).data[0].embedding
+
+def cosine_similarity(a, b):
+    a, b = np.array(a), np.array(b)
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+q = embed("capital city of France")
+doc1 = embed("Paris is the capital and most populous city of France.")
+doc2 = embed("The Eiffel Tower is a famous landmark.")
+
+print(cosine_similarity(q, doc1))  # higher — more relevant
+print(cosine_similarity(q, doc2))  # lower
+```

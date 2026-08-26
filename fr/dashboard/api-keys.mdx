@@ -1,0 +1,54 @@
+---
+title: "Créer et gérer vos clés API Flatkey dans la console"
+sidebarTitle: "Clés API"
+description: "Apprenez à créer, nommer et révoquer des clés API Flatkey dans la console. Gérez plusieurs clés par environnement et sécurisez vos intégrations."
+---
+
+Votre clé API Flatkey authentifie chaque requête envoyée à `https://router.flatkey.ai/v1`. Vous créez et gérez les clés depuis la section **Clés** de la console. Vous pouvez créer plusieurs clés — une par environnement, application ou membre de l'équipe — et révoquer instantanément n'importe quelle clé en cas de compromission.
+
+## Créer une clé
+
+<Steps>
+  <Step title="Ouvrir la page Clés">
+    Connectez-vous à [console.flatkey.ai](https://console.flatkey.ai) et cliquez sur **Clés** dans la barre latérale gauche.
+  </Step>
+  <Step title="Cliquer sur Créer une clé">
+    Saisissez un nom descriptif pour la clé. Choisissez quelque chose de significatif comme `production-api`, `staging-test` ou `john-dev`. Le nom n'est visible que par vous.
+  </Step>
+  <Step title="Copier et stocker le secret">
+    La clé complète (commençant par `sk-fk-`) n'est affichée **qu'une seule fois**. Copiez-la immédiatement et stockez-la dans un gestionnaire de secrets, un gestionnaire de mots de passe ou une variable d'environnement. Vous ne pourrez plus la récupérer après avoir fermé la boîte de dialogue.
+  </Step>
+</Steps>
+
+<Warning>
+  Si vous perdez une clé API, vous devez en créer une nouvelle. Il n'est pas possible de consulter le secret après sa création. L'ancienne clé continuera de fonctionner jusqu'à ce que vous la révoquez.
+</Warning>
+
+## Bonnes pratiques
+
+- **Une clé par environnement** : utilisez des clés distinctes pour le développement, la pré-production et la production. Si une clé est compromise, vous pouvez révoquer uniquement cet environnement sans affecter les autres.
+- **Des noms descriptifs** : incluez l'environnement et l'usage (ex. : `prod-customer-chatbot`, `dev-local`).
+- **Utilisez des variables d'environnement** : ne codez jamais les clés en dur dans le code source. Utilisez `FLATKEY_API_KEY` comme nom de variable.
+- **Rotation régulière** : révoquez et remplacez les clés selon un calendrier régulier, en particulier pour les charges de travail en production.
+
+## Consulter vos clés
+
+La page **Clés** liste toutes vos clés actives avec :
+- Le nom de la clé
+- La date de création
+- L'horodatage de dernière utilisation
+- Le préfixe masqué de la clé (ex. : `sk-fk-****abcd`)
+
+Vous ne pouvez pas voir la valeur complète de la clé après sa création — uniquement le préfixe.
+
+## Révoquer une clé
+
+Pour révoquer une clé, cliquez sur l'icône **Supprimer** (corbeille) à côté d'elle sur la page Clés. La révocation est immédiate — toute requête utilisant cette clé recevra immédiatement une réponse `401 Unauthorized`. Il n'y a pas de suppression douce ni de délai de grâce.
+
+<Tip>
+  Avant de révoquer une clé utilisée en production, déployez d'abord la clé de remplacement dans votre application. Révoquer l'ancienne clé avant que la nouvelle soit en service entraînera une interruption de service.
+</Tip>
+
+## Permissions des clés
+
+Toutes les clés partagent le même solde de compte et peuvent accéder à tous les modèles par défaut. Si vous avez besoin de restreindre une clé à des modèles spécifiques ou de définir un quota de dépenses, utilisez les **Groupes** dans la console pour appliquer des politiques de routage et d'accès.

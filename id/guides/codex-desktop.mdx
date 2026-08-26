@@ -1,0 +1,170 @@
+---
+title: "Menggunakan Flatkey dengan Codex Desktop"
+sidebarTitle: "Codex Desktop"
+description: "Konfigurasikan aplikasi desktop Codex untuk menggunakan Flatkey secara manual atau dengan CC Switch sambil tetap menjaga login ChatGPT resmi Anda."
+---
+
+Codex Desktop membaca konfigurasi Codex tingkat pengguna yang sama dengan Codex CLI. Anda dapat menambahkan Flatkey sebagai penyedia model kustom tanpa menggantikan login ChatGPT atau Codex resmi Anda.
+
+## Prasyarat
+
+- Codex Desktop terinstal
+- Satu kali login ChatGPT atau Codex resmi yang berhasil di aplikasi desktop
+- Kunci API Flatkey — [buat satu di Flatkey Console](https://console.flatkey.ai/keys)
+- ID model yang didukung dari [Direktori Model Flatkey](https://flatkey.ai/models)
+- CC Switch, jika Anda menggunakan pengaturan CC Switch
+
+## Konfigurasi manual
+
+### 1. Atur kunci API
+
+Simpan kunci tersebut dalam variabel environment pengguna, bukan dengan menuliskannya ke dalam file konfigurasi.
+
+<CodeGroup>
+```powershell Windows PowerShell
+[Environment]::SetEnvironmentVariable(
+  "FLATKEY_API_KEY",
+  "sk-fk-...",
+  "User"
+)
+```
+```bash macOS
+launchctl setenv FLATKEY_API_KEY "sk-fk-..."
+```
+```bash Linux
+export FLATKEY_API_KEY="sk-fk-..."
+```
+</CodeGroup>
+
+Setelah mengubah variabel tersebut, tutup Codex Desktop secara penuh sebelum membukanya kembali.
+
+### 2. Perbarui `config.toml`
+
+Buka file konfigurasi Codex tingkat pengguna:
+
+| Platform | Path konfigurasi |
+|---|---|
+| Windows | `%USERPROFILE%\.codex\config.toml` |
+| macOS dan Linux | `~/.codex/config.toml` |
+
+Sebelum mengganti pengaturan `model` dan `model_provider` tingkat atas, catat nilainya saat ini agar Anda dapat mengembalikannya nanti. Kemudian perbarui kedua pengaturan tersebut. Jika salah satu kunci sudah ada, ganti nilainya alih-alih menambahkan kunci duplikat. Pertahankan semua pengaturan lain yang tidak terkait. Tambahkan tabel penyedia di bawah ini; jika `[model_providers.flatkey]` sudah ada, perbarui tabel tersebut alih-alih membuat duplikat:
+
+```toml
+model = "gpt-5.4"
+model_provider = "flatkey"
+
+[model_providers.flatkey]
+name = "Flatkey"
+base_url = "https://router.flatkey.ai/v1"
+env_key = "FLATKEY_API_KEY"
+wire_api = "responses"
+```
+
+`gpt-5.4` tersedia di Direktori Model Flatkey pada saat penulisan ini. Periksa direktori tersebut sebelum beralih ke ID model lain.
+
+<Warning>
+  Kredensial resmi dapat disimpan di `auth.json` atau penyimpanan kredensial sistem operasi Anda. Jangan pernah mengedit, mengganti, menimpa, mengekspor, atau membagikan salah satu penyimpanan kredensial untuk pengaturan Flatkey. Jangan pernah menempelkan kunci API Flatkey ke salah satu penyimpanan tersebut. `config.toml` mengontrol perutean model dan penyedia.
+</Warning>
+
+### 3. Mulai ulang dan verifikasi
+
+Tutup Codex Desktop secara penuh, buka kembali, dan kirim sebuah prompt kecil. Buka [Log Penggunaan Flatkey](https://console.flatkey.ai/usage-logs/common) dan konfirmasikan model, jumlah token, latensi, dan biaya.
+
+## Konfigurasi dengan CC Switch
+
+[CC Switch](https://ccswitch.io) adalah pengelola konfigurasi pihak ketiga, bukan produk Flatkey. Anda juga dapat mengunduhnya dari [repositori GitHub CC Switch](https://github.com/farion1231/cc-switch). Langkah-langkah di bawah ini mengikuti antarmuka CC Switch saat ini.
+
+Konfigurasi manual dan CC Switch adalah metode pengaturan alternatif. Gunakan satu metode untuk penyedia yang aktif. Codex Desktop dan Codex CLI berbagi `~/.codex/config.toml` di macOS dan Linux, atau `%USERPROFILE%\.codex\config.toml` di Windows. CC Switch mengontrol pengaturan model dan penyedia di file bersama tersebut. Pertahankan pengaturan dan penyedia yang tidak terkait.
+
+### 1. Selesaikan satu login resmi
+
+Buka Codex Desktop dan selesaikan login ChatGPT atau Codex resmi sebelum beralih penyedia. Lakukan ini setidaknya sekali agar aplikasi desktop memiliki sesi resmi yang valid untuk akses akun dan katalog modelnya.
+
+Kredensial resmi disimpan di `auth.json` atau penyimpanan kredensial sistem operasi Anda. Perlakukan keduanya sebagai sesuatu yang sensitif.
+
+### 2. Pertahankan login resmi untuk perpindahan langsung
+
+Di CC Switch, buka **Settings** > **General** > **Codex App Enhancements**, kemudian aktifkan **Keep official login for direct switches**. Pengaturan ini mencegah perpindahan penyedia secara langsung membuang login resmi yang masih diperlukan oleh Codex Desktop.
+
+![Aktifkan pengaturan pelestarian login resmi saat ini untuk Codex](/images/guides/cc-switch/en/codex-login-preservation.png)
+
+<Warning>
+  Jangan pernah membuka `auth.json` untuk menyalin, mengganti atau menimpanya, menempelkan kunci API Flatkey ke dalamnya, atau membagikannya. Jangan pernah mengekspos kunci API Flatkey Anda dalam tangkapan layar atau ekspor penyedia CC Switch. Jika salah satu kredensial terekspos, rotasi atau cabut kredensial tersebut segera.
+</Warning>
+
+### 3. Tambahkan Flatkey sebagai penyedia kustom
+
+Buka panel **Codex** di CC Switch dan tambahkan **Custom Provider**. Gunakan nilai-nilai berikut. Tutorial ini tidak bergantung pada penyedia Flatkey bawaan.
+
+![Buka panel penyedia Codex dan pilih tombol tambah-penyedia di CC Switch](/images/guides/cc-switch/en/codex-provider-list.png)
+
+| Bidang penyedia | Nilai |
+|---|---|
+| Provider Name | `flatkey` |
+| API Key | `sk-fk-...` |
+| API Request URL | `https://router.flatkey.ai/v1` |
+| Default Model | `gpt-5.6-sol` pada tangkapan layar — verifikasi ID pasti yang berlaku saat ini di [Direktori Model Flatkey](https://flatkey.ai/models) |
+| Upstream Format | **Responses (native)** |
+
+![Masukkan bidang penyedia Flatkey terkini di CC Switch](/images/guides/cc-switch/en/codex-provider-form.png)
+
+### 4. Konfigurasikan model
+
+Atur **Default Model** milik penyedia ke ID model Flatkey pasti yang ingin Anda gunakan. Tangkapan layar menunjukkan `gpt-5.6-sol` sebagai contoh. Periksa [Direktori Model Flatkey](https://flatkey.ai/models) sebelum memilih ID.
+
+Klik **Fetch Models** untuk memuat ID terkini. Tambahkan model ke **Model Mapping** milik penyedia jika Anda ingin model tersebut muncul di menu `/model` Codex. Anda juga dapat mengatur ID pasti sebagai **Default Model** milik penyedia atau meneruskannya dari Codex CLI dengan `codex --model <id>`. Untuk Codex Desktop, perlakukan penyedia yang aktif dan model default sebagai rute yang dimaksud meskipun pemilih tidak mencantumkan model kustom tersebut. Konfirmasikan rute sebenarnya dengan Log Penggunaan Flatkey setelah mengirim permintaan.
+
+![Pilih Responses native dan konfigurasikan pemetaan model Codex](/images/guides/cc-switch/en/codex-model-mapping.png)
+
+Flatkey secara native mendukung API Responses. Biarkan **Local Routing** tetap nonaktif; ini tidak diperlukan untuk pengaturan ini.
+
+### 5. Simpan, aktifkan, dan mulai ulang
+
+Simpan penyedia kustom dan aktifkan untuk Codex. Jangan hapus pengaturan atau penyedia yang tidak terkait dari `config.toml` bersama.
+
+![Konfirmasi bahwa penyedia Codex Flatkey sedang digunakan](/images/guides/cc-switch/en/codex-provider-active.png)
+
+Tutup Codex Desktop secara penuh. Pastikan tidak ada proses Codex Desktop lama yang masih berjalan, kemudian buka kembali aplikasi tersebut agar membaca pengaturan penyedia yang baru.
+
+### 6. Verifikasi rute sebenarnya
+
+Mulai percakapan baru dengan konteks kecil dan kirim prompt minimal. Kemudian buka [Log Penggunaan Flatkey](https://console.flatkey.ai/usage-logs/common) dan konfirmasikan model, jumlah token, latensi, dan biaya untuk permintaan tersebut.
+
+![Verifikasi rute Flatkey dengan respons minimal Codex Desktop](/images/guides/cc-switch/en/codex-desktop-verify.png)
+
+Mempertahankan login resmi tidak berarti permintaan menggunakan penagihan OpenAI. Pengaturan penyedia dan model saat ini di `config.toml` bersama yang mengontrol rute tersebut. Log Penggunaan Flatkey adalah konfirmasi otoritatif bahwa permintaan benar-benar mencapai Flatkey.
+
+Prompt sistem, alat, riwayat percakapan, file terlampir, dan output perintah dapat meningkatkan token input di luar teks yang terlihat pada prompt Anda. Jumlah token input yang lebih tinggi dapat meningkatkan biaya yang ditagihkan.
+
+### Jika model tidak terlihat
+
+Codex Desktop mungkin menampilkan katalog model resmi dan menghilangkan model kustom dari pemilihnya. Model kustom yang tidak tampak di UI tidak membuktikan bahwa perutean gagal.
+
+1. Konfirmasikan bahwa login ChatGPT atau Codex resmi masih aktif.
+2. Konfirmasikan bahwa **Settings** > **General** > **Codex App Enhancements** > **Keep official login for direct switches** diaktifkan.
+3. Konfirmasikan bahwa penyedia Flatkey aktif dan **Default Model**-nya berisi ID model yang pasti.
+4. Periksa pemetaan model milik penyedia. Gunakan **Fetch Models** jika Anda ingin model tersebut muncul di menu `/model`.
+5. Konfirmasikan bahwa `config.toml` bersama berisi penyedia dan model aktif yang dimaksud tanpa mengubah pengaturan yang tidak terkait.
+6. Tutup semua proses Codex Desktop secara penuh dan buka kembali aplikasinya.
+7. Kirim prompt minimal dan periksa [Log Penggunaan Flatkey](https://console.flatkey.ai/usage-logs/common) untuk melihat rute sebenarnya.
+
+### Beralih kembali ke penyedia resmi
+
+Jika Anda menggunakan CC Switch, aktifkan penyedia Codex resmi. Tutup Codex Desktop secara penuh, pastikan tidak ada proses lama yang masih berjalan, dan buka kembali aplikasinya. Anda tidak perlu menghapus penyedia kustom Flatkey.
+
+Jika Anda menggunakan konfigurasi manual, kembalikan nilai `model` dan `model_provider` tingkat atas sebelumnya di `config.toml`. Pertahankan pengaturan dan tabel penyedia yang tidak terkait. Biarkan kredensial resmi di `auth.json` atau penyimpanan kredensial sistem operasi tidak tersentuh. Tutup Codex Desktop secara penuh, pastikan tidak ada proses lama yang masih berjalan, dan buka kembali aplikasinya.
+
+### Pemecahan masalah CC Switch
+
+| Masalah | Yang perlu diperiksa |
+|---|---|
+| Login resmi hilang atau kedaluwarsa | Masuk kembali melalui Codex Desktop, kemudian aktifkan **Keep official login for direct switches** sebelum mengaktifkan Flatkey |
+| Autentikasi gagal atau kunci Flatkey ditolak | Konfirmasikan bahwa kunci API aktif dan telah dimasukkan pada bidang kunci API penyedia kustom; rotasi atau cabut kunci tersebut jika sempat terekspos |
+| Error endpoint atau Responses | Atur **API Request URL** ke `https://router.flatkey.ai/v1`, pilih **Responses (native)**, dan biarkan **Local Routing** nonaktif |
+| `Model not found`, model kustom tersembunyi, atau pemetaan `/model` hilang | Salin ID pasti dari [Direktori Model](https://flatkey.ai/models), atur sebagai **Default Model**, dan gunakan **Fetch Models** atau pemetaan model |
+| Log Penggunaan menampilkan penyedia atau model yang salah | Aktifkan penyedia kustom Flatkey dan konfirmasikan model default serta nilai aktifnya di `config.toml` bersama |
+| Perubahan tidak berpengaruh | Tutup Codex Desktop secara penuh, hentikan proses Codex Desktop yang tersisa, dan buka kembali aplikasinya |
+| Saldo Flatkey tidak cukup | Tambahkan saldo atau gunakan kunci Flatkey dengan kredit yang tersedia, lalu coba lagi dengan prompt minimal |
+| Local Routing tidak sengaja diaktifkan | Nonaktifkan **Local Routing** karena Flatkey menerima permintaan Responses native |
+| Sebuah permintaan tidak muncul di Log Penggunaan | Mulai percakapan baru berkonteks kecil, kirim prompt minimal, kemudian periksa kembali penyedia aktif, endpoint API, dan [Log Penggunaan](https://console.flatkey.ai/usage-logs/common) |
+| Login resmi hilang setelah beralih | Masuk kembali melalui Codex Desktop dan aktifkan pengaturan pelestarian login; jangan pernah mengganti atau menimpa `auth.json` |

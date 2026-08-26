@@ -1,0 +1,92 @@
+---
+title: "Panggil API Flatkey secara langsung"
+sidebarTitle: "Akses API"
+description: "Gunakan REST API dengan HTTP biasa, tanpa SDK. Mencakup base URL, autentikasi, endpoint yang tersedia, dan penanganan error."
+---
+
+Base URL: `https://router.flatkey.ai`
+
+Flatkey menyediakan REST API yang kompatibel dengan OpenAI. Jika Anda sudah memiliki HTTP client, Anda tidak memerlukan SDK. Halaman ini adalah jalur tercepat dari sebuah kunci menuju permintaan yang berfungsi.
+
+## Autentikasi
+
+Setiap permintaan membawa kunci Anda sebagai bearer token:
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+Buat kunci di [konsol](https://console.flatkey.ai). Kunci dimulai dengan `sk-fk-`. Simpan dalam variabel lingkungan dan jaga agar tidak masuk ke source control atau kode browser.
+
+```bash
+export FLATKEY_API_KEY="sk-fk-..."
+```
+
+## Kirim permintaan
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-5",
+    "messages": [{ "role": "user", "content": "Hello!" }]
+  }'
+```
+
+Panggilan yang berhasil mengembalikan objek chat completion standar dengan `choices` dan `usage`.
+
+## Endpoint yang tersedia
+
+| Endpoint | Tujuan |
+| --- | --- |
+| `POST /v1/chat/completions` | [Generasi teks dan chat](/id/api-reference/chat-completions) |
+| `POST /v1/responses` | [Responses API](/id/api-reference/responses), untuk model OpenAI |
+| `POST /v1/images/generations` | [Generasi dan pengeditan gambar](/id/api-reference/image-generation) |
+| `POST /v1/videos` | [Generasi video](/id/api-reference/seedance-video-generation), asinkron |
+| `GET /v1/videos/{task_id}` | Polling tugas video |
+| `GET /v1/models` | [Daftar model yang tersedia](/id/api-reference/models) |
+| `GET /v1/credits` | Saldo yang tersisa |
+
+<Warning>
+  `POST /v1/responses` saat ini hanya berfungsi dengan model OpenAI. Keluarga model lain akan mengembalikan error pada endpoint ini — gunakan `POST /v1/chat/completions` untuk model tersebut.
+</Warning>
+
+## Periksa saldo Anda
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/credits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY"
+```
+
+```json
+{ "remaining": 34.18, "used": 185.13 }
+```
+
+## Tangani error
+
+Error mengembalikan body JSON dengan pesan yang dapat Anda tindaki:
+
+```json
+{ "error": { "message": "No available channel for model ..." } }
+```
+
+| Status | Arti | Yang harus dilakukan |
+| --- | --- | --- |
+| `400` | Permintaan tidak valid | Baca pesannya; pesan tersebut menyebutkan field yang bermasalah |
+| `401` | Kunci tidak valid | Periksa header `Authorization` dan nilai kunci |
+| `429` | Terlalu banyak permintaan | Tunda dan coba lagi |
+| `500`, `503` | Model atau rute tidak tersedia | Ganti model. Mencoba ulang model yang sama jarang berhasil |
+
+Daftar lengkap ada di [referensi error](/id/api-reference/errors).
+
+## Langkah berikutnya
+
+<CardGroup cols={2}>
+  <Card title="Referensi API" icon="code" href="/id/api-reference/overview">
+    Setiap endpoint, parameter, dan field respons.
+  </Card>
+  <Card title="Gunakan SDK sebagai gantinya" icon="plug" href="/id/guides/openai-sdk">
+    Pertahankan client OpenAI atau Anthropic Anda dan ubah satu baris saja.
+  </Card>
+</CardGroup>

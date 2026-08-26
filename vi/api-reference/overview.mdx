@@ -1,0 +1,83 @@
+---
+title: "Flatkey REST API: Các Endpoint, Xác Thực và Định Dạng Yêu Cầu"
+sidebarTitle: "Tổng quan"
+description: "Flatkey cung cấp REST API tương thích với OpenAI tại https://router.flatkey.ai/v1. Các yêu cầu API sử dụng xác thực Bearer, ngoại trừ URL nội dung video đã hoàn thành chỉ cho phép truy cập ẩn danh."
+---
+
+Flatkey API là một REST API hoàn toàn tương thích với đặc tả OpenAI API. Các yêu cầu API được gửi đến `https://router.flatkey.ai/v1` — cùng một URL cơ sở cho tất cả các endpoint, nhà cung cấp và mô hình. Xác thực sử dụng Bearer token trong header `Authorization`, ngoại trừ các URL nội dung video đã hoàn thành.
+
+## URL cơ sở
+
+```
+https://router.flatkey.ai/v1
+```
+
+## Xác thực
+
+Các yêu cầu API phải bao gồm API key Flatkey của bạn dưới dạng Bearer token:
+
+```
+Authorization: Bearer sk-fk-your-api-key
+```
+
+Tạo API key của bạn trong [bảng điều khiển](https://console.flatkey.ai/keys). Xem [Xác thực](/vi/api-reference/authentication) để biết thêm chi tiết.
+
+URL `GET /v1/videos/{task_id}/content` ẩn danh là một ngoại lệ. Hãy coi nó là nhạy cảm vì việc sở hữu URL task sẽ cấp quyền truy cập vào video đã hoàn thành.
+
+## Định dạng yêu cầu
+
+- Tất cả các yêu cầu sử dụng **HTTPS**
+- Phần thân yêu cầu phải là **JSON** (`Content-Type: application/json`)
+- Phản hồi là JSON, SSE cho streaming, hoặc `video/mp4` cho nội dung video đã hoàn thành
+
+## Các endpoint khả dụng
+
+| Endpoint | Phương thức | Mô tả |
+|---|---|---|
+| `/v1/chat/completions` | POST | Chat và tạo văn bản (tương thích OpenAI) |
+| `/v1/responses` | POST | OpenAI Responses API (đa lượt có trạng thái) |
+| `/v1/embeddings` | POST | Nhúng văn bản |
+| `/v1/images/generations` | POST | Tạo hình ảnh |
+| `/v1/videos` | POST | Tạo task tạo video Seedance |
+| `/v1/videos/{task_id}` | GET | Truy xuất trạng thái và kết quả task Seedance |
+| `/v1/videos/{task_id}/content` | GET | Tải xuống video đã hoàn thành mà không cần xác thực Bearer |
+| `/v1/models` | GET | Liệt kê các mô hình khả dụng |
+
+## Khả năng tương thích với OpenAI SDK
+
+Vì API tương thích với OpenAI, bạn có thể sử dụng SDK Python hoặc Node.js chính thức của OpenAI mà không cần thay đổi mã yêu cầu — chỉ cần đặt `base_url`:
+
+<CodeGroup>
+```python python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-fk-your-api-key",
+    base_url="https://router.flatkey.ai/v1",
+)
+```
+```javascript node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: "sk-fk-your-api-key",
+  baseURL: "https://router.flatkey.ai/v1",
+});
+```
+</CodeGroup>
+
+## Phiên bản
+
+Flatkey sử dụng cùng sơ đồ phiên bản như OpenAI API. Tiền tố đường dẫn `/v1` là ổn định. Khi các phiên bản OpenAI API mới được phát hành, Flatkey thêm hỗ trợ trong khi vẫn duy trì khả năng tương thích ngược với `/v1`.
+
+## Giới hạn tốc độ
+
+Giới hạn tốc độ được áp dụng theo từng API key. Nếu bạn vượt quá giới hạn, bạn sẽ nhận được phản hồi `429 Too Many Requests`. Liên hệ [support@flatkey.ai](mailto:support@flatkey.ai) nếu bạn cần giới hạn tốc độ cao hơn cho khối lượng công việc sản xuất.
+
+## Các loại nội dung được hỗ trợ
+
+| Loại nội dung | Dùng cho |
+|---|---|
+| `application/json` | Phần thân yêu cầu JSON và phản hồi API |
+| `text/event-stream` | Phản hồi streaming (khi `stream: true`) |
+| `video/mp4` | Nội dung video đã hoàn thành |

@@ -1,0 +1,68 @@
+---
+title: "Authentification API Flatkey : jetons Bearer et clés API"
+sidebarTitle: "Authentification"
+description: "Authentifiez vos requêtes à l'API Flatkey en transmettant votre clé API comme jeton Bearer dans l'en-tête Authorization. Découvrez les formats de clés, les erreurs et les bonnes pratiques."
+---
+
+Chaque requête adressée à l'API Flatkey doit inclure une clé API valide dans l'en-tête `Authorization` sous forme de jeton Bearer. Vous créez et gérez vos clés depuis la [console Flatkey](https://console.flatkey.ai/keys).
+
+## Format de l'en-tête
+
+```http
+Authorization: Bearer sk-fk-your-api-key
+```
+
+Les clés API Flatkey commencent par `sk-fk-`. Les clés sont sensibles à la casse et doivent être transmises exactement telles qu'elles ont été générées.
+
+## Exemple de requête
+
+```bash
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+## Créer une clé API
+
+1. Connectez-vous à [console.flatkey.ai](https://console.flatkey.ai)
+2. Cliquez sur **Clés** dans la barre latérale gauche
+3. Cliquez sur **Créer une clé** et saisissez un nom
+4. Copiez la clé — elle n'est affichée qu'**une seule fois**
+
+Si vous perdez une clé, vous devez en créer une nouvelle. Les anciennes clés restent actives jusqu'à leur révocation explicite.
+
+## Erreurs d'authentification
+
+| Statut HTTP | Condition | Résolution |
+|---|---|---|
+| `401 Unauthorized` | La clé est absente de la requête | Ajoutez l'en-tête `Authorization: Bearer sk-fk-...` |
+| `401 Unauthorized` | La clé est invalide ou révoquée | Générez une nouvelle clé depuis la console |
+| `401 Unauthorized` | Le solde est de $0.00 | Rechargez votre compte sur [console.flatkey.ai](https://console.flatkey.ai) |
+| `403 Forbidden` | La clé n'a pas accès au modèle | Vérifiez les permissions de la clé dans la console |
+
+### Format de la réponse d'erreur
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided.",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## Bonnes pratiques de sécurité
+
+- Stockez les clés dans des variables d'environnement, pas dans le code source
+- Utilisez une clé par environnement de déploiement
+- Révoquez immédiatement les clés compromises
+- Faites tourner les clés régulièrement pour les charges de travail en production
+
+<Warning>
+  N'incluez jamais de clés API dans du JavaScript côté client, des bundles d'applications mobiles ou des dépôts publics. Les clés peuvent être détournées pour vider votre solde.
+</Warning>

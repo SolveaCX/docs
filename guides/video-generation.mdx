@@ -1,0 +1,245 @@
+---
+title: "Generate video with Flatkey"
+sidebarTitle: "Video Generation"
+description: "Submit a video task, poll it, and download the MP4. Covers the two request formats, per-model resolutions, and the parameters that do and do not apply."
+---
+
+Base URL: `https://router.flatkey.ai`
+
+Flatkey generates video through one asynchronous endpoint. You submit a task, poll it until it finishes, then download the MP4. This page covers what is shared across every video model. For a model's own options, continue to [Seedance](/guides/seedance) or [MiniMax H3](/guides/minimax-h3).
+
+<CardGroup cols={2}>
+  <Card title="One async workflow" icon="video">
+    Create the task with `POST /v1/videos`, poll it with `GET /v1/videos/{task_id}`, and download the MP4 from `metadata.url`.
+  </Card>
+  <Card title="Two request shapes" icon="code-branch">
+    Some models take a `content` array, others take a `prompt` string. Sending the wrong one returns `400`.
+  </Card>
+</CardGroup>
+
+Use this authorization header on every request on this page, including the download:
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+## Find a video model
+
+List every model and keep the ones whose `type` is `video`:
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/models \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  | jq '.data[] | select(.type == "video") | .id'
+```
+
+```json
+"grok-imagine-video"
+"grok-imagine-video-1.5"
+"MiniMax-H3"
+"seedance-2.5"
+"veo-3.1-fast-generate-preview"
+"veo-3.1-generate-preview"
+```
+
+<Warning>
+  `/v1/models` ignores query parameters. Filtering happens in your own code, as in the `jq` example above.
+</Warning>
+
+You can also browse the same list with pricing on the [model directory](https://flatkey.ai/models).
+
+## Pick the right request shape
+
+The endpoint accepts two different shapes, and each model takes exactly one of them.
+
+| Model | Prompt field |
+| --- | --- |
+| `seedance-2.5` | `content` array |
+| `seedance-2.0-pro` | `content` array |
+| `MiniMax-H3` | `content` array |
+| `grok-imagine-video` | `prompt` string |
+| `grok-imagine-video-1.5` | `prompt` string |
+| `veo-3.1-generate-preview` | `prompt` string |
+| `veo-3.1-fast-generate-preview` | `prompt` string |
+
+Sending a `content` array to a `prompt` model returns:
+
+```json
+{ "code": "invalid_request", "message": "prompt is required" }
+```
+
+### The `content` shape
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.5",
+    "content": [
+      { "type": "text", "text": "a quiet neon-lit street at dusk, slow camera drift" }
+    ],
+    "duration": 5,
+    "resolution": "720p"
+  }'
+```
+
+The array also carries images. Add an `image_url` entry to interpolate between frames or supply a reference. Field names differ by model, so follow the model's own guide.
+
+### The `prompt` shape
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "grok-imagine-video",
+    "prompt": "a quiet neon-lit street at dusk, slow camera drift",
+    "duration": 10
+  }'
+```
+
+## Resolutions differ by model
+
+There is no shared set of resolution values. Sending an unsupported one returns `400` before the task is created.
+
+| Model | Accepted values | Notes |
+| --- | --- | --- |
+| `seedance-2.5` | `480p`, `720p` | `1080p` returns `unsupported resolution` |
+| `MiniMax-H3` | `768P`, `2K` | Uppercase `P`. Other values return `resolution must be 768P or 2K` |
+| `grok-imagine-video` | `720p` | Output is `848x480` regardless |
+| `veo-3.1-*` | `720p` | |
+
+<Warning>
+  Check the model's own guide before choosing a resolution. `1080p` is rejected by `seedance-2.5`, and `720p` is rejected by `MiniMax-H3`.
+</Warning>
+
+## Request parameters
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `model` | string | Yes | Model id from `/v1/models` |
+| `content` | array | Conditional | Prompt and media for `content`-shape models |
+| `prompt` | string | Conditional | Prompt for `prompt`-shape models |
+| `duration` | integer | No | Length in seconds. `MiniMax-H3` accepts `4` through `15` |
+| `resolution` | string | No | See the table above |
+
+<Warning>
+  `aspect_ratio` and `seed` are accepted without an error but do not change the output on every model. On `grok-imagine-video`, requesting `9:16` still returns an `848x480` landscape clip, and the same `seed` produces a different file each time. Where a model supports orientation, it is documented on that model's own page. Do not rely on these two fields for cross-model behavior.
+</Warning>
+
+## Poll the task
+
+A successful submission returns a task immediately:
+
+```json
+{
+  "id": "task_aaaaaaaaaaaaaaaa",
+  "task_id": "task_aaaaaaaaaaaaaaaa",
+  "object": "video",
+  "model": "seedance-2.5",
+  "status": "queued",
+  "progress": 0,
+  "created_at": 1787110914
+}
+```
+
+Poll with the task id until the status is terminal:
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+
+```json
+{
+  "id": "task_aaaaaaaaaaaaaaaa",
+  "status": "completed",
+  "progress": 100,
+  "completed_at": 1787111135,
+  "metadata": {
+    "url": "https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa/content"
+  }
+}
+```
+
+| Status | Meaning |
+| --- | --- |
+| `queued` | Accepted and waiting |
+| `in_progress` | Generating |
+| `completed` | Ready to download from `metadata.url` |
+| `failed` | Generation failed. Read the error field |
+
+Poll about every 15 seconds. A five-second clip usually finishes in two to four minutes.
+
+## Download the MP4
+
+The download URL arrives in `metadata.url`, and it needs the same authorization header:
+
+```bash
+curl -L "https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa/content" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -o output.mp4
+```
+
+## End-to-end example
+
+```python
+import os, time, requests
+
+BASE = "https://router.flatkey.ai/v1"
+HEAD = {"Authorization": f"Bearer {os.environ['FLATKEY_API_KEY']}",
+        "Content-Type": "application/json"}
+
+task = requests.post(f"{BASE}/videos", headers=HEAD, json={
+    "model": "seedance-2.5",
+    "content": [{"type": "text", "text": "a quiet neon-lit street at dusk"}],
+    "duration": 5,
+    "resolution": "720p",
+}).json()
+
+task_id = task["task_id"]
+
+while True:
+    time.sleep(15)
+    state = requests.get(f"{BASE}/videos/{task_id}", headers=HEAD).json()
+    if state["status"] == "completed":
+        mp4 = requests.get(state["metadata"]["url"], headers=HEAD).content
+        open("output.mp4", "wb").write(mp4)
+        break
+    if state["status"] == "failed":
+        raise RuntimeError(state)
+```
+
+## Troubleshooting
+
+**`prompt is required`**
+
+You sent a `content` array to a model that expects `prompt`. Check the table in [Pick the right request shape](#pick-the-right-request-shape).
+
+**`unsupported resolution` or `resolution must be 768P or 2K`**
+
+The value is valid for a different model. See [Resolutions differ by model](#resolutions-differ-by-model).
+
+**`No available channel for model ...`**
+
+The model is not routable right now. Pick another video model rather than retrying — this error does not clear on its own. Check the [model directory](https://flatkey.ai/models) for current availability.
+
+**`duration must be between 4 and 15`**
+
+`MiniMax-H3` requires a `duration` in that range. Send one explicitly.
+
+**The task stays `queued`**
+
+Video generation takes minutes, not seconds. Keep polling at a 15-second interval before treating it as stuck.
+
+## Model guides
+
+<CardGroup cols={2}>
+  <Card title="Seedance" icon="film" href="/guides/seedance">
+    Text-to-video plus the virtual and real-person asset library.
+  </Card>
+  <Card title="MiniMax H3" icon="wand-magic-sparkles" href="/guides/minimax-h3">
+    First and last frame control, reference media, and task settings.
+  </Card>
+</CardGroup>

@@ -1,0 +1,69 @@
+---
+title: "Surveiller l'utilisation et les coûts de l'API Flatkey dans le tableau de bord"
+sidebarTitle: "Utilisation"
+description: "Suivez chaque requête de l'API Flatkey avec le nombre de tokens, les noms de modèles et les coûts par requête. Filtrez, recherchez et exportez les journaux d'utilisation pour le rapprochement de facturation."
+---
+
+Le tableau de bord **Utilisation** de Flatkey vous donne une visibilité complète sur chaque requête API effectuée avec votre compte. Chaque entrée de journal indique le modèle utilisé, le nombre de tokens en entrée et en sortie, le coût déduit de votre solde, et l'horodatage. Utilisez cette vue pour comprendre vos habitudes de dépenses, déboguer des erreurs et réconcilier les coûts.
+
+## Accéder aux journaux d'utilisation
+
+<Steps>
+  <Step title="Ouvrir la console">
+    Connectez-vous à [console.flatkey.ai](https://console.flatkey.ai) et cliquez sur **Utilisation** dans la barre latérale gauche.
+  </Step>
+  <Step title="Définir une plage de dates">
+    Utilisez le sélecteur de dates en haut pour filtrer les journaux par jour, semaine, mois ou une plage personnalisée. La vue par défaut affiche les 7 derniers jours.
+  </Step>
+  <Step title="Filtrer par modèle ou par clé">
+    Utilisez les menus déroulants **Modèle** et **Clé API** pour vous concentrer sur un modèle ou une clé spécifique. Cela est utile pour comparer les coûts entre les modèles ou auditer une intégration spécifique.
+  </Step>
+</Steps>
+
+## Ce que chaque entrée de journal affiche
+
+| Champ | Description |
+|---|---|
+| **Horodatage** | Quand la requête a été reçue par Flatkey |
+| **Modèle** | L'identifiant du modèle utilisé (ex. : `gpt-4o-mini`, `claude-sonnet-4-5`) |
+| **Tokens en entrée** | Nombre de tokens dans le prompt |
+| **Tokens en sortie** | Nombre de tokens dans la complétion |
+| **Coût** | Montant déduit de votre solde pour cette requête |
+| **Clé API** | Quelle clé a été utilisée (affichée sous forme de nom + préfixe masqué) |
+| **Statut** | Si la requête a réussi ou échoué |
+
+## Comprendre les coûts
+
+Chaque requête affiche le coût réel facturé, qui reflète :
+- Le prix d'entrée et de sortie du modèle (au tarif réduit de Flatkey)
+- Votre bonus de recharge actuel appliqué automatiquement
+
+La somme de tous les coûts de requêtes est égale au solde total consommé sur cette période.
+
+## Surveiller votre solde
+
+Votre solde actuel est affiché en haut de la page Utilisation et dans la section **Solde**. Lorsque le solde descend en dessous d'un seuil que vous définissez, vous recevrez une alerte par e-mail. Pour configurer les alertes, accédez à **Paramètres → Notifications**.
+
+<Note>
+  Le solde est déduit en temps réel à mesure que les requêtes se terminent. Si une requête échoue côté fournisseur, le coût peut tout de même être partiellement déduit selon le nombre de tokens traités avant l'échec.
+</Note>
+
+## Exporter les journaux
+
+Pour exporter les données d'utilisation :
+1. Définissez la plage de dates et les filtres souhaités.
+2. Cliquez sur **Exporter** dans le coin supérieur droit.
+3. Choisissez le format CSV ou JSON.
+4. Le fichier se télécharge dans votre navigateur.
+
+Les journaux exportés contiennent tous les champs affichés dans le tableau de bord et sont adaptés au chargement dans des tableurs ou des outils financiers.
+
+## Alertes de haute utilisation
+
+Pour prévenir les dépenses incontrôlées :
+- Définissez un **plafond de dépenses mensuel** dans **Paramètres → Facturation** — les requêtes sont bloquées une fois le plafond atteint.
+- Utilisez les **Groupes** pour définir des quotas par clé ou par application.
+
+<Tip>
+  Pendant le développement, utilisez une clé séparée avec un quota de dépenses fixé à un petit montant (ex. : 5 $). Cela évite que des requêtes accidentellement coûteuses ne vident votre solde de production.
+</Tip>

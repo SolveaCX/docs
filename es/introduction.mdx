@@ -1,0 +1,74 @@
+---
+title: "Flatkey: Una clave, más de 300 modelos de IA oficiales y más de 1000 herramientas, hasta un 50% de descuento"
+sidebarTitle: "Introducción"
+description: "Flatkey es una pasarela de API de IA para GPT, Claude, Gemini, DeepSeek y más de 300 modelos, además de más de 1000 herramientas, todo a través de una única clave compatible con OpenAI. Accede a modelos oficiales con hasta un 50% de descuento."
+---
+
+Flatkey es una pasarela de API de IA que te permite acceder a más de 300 modelos oficiales de OpenAI, Anthropic, Google, DeepSeek, Qwen, GLM y otros, además de más de 1000 herramientas, todo a través de una única clave de API compatible con OpenAI. Es un reemplazo directo para cualquier cliente compatible con OpenAI: cambia una línea de código (`base_url`) y tus solicitudes se enrutan a través de Flatkey con hasta un 50% de descuento sobre el precio oficial.
+
+## Qué te ofrece Flatkey
+
+<CardGroup cols={2}>
+  <Card title="Una clave, todos los modelos" icon="key">
+    Una única clave de API y URL base enruta a GPT, Claude, Gemini, DeepSeek, Qwen, GLM y más. Sin claves por proveedor que gestionar.
+  </Card>
+  <Card title="Hasta un 50% de ahorro" icon="piggy-bank">
+    Modelos con precio entre el 60 y el 90% del precio de lista oficial. Recarga 200 $, obtén 100 $ de crédito adicional — acumulado, tan bajo como la mitad del precio oficial.
+  </Card>
+  <Card title="99,9% de fiabilidad" icon="shield-check">
+    Conmutación automática por error entre proveedores. Los paneles de salud en tiempo real muestran las tasas de éxito reales del tráfico en producción.
+  </Card>
+  <Card title="Cero retención de datos" icon="lock">
+    Los prompts y las respuestas nunca se almacenan. Cumplimiento del RGPD, controles alineados con SOC 2 e ISO 27001.
+  </Card>
+  <Card title="Saldo de prepago" icon="receipt">
+    Recarga una vez, consume según vayas usando. Sin suscripciones, sin facturas sorpresa.
+  </Card>
+  <Card title="Compatibilidad total con la API" icon="plug">
+    Endpoints compatibles con OpenAI: completado de chat, respuestas, embeddings, generación de imágenes y lista de modelos.
+  </Card>
+</CardGroup>
+
+## Proveedores compatibles
+
+Flatkey enruta a las APIs oficiales de todos los principales proveedores de IA:
+
+| Proveedor | Modelos de ejemplo |
+|---|---|
+| OpenAI | gpt-4o, gpt-4o-mini, gpt-5, gpt-image-2 |
+| Anthropic | claude-opus-4, claude-sonnet-4, claude-haiku-4 |
+| Google | gemini-2.5-pro, gemini-2.5-flash, gemini-flash-latest |
+| DeepSeek | deepseek-v3, deepseek-v4-pro, deepseek-v4-flash |
+| Qwen | qwen3.5-plus, qwen3.7-max, qwen3.5-flash |
+| Z.ai / GLM | glm-4.7, glm-5-turbo, glm-5.2 |
+| ByteDance | seedance-2.0, seedance-2.5 |
+
+Consulta el [Directorio de modelos](https://flatkey.ai/models) completo para ver los más de 300 modelos con precios en tiempo real y datos de salud.
+
+## Cómo funciona
+
+Flatkey se sitúa entre tu aplicación y los proveedores de IA. Cuando envías una solicitud:
+
+1. Tu cliente llama a `https://router.flatkey.ai/v1` con tu clave de API de Flatkey.
+2. Flatkey autentica la solicitud y deduce el coste de tu saldo de prepago.
+3. La solicitud se reenvía a la API oficial del proveedor (OpenAI, Anthropic, etc.).
+4. La respuesta se devuelve directamente a tu cliente, sin transformar el contenido.
+
+Tus prompts y respuestas nunca se almacenan. Flatkey solo registra metadatos (modelo, conteo de tokens, marcas de tiempo) para facturación y análisis.
+
+## Próximos pasos
+
+<CardGroup cols={2}>
+  <Card title="Inicio rápido" icon="bolt" href="/es/quickstart">
+    Crea una cuenta y realiza tu primera llamada a la API en menos de 5 minutos
+  </Card>
+  <Card title="Autenticación" icon="lock-keyhole" href="/es/api-reference/authentication">
+    Aprende a crear y usar tu clave de API de Flatkey
+  </Card>
+  <Card title="Guía del SDK de OpenAI" icon="python" href="/es/guides/openai-sdk">
+    Usa Flatkey con el SDK oficial de OpenAI, en Python o Node.js
+  </Card>
+  <Card title="Referencia de la API" icon="code" href="/es/api-reference/overview">
+    Referencia completa de endpoints para todos los métodos de API compatibles
+  </Card>
+</CardGroup>

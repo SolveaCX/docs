@@ -1,0 +1,104 @@
+---
+title: "Список моделей — GET /v1/models"
+sidebarTitle: "Модели"
+description: "Получите все модели ИИ, доступные через ваш аккаунт Flatkey, с помощью GET /v1/models. Возвращает идентификаторы моделей, провайдеров и временные метки в формате, совместимом с OpenAI."
+---
+
+Эндпоинт `/v1/models` возвращает список всех моделей, доступных через ваш аккаунт Flatkey. Ответ соответствует формату OpenAI API — те же идентификаторы моделей, возвращаемые здесь, можно использовать в `/v1/chat/completions`, `/v1/embeddings` и других эндпоинтах.
+
+## Эндпоинт
+
+```
+GET https://router.flatkey.ai/v1/models
+```
+
+## Запрос
+
+### Заголовки
+
+| Заголовок | Значение |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+
+Тело запроса не требуется.
+
+## Пример запроса
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+models = client.models.list()
+
+for model in models.data:
+    print(model.id)
+```
+```javascript node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const models = await client.models.list();
+
+for (const model of models.data) {
+  console.log(model.id);
+}
+```
+```bash curl
+curl https://router.flatkey.ai/v1/models \
+  -H "Authorization: Bearer $FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+## Ответ
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-4o",
+      "object": "model",
+      "created": 1710000000,
+      "owned_by": "openai"
+    },
+    {
+      "id": "claude-sonnet-4-5",
+      "object": "model",
+      "created": 1710000000,
+      "owned_by": "anthropic"
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "object": "model",
+      "created": 1710000000,
+      "owned_by": "google"
+    }
+  ]
+}
+```
+
+### Поля ответа
+
+<ResponseField name="data" type="array">
+  Массив объектов модели.
+  <Expandable title="объект модели">
+    <ResponseField name="id" type="string">Идентификатор модели для использования в запросах.</ResponseField>
+    <ResponseField name="object" type="string">Всегда `"model"`.</ResponseField>
+    <ResponseField name="created" type="integer">Unix-временная метка добавления модели.</ResponseField>
+    <ResponseField name="owned_by" type="string">Провайдер: `"openai"`, `"anthropic"`, `"google"` и т.д.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Tip>
+  Для получения информации о ценах, состоянии работоспособности и подробных спецификациях моделей посетите [flatkey.ai/models](https://flatkey.ai/models) или [Каталог моделей](https://flatkey.ai/models).
+</Tip>

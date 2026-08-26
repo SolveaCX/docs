@@ -1,0 +1,74 @@
+---
+title: "Flatkey : une clé, 300+ modèles IA officiels et 1000+ outils, jusqu'à 50% de réduction"
+sidebarTitle: "Introduction"
+description: "Flatkey est une passerelle API IA pour GPT, Claude, Gemini, DeepSeek et 300+ modèles, ainsi que 1000+ outils, via une seule clé compatible OpenAI. Accédez aux modèles officiels avec jusqu'à 50% de réduction."
+---
+
+Flatkey est une passerelle API IA qui vous permet d'accéder à 300+ modèles officiels de OpenAI, Anthropic, Google, DeepSeek, Qwen, GLM et bien d'autres, ainsi qu'à 1000+ outils — le tout via une seule clé API compatible OpenAI. C'est un remplacement direct pour tout client compatible OpenAI : modifiez une seule ligne de code (`base_url`) et vos requêtes sont acheminées via Flatkey avec jusqu'à 50% de réduction par rapport aux tarifs officiels.
+
+## Ce que Flatkey vous offre
+
+<CardGroup cols={2}>
+  <Card title="Une clé, tous les modèles" icon="key">
+    Une seule clé API et une URL de base pour accéder à GPT, Claude, Gemini, DeepSeek, Qwen, GLM et bien d'autres. Plus besoin de gérer des clés par fournisseur.
+  </Card>
+  <Card title="Jusqu'à 50% d'économies" icon="piggy-bank">
+    Modèles tarifés à 60–90% du prix catalogue officiel. Rechargez 200 $, obtenez 100 $ de crédit bonus — cumulé, soit aussi peu que la moitié du prix officiel.
+  </Card>
+  <Card title="Fiabilité à 99,9%" icon="shield-check">
+    Basculement automatique entre les fournisseurs en amont. Des tableaux de bord de santé en direct affichent les taux de succès réels issus du trafic en production.
+  </Card>
+  <Card title="Zéro rétention des données" icon="lock">
+    Les invites et les complétions ne sont jamais stockées. Conforme au RGPD, contrôles alignés SOC 2 et ISO 27001.
+  </Card>
+  <Card title="Solde prépayé" icon="receipt">
+    Rechargez une fois, consommez au fur et à mesure. Pas d'abonnements, pas de factures surprises.
+  </Card>
+  <Card title="Compatibilité API complète" icon="plug">
+    Points de terminaison compatibles OpenAI : complétions de chat, réponses, embeddings, génération d'images et liste des modèles.
+  </Card>
+</CardGroup>
+
+## Fournisseurs pris en charge
+
+Flatkey achemine vers les API officielles de tous les grands éditeurs d'IA :
+
+| Fournisseur | Exemples de modèles |
+|---|---|
+| OpenAI | gpt-4o, gpt-4o-mini, gpt-5, gpt-image-2 |
+| Anthropic | claude-opus-4, claude-sonnet-4, claude-haiku-4 |
+| Google | gemini-2.5-pro, gemini-2.5-flash, gemini-flash-latest |
+| DeepSeek | deepseek-v3, deepseek-v4-pro, deepseek-v4-flash |
+| Qwen | qwen3.5-plus, qwen3.7-max, qwen3.5-flash |
+| Z.ai / GLM | glm-4.7, glm-5-turbo, glm-5.2 |
+| ByteDance | seedance-2.0, seedance-2.5 |
+
+Consultez le [Répertoire des modèles](https://flatkey.ai/models) complet pour les 300+ modèles avec tarification en direct et données de santé.
+
+## Comment ça fonctionne
+
+Flatkey s'interpose entre votre application et les fournisseurs d'IA. Lorsque vous envoyez une requête :
+
+1. Votre client appelle `https://router.flatkey.ai/v1` avec votre clé API Flatkey.
+2. Flatkey authentifie la requête et déduit le coût de votre solde prépayé.
+3. La requête est transmise à l'API officielle du fournisseur (OpenAI, Anthropic, etc.).
+4. La réponse est renvoyée directement à votre client — sans aucune transformation du contenu.
+
+Vos invites et complétions ne sont jamais stockées. Flatkey enregistre uniquement les métadonnées (modèle, nombre de tokens, horodatages) à des fins de facturation et d'analyse.
+
+## Prochaines étapes
+
+<CardGroup cols={2}>
+  <Card title="Démarrage rapide" icon="bolt" href="/fr/quickstart">
+    Créez un compte et effectuez votre premier appel API en moins de 5 minutes
+  </Card>
+  <Card title="Authentification" icon="lock-keyhole" href="/fr/api-reference/authentication">
+    Apprenez à créer et utiliser votre clé API Flatkey
+  </Card>
+  <Card title="Guide du SDK OpenAI" icon="python" href="/fr/guides/openai-sdk">
+    Utilisez Flatkey avec le SDK officiel OpenAI — Python ou Node.js
+  </Card>
+  <Card title="Référence API" icon="code" href="/fr/api-reference/overview">
+    Référence complète des points de terminaison pour toutes les méthodes API prises en charge
+  </Card>
+</CardGroup>

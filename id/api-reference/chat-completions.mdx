@@ -1,0 +1,178 @@
+---
+title: "Chat Completions — POST /v1/chat/completions"
+sidebarTitle: "Chat Completions"
+description: "Hasilkan penyelesaian obrolan dan teks melalui Flatkey dengan mengirimkan array pesan ke model yang didukung. Mengembalikan pilihan dengan teks yang dihasilkan dan penggunaan token."
+---
+
+Endpoint `/v1/chat/completions` menghasilkan penyelesaian teks berdasarkan daftar pesan. Ini adalah endpoint utama untuk obrolan, mengikuti instruksi, dan tugas pembuatan teks. Format permintaan identik dengan OpenAI Chat Completions API, sehingga SDK apa pun yang kompatibel dengan OpenAI dapat digunakan tanpa modifikasi.
+
+## Endpoint
+
+```
+POST https://router.flatkey.ai/v1/chat/completions
+```
+
+## Permintaan
+
+### Header
+
+| Header | Nilai |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### Parameter body
+
+<ParamField body="model" type="string" required>
+  ID model yang akan digunakan. Lihat [Direktori Model](https://flatkey.ai/models) untuk semua nilai yang valid. Contoh: `"gpt-4o"`, `"claude-sonnet-4-5"`, `"gemini-2.5-flash"`.
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  Array objek pesan yang merepresentasikan percakapan. Setiap objek harus memiliki `role` (`"system"`, `"user"`, atau `"assistant"`) dan `content` (string).
+</ParamField>
+
+<ParamField body="max_tokens" type="integer">
+  Jumlah maksimum token yang akan dihasilkan. Nilai default bervariasi tergantung model.
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  Temperatur sampling antara 0 dan 2. Nilai yang lebih tinggi menghasilkan output yang lebih acak. Default: 1.
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  Jika `true`, respons dikembalikan sebagai aliran peristiwa yang dikirim server (SSE). Default: `false`.
+</ParamField>
+
+<ParamField body="top_p" type="number">
+  Nucleus sampling — hanya token dalam massa probabilitas `top_p` teratas yang dipertimbangkan. Default: 1.
+</ParamField>
+
+<ParamField body="stop" type="string | array">
+  Satu atau lebih urutan di mana model berhenti menghasilkan. Dapat berupa string atau array string.
+</ParamField>
+
+<ParamField body="tools" type="array">
+  Daftar definisi alat untuk pemanggilan fungsi. Setiap alat harus memiliki `type: "function"` dan objek `function` dengan `name`, `description`, dan `parameters`.
+</ParamField>
+
+<ParamField body="tool_choice" type="string | object">
+  Mengontrol pemilihan alat: `"none"`, `"auto"`, `"required"`, atau alat tertentu `{"type": "function", "function": {"name": "..."}}`.
+</ParamField>
+
+## Contoh permintaan
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "What is the speed of light?"},
+    ],
+    max_tokens=256,
+    temperature=0.7,
+)
+
+print(response.choices[0].message.content)
+```
+```bash curl
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant."},
+      {"role": "user", "content": "What is the speed of light?"}
+    ],
+    "max_tokens": 256
+  }'
+```
+</CodeGroup>
+
+## Respons
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1710000000,
+  "model": "gpt-4o",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The speed of light in a vacuum is approximately 299,792,458 meters per second."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 28,
+    "completion_tokens": 22,
+    "total_tokens": 50
+  }
+}
+```
+
+### Kolom respons
+
+<ResponseField name="id" type="string">
+  Pengenal unik untuk penyelesaian.
+</ResponseField>
+
+<ResponseField name="choices" type="array">
+  Array pilihan penyelesaian yang dihasilkan.
+  <Expandable title="properti choice">
+    <ResponseField name="message.content" type="string">
+      Teks yang dihasilkan.
+    </ResponseField>
+    <ResponseField name="message.role" type="string">
+      Selalu `"assistant"` untuk pesan yang dihasilkan.
+    </ResponseField>
+    <ResponseField name="finish_reason" type="string">
+      Alasan generasi berhenti: `"stop"` (berakhir secara alami), `"length"` (max_tokens tercapai), `"tool_calls"` (alat dipanggil).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Jumlah token untuk penagihan.
+  <Expandable title="properti usage">
+    <ResponseField name="prompt_tokens" type="integer">Jumlah token input.</ResponseField>
+    <ResponseField name="completion_tokens" type="integer">Jumlah token output.</ResponseField>
+    <ResponseField name="total_tokens" type="integer">Jumlah token prompt dan penyelesaian.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Streaming
+
+Atur `stream: true` untuk menerima aliran potongan SSE. Setiap potongan memiliki struktur yang sama tetapi dengan konten `delta` parsial alih-alih pesan lengkap:
+
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+stream = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Tell me a story."}],
+    stream=True,
+)
+
+for chunk in stream:
+    print(chunk.choices[0].delta.content or "", end="", flush=True)
+```

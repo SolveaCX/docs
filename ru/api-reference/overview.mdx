@@ -1,0 +1,83 @@
+---
+title: "Flatkey REST API: эндпоинты, аутентификация и формат запросов"
+sidebarTitle: "Обзор"
+description: "Flatkey предоставляет OpenAI-совместимый REST API по адресу https://router.flatkey.ai/v1. Запросы к API используют Bearer-аутентификацию; анонимный доступ разрешён только для URL с готовым видеоконтентом."
+---
+
+Flatkey API — это REST API, полностью совместимый со спецификацией OpenAI API. Запросы к API направляются на `https://router.flatkey.ai/v1` — единый базовый URL для всех эндпоинтов, провайдеров и моделей. Аутентификация осуществляется с помощью Bearer-токена в заголовке `Authorization`, за исключением URL с готовым видеоконтентом.
+
+## Базовый URL
+
+```
+https://router.flatkey.ai/v1
+```
+
+## Аутентификация
+
+Запросы к API должны включать ваш API-ключ Flatkey в виде Bearer-токена:
+
+```
+Authorization: Bearer sk-fk-your-api-key
+```
+
+Создайте API-ключ в [консоли](https://console.flatkey.ai/keys). Подробности см. в разделе [Аутентификация](/ru/api-reference/authentication).
+
+Анонимный URL `GET /v1/videos/{task_id}/content` является исключением. Относитесь к нему как к чувствительным данным: наличие URL задачи предоставляет доступ к готовому видео.
+
+## Формат запросов
+
+- Все запросы используют **HTTPS**
+- Тела запросов должны быть в формате **JSON** (`Content-Type: application/json`)
+- Ответы возвращаются в формате JSON, SSE для потоковой передачи или `video/mp4` для готового видеоконтента
+
+## Доступные эндпоинты
+
+| Эндпоинт | Метод | Описание |
+|---|---|---|
+| `/v1/chat/completions` | POST | Чат и генерация текста (совместимо с OpenAI) |
+| `/v1/responses` | POST | OpenAI Responses API (многоходовые диалоги с сохранением состояния) |
+| `/v1/embeddings` | POST | Текстовые эмбеддинги |
+| `/v1/images/generations` | POST | Генерация изображений |
+| `/v1/videos` | POST | Создание задачи генерации видео Seedance |
+| `/v1/videos/{task_id}` | GET | Получение статуса и результата задачи Seedance |
+| `/v1/videos/{task_id}/content` | GET | Скачивание готового видео без Bearer-аутентификации |
+| `/v1/models` | GET | Список доступных моделей |
+
+## Совместимость с OpenAI SDK
+
+Поскольку API совместим с OpenAI, вы можете использовать официальный OpenAI SDK для Python или Node.js без изменений в коде запросов — достаточно задать `base_url`:
+
+<CodeGroup>
+```python python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-fk-your-api-key",
+    base_url="https://router.flatkey.ai/v1",
+)
+```
+```javascript node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: "sk-fk-your-api-key",
+  baseURL: "https://router.flatkey.ai/v1",
+});
+```
+</CodeGroup>
+
+## Версионирование
+
+Flatkey использует ту же схему версионирования, что и OpenAI API. Префикс пути `/v1` является стабильным. При выходе новых версий OpenAI API Flatkey добавляет их поддержку, сохраняя обратную совместимость с `/v1`.
+
+## Ограничения частоты запросов
+
+Ограничения частоты запросов применяются на уровне API-ключа. При превышении лимита вы получите ответ `429 Too Many Requests`. Свяжитесь со [службой поддержки](mailto:support@flatkey.ai), если вам требуются более высокие лимиты для производственных нагрузок.
+
+## Поддерживаемые типы контента
+
+| Тип контента | Используется для |
+|---|---|
+| `application/json` | Тела JSON-запросов и ответы API |
+| `text/event-stream` | Потоковые ответы (при `stream: true`) |
+| `video/mp4` | Готовый видеоконтент |

@@ -1,0 +1,60 @@
+---
+title: "Flatkey-Kontoguthaben aufladen und Bonusguthaben erhalten"
+sidebarTitle: "Aufladen"
+description: "Fügen Sie Ihrem Flatkey-Konto Prepaid-Guthaben hinzu. Erfahren Sie mehr über Aufladeoptionen, Bonusguthaben und die Verwaltung Ihres Guthabens für einen unterbrechungsfreien API-Zugriff."
+---
+
+Flatkey verwendet ein Prepaid-Guthabenmodell — Sie laden Guthaben auf Ihr Konto und es wird verbraucht, wenn Ihre API-Anfragen Modelle nutzen. Es gibt keine Abonnements oder wiederkehrende Gebühren. Jede Aufladung bringt Bonusguthaben, das sofort Ihrem Guthaben gutgeschrieben wird.
+
+## Aufladeoptionen
+
+| Aufladebetrag | Bonus | Gesamtguthaben | Effektive Ersparnis |
+|---|---|---|---|
+| $10 | +$3 | $13 | 30% |
+| $20 | +$8 | $28 | 40% |
+| $200 | +$100 | $300 | **50% (bestes Preis-Leistungs-Verhältnis)** |
+
+<Tip>
+  Die $200-Aufladeoption bietet den besten effektiven Tarif. In Kombination mit Modellrabatten (60–90 % des offiziellen Listenpreises) sinken die Kosten auf bis zu 50 % des offiziellen Anbieterpreises.
+</Tip>
+
+## Guthaben aufladen
+
+<Steps>
+  <Step title="Guthaben öffnen">
+    Klicken Sie in der [Konsole](https://console.flatkey.ai) in der linken Seitenleiste auf **Guthaben**.
+  </Step>
+  <Step title="Aufladebetrag auswählen">
+    Wählen Sie $10, $20 oder $200. Das Bonusguthaben wird vor der Bestätigung angezeigt.
+  </Step>
+  <Step title="Zahlung abschließen">
+    Geben Sie Ihre Kartendaten ein und bestätigen Sie. Die Zahlung wird über Stripe abgewickelt. Das Guthaben (einschließlich Bonus) wird sofort Ihrem Konto gutgeschrieben.
+  </Step>
+</Steps>
+
+## So funktioniert das Bonusguthaben
+
+- **Sofortige Gutschrift**: Das Bonusguthaben erscheint auf Ihrem Konto, sobald die Zahlung verarbeitet wurde.
+- **Kein Ablaufdatum**: Bonusguthaben und bezahltes Guthaben verbleiben dauerhaft auf Ihrem Konto — es gibt kein Ablaufdatum.
+- **Wie normales Guthaben nutzbar**: Bonusguthaben wird auf die gleiche Weise verbraucht wie bezahltes Guthaben. Es gibt keine Einschränkung, für welche Modelle es verwendet werden kann.
+- **Stapelt sich bei jeder Aufladung**: Jede Aufladung bringt neues Bonusguthaben. Laden Sie dreimal $200 auf und erhalten Sie insgesamt $300 Bonusguthaben.
+
+## Guthabenverwaltung
+
+Ihr Guthaben wird im Bereich **Guthaben** der Konsole angezeigt. Sie können:
+
+- Die Aufschlüsselung zwischen bezahltem Guthaben und Bonusguthaben einsehen
+- Den Verlauf aller Aufladetransaktionen mit Datum und Betrag anzeigen
+- E-Mail-Benachrichtigungen bei niedrigem Guthaben unter **Einstellungen → Benachrichtigungen** aktivieren
+
+## Was passiert, wenn das Guthaben aufgebraucht ist
+
+Wenn Ihr Guthaben auf $0,00 sinkt, geben API-Anfragen einen `401 Insufficient Balance`-Fehler zurück, bis Sie aufladen. Es gibt keine automatischen Abbuchungen oder Überziehungen — Ihre Anfragen werden einfach gestoppt, bis Sie weiteres Guthaben hinzufügen.
+
+<Warning>
+  Richten Sie für produktive Workloads eine Benachrichtigung bei niedrigem Guthaben ein, um sicherzustellen, dass Sie aufladen, bevor das Guthaben vollständig aufgebraucht ist. Gehen Sie zu **Einstellungen → Benachrichtigungen**, um den Schwellenwert zu konfigurieren.
+</Warning>
+
+## Enterprise-Abrechnung
+
+Für Teams, die eine rechnungsbasierte Abrechnung, individuelle monatliche Volumina oder Beschaffungsunterstützung benötigen, wenden Sie sich an [support@flatkey.ai](mailto:support@flatkey.ai), um Enterprise-Konditionen zu besprechen. Enterprise-Konten erfordern keine Prepaid-Aufladungen.

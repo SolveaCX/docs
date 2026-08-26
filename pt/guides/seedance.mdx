@@ -1,0 +1,532 @@
+---
+title: "Gere vídeos Seedance com Flatkey"
+sidebarTitle: "Seedance"
+description: "Crie tarefas de vídeo Seedance, consulte os resultados, baixe o MP4 final e reutilize ativos virtuais ou de pessoas reais através do Flatkey."
+---
+
+URL base: `https://router.flatkey.ai`
+
+Este guia oferece um caminho pronto para copiar e usar o Seedance através do Flatkey. Comece com uma tarefa de texto para vídeo, consulte a tarefa até que seja concluída e depois baixe o MP4 gerado. Se você precisar de referências reutilizáveis de produto, fundo, áudio ou pessoa real, continue para as seções da biblioteca de ativos.
+
+<CardGroup cols={2}>
+  <Card title="Exemplos prontos para copiar" icon="copy">
+    Use o ícone de copiar em qualquer bloco de comando e substitua `YOUR_FLATKEY_API_KEY`, `task_...`, `ast_...` e `rph_...` pelos seus próprios valores.
+  </Card>
+  <Card title="Um fluxo de trabalho assíncrono" icon="video">
+    Crie a tarefa com `POST /v1/videos`, consulte-a com `GET /v1/videos/{task_id}` e baixe o MP4 a partir de `metadata.url`.
+  </Card>
+</CardGroup>
+
+Use este cabeçalho de autorização em todas as requisições de API deste guia. A URL de download do vídeo retornada em `metadata.url` é a única exceção.
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+Mantenha sua chave de API privada. Não a cole em logs públicos, páginas ou tickets de suporte.
+
+## Chame o Seedance
+
+Comece aqui se você só quiser criar uma tarefa de texto para vídeo e baixar o vídeo finalizado.
+
+### 1. Crie uma tarefa de texto para vídeo
+
+Envie `POST /v1/videos` com o modelo `seedance-2.0` e um prompt de texto.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a calm 5 second video of a ceramic mug on a kitchen table in morning light"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a calm 5 second video of a ceramic mug on a kitchen table in morning light"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
+
+Copie o valor `task_...` retornado. Armazene-o em seu banco de dados ou em suas anotações, pois você precisará dele para verificar o vídeo.
+
+### 2. Consulte a tarefa
+
+Use este endpoint com o ID da tarefa salvo:
+
+```http
+GET /v1/videos/{task_id}
+```
+
+Consulte até que `status` seja `completed`, depois leia a URL de download em `metadata.url`. Se o status for `failed`, leia `error.message`, corrija a requisição e crie uma nova tarefa.
+
+<CodeGroup>
+```bash Bash
+TASK_ID="task_3f9a00000000000000000000000000e2"
+
+curl -sS "https://router.flatkey.ai/v1/videos/$TASK_ID" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+
+# Run the command above again until status is completed.
+# Then copy metadata.url from the response and paste it below.
+VIDEO_URL="PASTE_METADATA_URL_HERE"
+curl -L "$VIDEO_URL" -o output.mp4
+```
+```powershell Windows PowerShell
+$taskId = "task_3f9a00000000000000000000000000e2"
+
+while ($true) {
+  $result = curl.exe -sS "https://router.flatkey.ai/v1/videos/$taskId" `
+    -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" | ConvertFrom-Json
+  Write-Host "status: $($result.status)"
+
+  if ($result.status -eq "completed") { break }
+  if ($result.status -eq "failed") {
+    $result | ConvertTo-Json -Depth 10
+    exit 1
+  }
+  Start-Sleep -Seconds 5
+}
+
+$videoUrl = $result.metadata.url
+curl.exe -L "$videoUrl" -o output.mp4
+```
+</CodeGroup>
+
+Depois que a tarefa é concluída, `metadata.url` baixa o arquivo MP4 sem um cabeçalho de autorização. Trate essa URL como privada e não a publique.
+
+## Use a biblioteca de ativos
+
+Use a biblioteca de ativos quando quiser registrar uma referência uma vez, esperar até que esteja pronta e reutilizá-la em requisições do Seedance. Existem dois tipos de ativos:
+
+| Tipo de ativo | Para que serve |
+| --- | --- |
+| Ativos virtuais | Imagens de produtos, vídeos de fundo, áudio ou outras referências que não sejam de pessoas. |
+| Ativos de pessoa real | O rosto, voz ou vídeo de uma pessoa específica. Esse recurso tem acesso limitado e precisa ser habilitado para sua conta. |
+
+Use o URI `asset://ast_...` retornado pelo Flatkey em suas requisições do Seedance.
+
+### Ativos virtuais
+
+Os ativos virtuais não requerem verificação de pessoa real. Crie-os a partir de uma URL pública ou envie um arquivo local e depois reutilize o URI de ativo do Flatkey retornado.
+
+#### 1. Crie um ativo virtual a partir de uma URL HTTPS pública
+
+Envie uma URL pública `https://`.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://cdn.example.com/reference/product.png",
+    "asset_type": "Image",
+    "moderation": {
+      "strategy": "Default"
+    }
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "url": "https://cdn.example.com/reference/product.png",
+    "asset_type": "Image",
+    "moderation": {
+      "strategy": "Default"
+    }
+  }'
+```
+</CodeGroup>
+
+A resposta inclui um `id`, por exemplo `ast_1234567890abcdef1234567890abcdef`, e um status como `Processing`. Monte o URI reutilizável adicionando `asset://` antes do ID:
+
+```text
+asset://ast_1234567890abcdef1234567890abcdef
+```
+
+Não envie `model` ao criar, enviar ou consultar um ativo. O Flatkey deriva os modelos Seedance relevantes a partir da chave de API usada na requisição.
+
+#### 2. Envie um ativo virtual local
+
+Para um arquivo de imagem, vídeo ou áudio local, envie `multipart/form-data` para `POST /v1/assets/upload`. Use um único campo `file`. `asset_type` pode ser `Image`, `Video` ou `Audio`.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets/upload \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -F "file=@./reference-a.png" \
+  -F "asset_type=Image"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets/upload `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -F "file=@./reference-a.png" `
+  -F "asset_type=Image"
+```
+</CodeGroup>
+
+A resposta usa o mesmo formato de ativo da criação via URL. Salve seu `id` ou `asset_url` para consultas e requisições de vídeo posteriores.
+
+#### 3. Consulte até que o modelo selecionado esteja disponível
+
+Consulte todos os ativos com a mesma chave de API que criará a tarefa de vídeo. Por exemplo, verifique dois ativos de imagem separadamente:
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets/ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+curl -sS https://router.flatkey.ai/v1/assets/ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets/ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+curl.exe -sS https://router.flatkey.ai/v1/assets/ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+Toda resposta de ativo inclui `available_models`. `available_models` é sempre um array e lista os modelos que podem usar esse ativo agora. Um ativo parcialmente pronto pode se parecer com isto:
+
+```json
+{
+  "id": "ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "object": "asset",
+  "asset_type": "Image",
+  "status": "Processing",
+  "available_models": ["seedance-2.0-fast"],
+  "asset_url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "created_at": 1785292000
+}
+```
+
+`status` é o estado agregado entre os modelos Seedance relevantes para esta chave de API:
+
+| Status | Significado |
+| --- | --- |
+| `Creating` | O upload de origem ainda não terminou. |
+| `Processing` | Pelo menos um modelo relevante ainda está sendo preparado. Verifique `available_models`; outro modelo já pode estar utilizável. |
+| `Active` | Todos os modelos relevantes para esta chave de API estão prontos. |
+| `Failed` | A origem falhou, ou a disponibilidade não pôde ser estabelecida para pelo menos um modelo relevante. |
+| `Expired` | A origem não pode mais ser usada. Crie um novo ativo. |
+
+Você não precisa esperar pelo `Active` agregado quando o modelo escolhido já estiver listado. Antes de criar uma tarefa, certifique-se de que o modelo selecionado apareça em `available_models` de todos os ativos. Para rapidez, use `seedance-2.0-fast`; para qualidade profissional, use `seedance-2.0`. A requisição de criação de tarefa verifica a disponibilidade novamente, então repita a consulta se o roteamento tiver mudado entre as requisições GET e POST.
+
+O URI `asset://` identifica o ativo, mas não comprova por si só que ele está pronto. `Deleting` significa que a exclusão está em andamento e o ativo não pode ser usado para uma nova tarefa. Após a conclusão da exclusão, `GET /v1/assets/{asset_id}` retorna `404 asset_not_found`; não espere por um status `Deleted` consultável.
+
+#### 4. Chame o Seedance com dois ativos virtuais
+
+Coloque cada URI `asset://ast_...` no campo de mídia correspondente ao tipo de ativo: `image_url.url` para `Image`, `video_url.url` para `Video`, ou `audio_url.url` para `Audio`. Uma requisição do Seedance precisa de texto ou de pelo menos uma imagem/vídeo; apenas áudio não é suficiente. Este exemplo só é iniciado depois que ambos os ativos listarem `seedance-2.0-fast` em `available_models`.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0-fast",
+    "content": [
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "text",
+        "text": "Create a clean studio product video while keeping the product consistent"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "seedance-2.0-fast",
+    "content": [
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "text",
+        "text": "Create a clean studio product video while keeping the product consistent"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
+
+Copie o `task_...` retornado e use `GET /v1/videos/{task_id}` da primeira seção para baixar o vídeo finalizado a partir de `metadata.url`.
+
+### Ativos de pessoa real
+
+Os ativos de pessoa real são para o rosto, voz ou vídeo de uma pessoa específica. Esse recurso tem acesso limitado. Use-o somente depois que o Flatkey o habilitar para sua conta.
+
+Você criará um perfil, enviará `verification_url` para a pessoa, esperará até que o perfil esteja `active`, criará um ativo, esperará até que o `status` do ativo seja `Active` e então chamará o Seedance com `asset://ast_...`.
+
+| Endpoint | Quando usá-lo |
+| --- | --- |
+| `POST /v1/real-persons` | Criar um perfil de pessoa real e o primeiro link de verificação. |
+| `GET /v1/real-persons` | Listar seus perfis de pessoa real. |
+| `POST /v1/real-persons/{person_id}/verification-sessions` | Criar um novo link de verificação, se necessário. |
+| `GET /v1/real-persons/{person_id}` | Consultar o status do perfil. |
+| `POST /v1/real-persons/{person_id}/assets` | Criar um ativo a partir de uma URL pública ou de um arquivo local. |
+| `GET /v1/real-persons/{person_id}/assets` | Listar ativos de um perfil. |
+
+Limites de tamanho de arquivo:
+
+| Tipo de arquivo | Limite |
+| --- | --- |
+| Imagem | &lt; 30 MiB |
+| Vídeo | &lt;= 50 MiB |
+| Áudio | &lt;= 15 MiB |
+
+As requisições de escrita nesta seção exigem `Idempotency-Key`. Substitua cada placeholder `YOUR_UNIQUE_KEY_...` por um novo UUID para cada nova requisição de escrita. Reutilize uma chave apenas ao repetir exatamente a mesma requisição.
+
+#### 1. Crie um perfil de pessoa real
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_PROFILE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My first real-person profile"
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_PROFILE" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "name": "My first real-person profile"
+  }'
+```
+</CodeGroup>
+
+A resposta inclui um `id` de perfil, um `status` e uma `verification_url` de uso único. Envie `verification_url` para a pessoa real e peça que ela mesma a abra. Não publique este link.
+
+Se o link expirar ou a pessoa precisar de outro link, crie uma nova sessão de verificação:
+
+<CodeGroup>
+```bash Bash
+curl -sS -X POST https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/verification-sessions \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_VERIFICATION_SESSION"
+```
+```powershell Windows PowerShell
+curl.exe -sS -X POST https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/verification-sessions `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_VERIFICATION_SESSION"
+```
+</CodeGroup>
+
+Depois que a pessoa concluir a página de verificação, continue com a próxima etapa.
+
+#### 2. Consulte até que o perfil esteja ativo
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+Espere até que o status do perfil seja `active` antes de criar ativos. Se for `pending_verification` ou `verifying`, espere e consulte novamente. Se for `failed` ou `expired`, crie uma nova sessão de verificação.
+
+#### 3. Crie um ativo de pessoa real a partir de uma URL pública
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_URL_ASSET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://cdn.example.com/reference/person.png",
+    "asset_type": "Image",
+    "name": "Front-facing reference"
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_URL_ASSET" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "url": "https://cdn.example.com/reference/person.png",
+    "asset_type": "Image",
+    "name": "Front-facing reference"
+  }'
+```
+</CodeGroup>
+
+#### 4. Envie um arquivo local
+
+O upload local usa `multipart/form-data` e está disponível apenas para ativos de pessoa real. Use um único campo `file` e deixe o curl definir o limite (boundary) do multipart.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_FILE_ASSET" \
+  -F "asset_type=Image" \
+  -F "name=Front-facing reference" \
+  -F "file=@./person-reference.png"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_FILE_ASSET" `
+  -F "asset_type=Image" `
+  -F "name=Front-facing reference" `
+  -F "file=@./person-reference.png"
+```
+</CodeGroup>
+
+A resposta de criação inclui um ID de ativo ou `asset_uri`, por exemplo `asset://ast_1234567890abcdef1234567890abcdef`.
+
+#### 5. Consulte a disponibilidade e chame o Seedance
+
+As respostas de ativo de pessoa real não incluem `available_models`. Liste os ativos do perfil até que o `status` do ativo seja `Active`:
+
+<CodeGroup>
+```bash Bash
+curl -sS "https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets?limit=20" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS "https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets?limit=20" `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+Se o ativo listado ainda estiver `Processing`, espere e consulte novamente. Se estiver `Failed`, crie um novo ativo a partir de uma referência melhor.
+
+Depois que o ativo estiver `Active`, chame o Seedance com o URI `asset://ast_...`.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a short greeting video with natural movement"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_1234567890abcdef1234567890abcdef"
+        },
+        "role": "reference_image"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a short greeting video with natural movement"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_1234567890abcdef1234567890abcdef"
+        },
+        "role": "reference_image"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
+
+Copie o `task_...` retornado e use `GET /v1/videos/{task_id}` da primeira seção para baixar o vídeo finalizado a partir de `metadata.url`.
+
+#### 6. Exclua um ativo quando você não precisar mais dele
+
+<CodeGroup>
+```bash Bash
+curl -sS -X DELETE https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS -X DELETE https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+A requisição de exclusão retorna `204 No Content`. Após a conclusão da exclusão, `GET /v1/assets/{asset_id}` retorna `404 asset_not_found`.

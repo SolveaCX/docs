@@ -1,0 +1,194 @@
+---
+title: "Flatkey API エラー：HTTPステータスコードとトラブルシューティング"
+sidebarTitle: "エラー"
+description: "Flatkey API の全 HTTP エラーコード、エラーレスポンス形式、および 400、401、403、429、500、503 レスポンスの推奨対処法のリファレンス。"
+---
+
+Flatkey は標準的な HTTP ステータスコードと、何が問題だったかを説明する JSON エラーボディを返します。エラーレスポンスは OpenAI API と同じ形式に従っているため、既存のエラーハンドリングコードをそのまま利用できます。
+
+## エラーレスポンス形式
+
+すべてのエラーは `error` フィールドを持つ JSON オブジェクトを返します：
+
+```json
+{
+  "error": {
+    "message": "A human-readable description of the error.",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## HTTP ステータスコード
+
+### 400 Bad Request
+
+リクエストボディが不正であるか、必須フィールドが不足しています。
+
+```json
+{
+  "error": {
+    "message": "Missing required field: model",
+    "type": "invalid_request_error",
+    "code": "missing_required_field"
+  }
+}
+```
+
+**よくある原因：**
+- チャット補完で `model` または `messages` フィールドが不足している
+- リクエストボディの JSON が無効
+- `messages` 配列が空
+
+---
+
+### 401 Unauthorized
+
+認証に失敗しました。キーが無効、不足しているか、アカウント残高がゼロです。
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided.",
+    "type": "authentication_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+**よくある原因と対処法：**
+
+| `code` の値 | 原因 | 対処法 |
+|---|---|---|
+| `invalid_api_key` | キーが不足、不正、または失効している | キーを確認して再生成してください |
+| `insufficient_balance` | アカウント残高が $0.00 | [console.flatkey.ai](https://console.flatkey.ai) でチャージしてください |
+
+---
+
+### 403 Forbidden
+
+API キーに要求されたモデルへのアクセス権限がありません。
+
+```json
+{
+  "error": {
+    "message": "This key does not have access to model claude-opus-4-5.",
+    "type": "permission_error",
+    "code": "model_not_allowed"
+  }
+}
+```
+
+**対処法：** [コンソール](https://console.flatkey.ai/keys) でこのキーのモデルアクセス設定を確認してください。
+
+---
+
+### 404 Not Found
+
+モデル ID が Flatkey に認識されていません。
+
+```json
+{
+  "error": {
+    "message": "Model 'gpt-unknown' not found.",
+    "type": "invalid_request_error",
+    "code": "model_not_found"
+  }
+}
+```
+
+**対処法：** [モデルディレクトリ](https://flatkey.ai/models) でモデル ID を確認してください。ID は大文字と小文字を区別します。
+
+---
+
+### 429 Too Many Requests
+
+キーがレート制限を超過しました。
+
+```json
+{
+  "error": {
+    "message": "Rate limit exceeded. Please retry after 1 second.",
+    "type": "rate_limit_error",
+    "code": "rate_limit_exceeded"
+  }
+}
+```
+
+**対処法：** 指数バックオフを実装してリトライしてください。レート制限の引き上げが必要な場合は [support@flatkey.ai](mailto:support@flatkey.ai) にお問い合わせください。
+
+---
+
+### 500 Internal Server Error
+
+リクエストの処理中に予期しないエラーが発生しました。
+
+```json
+{
+  "error": {
+    "message": "The model encountered an error processing your request.",
+    "type": "api_error",
+    "code": "internal_error"
+  }
+}
+```
+
+**対処法：** リクエストをリトライしてください。エラーが続く場合は [support@flatkey.ai](mailto:support@flatkey.ai) にお問い合わせください。
+
+---
+
+### 503 Service Unavailable
+
+モデルプロバイダーが一時的に利用できません。
+
+```json
+{
+  "error": {
+    "message": "Upstream provider temporarily unavailable. Please retry.",
+    "type": "service_error",
+    "code": "upstream_unavailable"
+  }
+}
+```
+
+**対処法：** 指数バックオフでリトライしてください。通常、問題は数秒以内に解決します。続く場合は [support@flatkey.ai](mailto:support@flatkey.ai) にお問い合わせください。
+
+---
+
+## リトライ戦略
+
+`429`、`500`、`503` エラーには指数バックオフを実装してください：
+
+```python python
+import time
+import random
+from openai import OpenAI, RateLimitError, APIStatusError
+
+client = OpenAI(
+    api_key="sk-fk-your-key",
+    base_url="https://router.flatkey.ai/v1",
+)
+
+def call_with_retry(model, messages, max_retries=5):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model=model,
+                messages=messages,
+            )
+        except RateLimitError:
+            wait = (2 ** attempt) + random.uniform(0, 1)
+            time.sleep(wait)
+        except APIStatusError as e:
+            if e.status_code in (500, 503):
+                wait = (2 ** attempt) + random.uniform(0, 1)
+                time.sleep(wait)
+            else:
+                raise
+    raise RuntimeError("Max retries exceeded")
+```
+
+<Note>
+  OpenAI SDK には `max_retries` パラメーターによる組み込みのリトライロジックがあります。一時的なエラーで自動的にリトライするには、OpenAI クライアントのコンストラクターで `max_retries=3` を設定してください。
+</Note>

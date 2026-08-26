@@ -1,0 +1,224 @@
+---
+title: "画像生成・編集 API"
+sidebarTitle: "Images API"
+description: "OpenAI Images 互換の /v1/images/generations および /v1/images/edits エンドポイントを通じて画像を生成または編集します。"
+---
+
+テキストプロンプトから画像を生成するには `/v1/images/generations` を、入力画像を編集するには `/v1/images/edits` を使用します。どちらのエンドポイントも OpenAI Images 互換のリクエスト形式を採用しています。利用可能な操作は、Flatkey サービスが公開しているモデルとチャンネルによって異なります。
+
+<Warning>
+  Gemini の画像モデルはネイティブの Gemini `generateContent` エンドポイントを使用するため、これらの OpenAI Images エンドポイントから呼び出すことはできません。[Gemini 画像モデルガイド](/ja/guides/image-generation#gemini-画像モデルを使用する)をご覧ください。
+</Warning>
+
+## 画像を生成する
+
+### エンドポイント
+
+```
+POST https://router.flatkey.ai/v1/images/generations
+```
+
+### ヘッダー
+
+| ヘッダー | 値 |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### JSON ボディパラメーター
+
+<ParamField body="model" type="string" required>
+  Flatkey サービスが公開している画像モデル ID。例: `"gpt-image-2"`。
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  生成する画像のテキスト説明。
+</ParamField>
+
+<ParamField body="size" type="string">
+  出力サイズ。例: `"1024x1024"`。サポートされる値はモデルによって異なります。
+</ParamField>
+
+<ParamField body="quality" type="string">
+  出力品質: `"low"`、`"medium"`、または `"high"`。省略した場合はアップストリームのデフォルトが使用されます。品質を上げるとレイテンシと使用量が増加します。
+</ParamField>
+
+<ParamField body="background" type="string">
+  モデルがサポートしている場合の背景処理。例: `"transparent"` または `"opaque"`。
+</ParamField>
+
+<ParamField body="output_format" type="string">
+  モデルがサポートしている場合の出力フォーマット。例: `"png"`、`"jpeg"`、または `"webp"`。
+</ParamField>
+
+<ParamField body="output_compression" type="integer">
+  モデルがサポートしている場合の出力圧縮レベル。
+</ParamField>
+
+<ParamField body="moderation" type="string">
+  モデルがサポートしている場合のコンテンツモデレーションレベル。
+</ParamField>
+
+<ParamField body="response_format" type="string">
+  `gpt-image-2` の結果は `data[].b64_json` で返されます。ホスト型の画像 URL は提供されず、`response_format: "url"` はサポートされていません。
+</ParamField>
+
+<ParamField body="n" type="integer">
+  リクエストする画像の枚数。`gpt-image-2` はアップストリームの画像ツールが `n` を受け付けないため、現在は1リクエストにつき1枚の画像を返します。複数の画像が必要な場合は、複数のリクエストを送信してください。
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  SSE レスポンスを受け取るには `true` に設定します。同期レスポンスの場合は省略してください。
+</ParamField>
+
+### リクエスト例
+
+<CodeGroup>
+```python python
+import base64
+import os
+from pathlib import Path
+
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.images.generate(
+    model="gpt-image-2",
+    prompt="A futuristic city skyline at dusk, cyberpunk style",
+    size="1024x1024",
+    quality="high",
+)
+
+Path("generated.png").write_bytes(
+    base64.b64decode(response.data[0].b64_json)
+)
+```
+```javascript node
+import { writeFileSync } from "node:fs";
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const response = await client.images.generate({
+  model: "gpt-image-2",
+  prompt: "A futuristic city skyline at dusk, cyberpunk style",
+  size: "1024x1024",
+  quality: "high",
+});
+
+writeFileSync(
+  "generated.png",
+  Buffer.from(response.data[0].b64_json, "base64"),
+);
+```
+```bash curl
+curl https://router.flatkey.ai/v1/images/generations \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-2",
+    "prompt": "A serene forest clearing with morning mist and sunbeams",
+    "size": "1024x1024",
+    "quality": "high"
+  }'
+```
+</CodeGroup>
+
+## 画像を編集する
+
+`/v1/images/edits` は入力画像と編集指示を `multipart/form-data` として受け付けます。
+
+### エンドポイント
+
+```
+POST https://router.flatkey.ai/v1/images/edits
+```
+
+### ヘッダー
+
+| ヘッダー | 値 |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `multipart/form-data`; `-F` を使用すると curl が自動的にバウンダリを付加します |
+
+### フォームフィールド
+
+| フィールド | 型 | 必須 | 説明 |
+|---|---|---|---|
+| `model` | string | Yes | Flatkey サービスが公開している画像モデル ID。例: `gpt-image-2`。 |
+| `prompt` | string | Yes | 画像の編集方法を説明する指示。 |
+| `image` | file | Yes | PNG、JPEG、または WebP 形式の入力画像。複数の画像を指定する場合は `image[]` またはインデックス付きフィールド（`image[0]`、`image[1]` など）を使用してください。 |
+| `mask` | file | No | インペインティング用のマスク。透明な領域が再描画するリージョンを指定します。 |
+| `size` | string | No | 出力サイズ。サポートされる値はモデルによって異なります。 |
+| `quality` | string | No | 出力品質: `low`、`medium`、または `high`。 |
+| `stream` | boolean | No | SSE レスポンスを受け取るには `true` に設定します。 |
+
+### リクエスト例
+
+```bash
+curl https://router.flatkey.ai/v1/images/edits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -F "model=gpt-image-2" \
+  -F "prompt=add a small yellow star in the center" \
+  -F "image=@input.png" \
+  -F "mask=@mask.png"
+```
+
+`mask` フィールドは省略可能です。省略した場合、プロンプトに基づいて画像全体が編集されます。`Content-Type` ヘッダーは手動で設定しないでください。curl は `-F` フィールドから正しいマルチパートバウンダリを自動的に導出します。
+
+<Warning>
+  指定したマスクが破損している、読み取れない、またはサービスの制限を超えている場合、画像全体の編集にフォールバックせずにリクエストが失敗します。
+</Warning>
+
+## レスポンス
+
+同期の生成リクエストと編集リクエストは同じレスポンス形式を返します。Flatkey は画像を base64 データとして返します。`gpt-image-2` にはホスト型の画像 URL は提供されません。
+
+```json
+{
+  "created": 1710000000,
+  "data": [
+    {
+      "b64_json": "iVBORw0KGgoAAA...",
+      "revised_prompt": "Add a small yellow five-pointed star in the center...",
+      "url": ""
+    }
+  ]
+}
+```
+
+### レスポンスフィールド
+
+<ResponseField name="created" type="integer">
+  リクエストが完了した時刻の Unix タイムスタンプ。
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  画像オブジェクトの配列。
+  <Expandable title="画像オブジェクト">
+    <ResponseField name="b64_json" type="string">Base64 エンコードされた画像データ。</ResponseField>
+    <ResponseField name="revised_prompt" type="string">モデルが書き換えた後に実際に使用されたプロンプト。</ResponseField>
+    <ResponseField name="url" type="string">`gpt-image-2` では空です。ホスト型 URL は提供されません。</ResponseField>
+  </Expandable>
+</ResponseField>
+
+編集の場合、入力画像もモデルの使用量にカウントされるため、編集はテキストのみの画像生成よりも通常多くの使用量を消費します。
+
+## ストリーミング
+
+生成の JSON ボディで `stream` を `true` に設定するか、編集リクエストに `-F "stream=true"` を追加すると、`text/event-stream` 形式の出力を受け取れます。最終イベントには画像の結果が含まれ、その後 `data: [DONE]` が続きます。
+
+| イベント | 意味 |
+|---|---|
+| `image_generation.completed` | 画像生成が完了しました。 |
+| `image_edit.completed` | 画像編集が完了しました。 |
+| `[DONE]` | ストリームが終了しました。 |
+
+ストリーミングのサポートは、選択したモデルとチャンネルによって異なる場合があります。同期の高品質リクエストには、クライアントのタイムアウトを少なくとも 150 秒に設定してください。

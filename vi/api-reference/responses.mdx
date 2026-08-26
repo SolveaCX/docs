@@ -1,0 +1,165 @@
+---
+title: "Responses API — POST /v1/responses"
+sidebarTitle: "Responses"
+description: "Sử dụng POST /v1/responses để chạy các cuộc hội thoại nhiều lượt có trạng thái với định dạng OpenAI Responses API. Flatkey ủy quyền endpoint này cho các mô hình tương thích."
+---
+
+Endpoint `/v1/responses` triển khai OpenAI Responses API, hỗ trợ các cuộc hội thoại nhiều lượt có trạng thái với tính năng quản lý lịch sử hội thoại tích hợp sẵn. Đây là một lựa chọn thay thế cho `/v1/chat/completions` dành cho các quy trình yêu cầu định dạng response mới hơn của OpenAI. Truyền `previous_response_id` để tiếp tục cuộc hội thoại mà không cần gửi lại toàn bộ lịch sử tin nhắn.
+
+## Endpoint
+
+```
+POST https://router.flatkey.ai/v1/responses
+```
+
+## Khi nào nên sử dụng endpoint này
+
+Sử dụng `/v1/responses` nếu:
+- Ứng dụng của bạn được xây dựng trên OpenAI Responses API
+- Bạn cần quản lý hội thoại có trạng thái
+- Bạn sử dụng tham số `previous_response_id` cho các cuộc hội thoại nhiều lượt
+
+Đối với hầu hết các tích hợp mới, `/v1/chat/completions` là endpoint được khuyến nghị và có hỗ trợ mô hình rộng hơn.
+
+## Yêu cầu
+
+### Headers
+
+| Header | Giá trị |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### Tham số body
+
+<ParamField body="model" type="string" required>
+  ID mô hình cần sử dụng. Chỉ những mô hình hỗ trợ định dạng Responses API mới hợp lệ ở đây.
+</ParamField>
+
+<ParamField body="input" type="string | array" required>
+  Đầu vào của người dùng cho lượt này. Có thể là một chuỗi hoặc một mảng các đối tượng nội dung.
+</ParamField>
+
+<ParamField body="instructions" type="string">
+  Hướng dẫn cấp hệ thống cho mô hình (tương đương với tin nhắn `system` trong chat completions).
+</ParamField>
+
+<ParamField body="previous_response_id" type="string">
+  `id` của một response trước đó. Khi được cung cấp, mô hình tiếp tục cuộc hội thoại từ điểm đó mà không cần client gửi lại lịch sử.
+</ParamField>
+
+<ParamField body="max_output_tokens" type="integer">
+  Số lượng token tối đa cần tạo ra.
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  Nếu là `true`, trả về một luồng các sự kiện server-sent. Mặc định: `false`.
+</ParamField>
+
+## Ví dụ yêu cầu
+
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.responses.create(
+    model="gpt-4o",
+    input="What is the capital of Japan?",
+    instructions="Answer concisely.",
+)
+
+print(response.output_text)
+```
+
+## Hội thoại nhiều lượt với previous_response_id
+
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+# First turn
+response1 = client.responses.create(
+    model="gpt-4o",
+    input="My name is Alice.",
+)
+
+# Second turn — continue from the first
+response2 = client.responses.create(
+    model="gpt-4o",
+    input="What is my name?",
+    previous_response_id=response1.id,
+)
+
+print(response2.output_text)  # "Your name is Alice."
+```
+
+## Phản hồi
+
+```json
+{
+  "id": "resp_abc123",
+  "object": "response",
+  "created_at": 1710000000,
+  "model": "gpt-4o",
+  "output": [
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {"type": "output_text", "text": "The capital of Japan is Tokyo."}
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 15,
+    "output_tokens": 9,
+    "total_tokens": 24
+  }
+}
+```
+
+### Các trường phản hồi
+
+<ResponseField name="id" type="string">
+  Định danh duy nhất cho response này. Truyền nó dưới dạng `previous_response_id` để tiếp tục cuộc hội thoại.
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  Luôn là `"response"`.
+</ResponseField>
+
+<ResponseField name="created_at" type="integer">
+  Dấu thời gian Unix khi response được tạo ra.
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  Mô hình đã tạo ra response.
+</ResponseField>
+
+<ResponseField name="output" type="array">
+  Mảng các đối tượng đầu ra được tạo ra bởi mô hình.
+  <Expandable title="thuộc tính của output item">
+    <ResponseField name="type" type="string">Loại đầu ra. `"message"` cho các response dạng văn bản.</ResponseField>
+    <ResponseField name="role" type="string">Luôn là `"assistant"` cho đầu ra được tạo ra.</ResponseField>
+    <ResponseField name="content" type="array">Mảng các khối nội dung. Mỗi khối có một `type` (`"output_text"`) và một chuỗi `text`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Số lượng token dùng để tính phí.
+  <Expandable title="thuộc tính của usage">
+    <ResponseField name="input_tokens" type="integer">Số lượng token đầu vào đã xử lý.</ResponseField>
+    <ResponseField name="output_tokens" type="integer">Số lượng token đầu ra đã tạo ra.</ResponseField>
+    <ResponseField name="total_tokens" type="integer">Tổng của token đầu vào và đầu ra.</ResponseField>
+  </Expandable>
+</ResponseField>

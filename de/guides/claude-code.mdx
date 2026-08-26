@@ -1,0 +1,93 @@
+---
+title: "Flatkey mit Claude Code für vergünstigtes KI-Coding nutzen"
+sidebarTitle: "Claude Code"
+description: "Leiten Sie Claude Code CLI-Anfragen über Flatkey, um Claude-Modelle mit bis zu 50 % Rabatt auf die offiziellen Anthropic-Preise zu nutzen – mit nur zwei Änderungen an Umgebungsvariablen."
+---
+
+Anthropics Claude Code ist ein agentischer KI-Coding-Assistent, der in Ihrem Terminal läuft. Durch das Setzen der Umgebungsvariable `ANTHROPIC_BASE_URL` können Sie alle Claude Code-Anfragen über Flatkey leiten und die vergünstigten Flatkey-Tarife für die Claude-Modellnutzung zahlen.
+
+## Voraussetzungen
+
+- Claude Code installiert: `npm install -g @anthropic-ai/claude-code`
+- Ein Flatkey-Konto mit einem API-Schlüssel — [hier registrieren](https://console.flatkey.ai/sign-up)
+
+## Konfiguration
+
+Setzen Sie diese zwei Umgebungsvariablen:
+
+```bash
+export ANTHROPIC_BASE_URL="https://router.flatkey.ai"
+export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
+```
+
+Um die Einstellung dauerhaft zu machen, fügen Sie sie zu Ihrem Shell-Profil hinzu:
+
+```bash ~/.zshrc
+export ANTHROPIC_BASE_URL="https://router.flatkey.ai"
+export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
+```
+
+<Warning>
+  Setzen Sie `ANTHROPIC_BASE_URL` auf `https://router.flatkey.ai` — ohne abschließendes `/v1`. Die Claude Code CLI hängt den korrekten Pfad automatisch an.
+</Warning>
+
+## Mit CC Switch konfigurieren
+
+[CC Switch](https://ccswitch.io) ist ein Desktop-Konfigurationsmanager eines Drittanbieters für Coding-Assistenten. Sie können es auch aus dem [offiziellen GitHub-Repository](https://github.com/farion1231/cc-switch) herunterladen.
+
+1. Öffnen Sie CC Switch und wählen Sie **Claude Code**.
+2. Fügen Sie einen **Custom Provider** namens `Flatkey` hinzu.
+3. Setzen Sie die Basis-URL auf `https://router.flatkey.ai` ohne abschließendes `/v1`.
+4. Geben Sie Ihren Flatkey-API-Schlüssel (`sk-fk-...`) ein und aktivieren Sie den Provider.
+5. Beenden Sie Claude Code vollständig und öffnen Sie es erneut, damit die Provider-Einstellungen neu geladen werden.
+6. Senden Sie eine kleine Anfrage und bestätigen Sie sie dann in den **Nutzungsprotokollen** in der [Flatkey Console](https://console.flatkey.ai/usage-logs/common).
+
+<Note>
+  Falls Ihre CC Switch-Version kein Flatkey-Preset enthält, verwenden Sie **Custom Provider**. CC Switch ist kein Flatkey-Produkt.
+</Note>
+
+## Claude Code ausführen
+
+Verwenden Sie Claude Code genau wie gewohnt:
+
+```bash
+claude "Fix the bug in this file"
+```
+
+oder interaktiv:
+
+```bash
+claude
+```
+
+Alle Anfragen werden an Flatkey weitergeleitet und zu vergünstigten Tarifen von Ihrem Prepaid-Guthaben abgerechnet.
+
+## Einrichtung überprüfen
+
+Führen Sie eine einfache Anfrage aus und prüfen Sie dann die **Nutzungsprotokolle** in Ihrer [Flatkey Console](https://console.flatkey.ai/usage-logs/common). Die Claude-Anfrage sollte dort mit Modell-ID, Token-Anzahl und Kosten protokolliert sein.
+
+## Ersparnis-Schätzung
+
+Verwendung von Claude Sonnet (eine beliebte Wahl für Claude Code) über Flatkey:
+
+| | Offizieller Preis | Flatkey (nach $200 Bonus) |
+|---|---|---|
+| `claude-sonnet-4-5` Eingabe | $3 / 1M Token | ~$1,60 / 1M Token |
+| `claude-haiku-4-5-20251001` Eingabe | $1 / 1M Token | ~$0,53 / 1M Token |
+
+Bei einer typischen Claude Code-Sitzung mit 50.000 Eingabe-Token unter Verwendung von Sonnet ergibt das:
+- Offiziell: ~$0,15 pro Sitzung
+- Flatkey: ~$0,08 pro Sitzung
+
+<Tip>
+  Intensive Claude Code-Nutzer profitieren am meisten vom $200-Aufladetarif – das Bonusguthaben gibt Ihnen effektiv einen zusätzlichen Nutzungsmonat obenauf auf den Modellrabatt.
+</Tip>
+
+## Fehlerbehebung
+
+| Problem | Lösung |
+|---|---|
+| `Authentication failed` | Bestätigen Sie, dass `ANTHROPIC_API_KEY` Ihr Flatkey-Schlüssel ist (`sk-fk-...`) |
+| `Could not connect` | Überprüfen Sie, ob `ANTHROPIC_BASE_URL` auf `https://router.flatkey.ai` gesetzt ist |
+| `Insufficient balance` | Guthaben aufladen unter [console.flatkey.ai](https://console.flatkey.ai) |
+| Anfragen nicht im Dashboard | Prüfen Sie, ob die Umgebungsvariablen in der aktuellen Shell exportiert sind |

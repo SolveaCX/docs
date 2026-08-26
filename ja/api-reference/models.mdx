@@ -1,0 +1,104 @@
+---
+title: "モデル一覧 — GET /v1/models"
+sidebarTitle: "モデル"
+description: "GET /v1/models を使用して、Flatkey アカウントで利用可能なすべての AI モデルを取得します。OpenAI 互換フォーマットでモデル ID、プロバイダー、タイムスタンプを返します。"
+---
+
+`/v1/models` エンドポイントは、Flatkey アカウントで利用可能なすべてのモデルの一覧を返します。レスポンスは OpenAI API フォーマットに準拠しており、ここで返されるモデル ID は `/v1/chat/completions`、`/v1/embeddings`、およびその他のエンドポイントでそのまま使用できます。
+
+## エンドポイント
+
+```
+GET https://router.flatkey.ai/v1/models
+```
+
+## リクエスト
+
+### ヘッダー
+
+| ヘッダー | 値 |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+
+リクエストボディは不要です。
+
+## リクエスト例
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+models = client.models.list()
+
+for model in models.data:
+    print(model.id)
+```
+```javascript node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const models = await client.models.list();
+
+for (const model of models.data) {
+  console.log(model.id);
+}
+```
+```bash curl
+curl https://router.flatkey.ai/v1/models \
+  -H "Authorization: Bearer $FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+## レスポンス
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-4o",
+      "object": "model",
+      "created": 1710000000,
+      "owned_by": "openai"
+    },
+    {
+      "id": "claude-sonnet-4-5",
+      "object": "model",
+      "created": 1710000000,
+      "owned_by": "anthropic"
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "object": "model",
+      "created": 1710000000,
+      "owned_by": "google"
+    }
+  ]
+}
+```
+
+### レスポンスフィールド
+
+<ResponseField name="data" type="array">
+  モデルオブジェクトの配列。
+  <Expandable title="モデルオブジェクト">
+    <ResponseField name="id" type="string">リクエストで使用するモデル識別子。</ResponseField>
+    <ResponseField name="object" type="string">常に `"model"`。</ResponseField>
+    <ResponseField name="created" type="integer">モデルが追加された日時の Unix タイムスタンプ。</ResponseField>
+    <ResponseField name="owned_by" type="string">プロバイダー: `"openai"`、`"anthropic"`、`"google"` など。</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Tip>
+  料金、ヘルスデータ、および詳細なモデル仕様については、[flatkey.ai/models](https://flatkey.ai/models) または [モデルディレクトリ](https://flatkey.ai/models) をご覧ください。
+</Tip>

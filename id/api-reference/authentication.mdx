@@ -1,0 +1,68 @@
+---
+title: "Autentikasi API Flatkey: Bearer Token dan API Key"
+sidebarTitle: "Autentikasi"
+description: "Autentikasi permintaan API Flatkey dengan meneruskan API key Anda sebagai Bearer token di header Authorization. Pelajari format key, error, dan praktik terbaik."
+---
+
+Setiap permintaan ke API Flatkey harus menyertakan API key yang valid di header `Authorization` sebagai Bearer token. Anda membuat dan mengelola key di [konsol Flatkey](https://console.flatkey.ai/keys).
+
+## Format header
+
+```http
+Authorization: Bearer sk-fk-your-api-key
+```
+
+API key Flatkey diawali dengan `sk-fk-`. Key bersifat case-sensitive dan harus diteruskan persis seperti saat dibuat.
+
+## Contoh permintaan
+
+```bash
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+## Membuat API key
+
+1. Masuk ke [console.flatkey.ai](https://console.flatkey.ai)
+2. Klik **Keys** di sidebar kiri
+3. Klik **Create Key** dan masukkan nama
+4. Salin key tersebut — key hanya ditampilkan **satu kali**
+
+Jika Anda kehilangan key, Anda harus membuat yang baru. Key lama tetap aktif sampai dicabut secara eksplisit.
+
+## Error autentikasi
+
+| Status HTTP | Kondisi | Penyelesaian |
+|---|---|---|
+| `401 Unauthorized` | Key tidak ada dalam permintaan | Tambahkan header `Authorization: Bearer sk-fk-...` |
+| `401 Unauthorized` | Key tidak valid atau sudah dicabut | Buat key baru di konsol |
+| `401 Unauthorized` | Saldo adalah $0.00 | Isi ulang di [console.flatkey.ai](https://console.flatkey.ai) |
+| `403 Forbidden` | Key tidak memiliki akses model | Periksa izin key di konsol |
+
+### Format respons error
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided.",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## Praktik terbaik keamanan
+
+- Simpan key di variabel lingkungan, bukan di kode sumber
+- Gunakan satu key per lingkungan deployment
+- Cabut key segera jika terjadi kebocoran
+- Rotasi key secara berkala untuk beban kerja produksi
+
+<Warning>
+  Jangan pernah menyertakan API key di JavaScript sisi klien, bundel aplikasi mobile, atau repositori publik. Key dapat disalahgunakan untuk menguras saldo Anda.
+</Warning>

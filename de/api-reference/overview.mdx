@@ -1,0 +1,83 @@
+---
+title: "Flatkey REST API: Endpunkte, Authentifizierung und Anfrageformat"
+sidebarTitle: "Übersicht"
+description: "Flatkey stellt eine OpenAI-kompatible REST API unter https://router.flatkey.ai/v1 bereit. API-Anfragen verwenden Bearer-Authentifizierung, mit anonymem Zugriff nur für abgeschlossene Video-Inhalts-URLs."
+---
+
+Die Flatkey API ist eine REST API, die vollständig mit der OpenAI API-Spezifikation kompatibel ist. API-Anfragen gehen an `https://router.flatkey.ai/v1` — dieselbe Basis-URL für alle Endpunkte, Anbieter und Modelle. Die Authentifizierung erfolgt über ein Bearer-Token im `Authorization`-Header, außer für abgeschlossene Video-Inhalts-URLs.
+
+## Basis-URL
+
+```
+https://router.flatkey.ai/v1
+```
+
+## Authentifizierung
+
+API-Anfragen müssen Ihren Flatkey API-Schlüssel als Bearer-Token enthalten:
+
+```
+Authorization: Bearer sk-fk-your-api-key
+```
+
+Generieren Sie Ihren API-Schlüssel in der [Konsole](https://console.flatkey.ai/keys). Vollständige Details finden Sie unter [Authentifizierung](/de/api-reference/authentication).
+
+Die anonyme `GET /v1/videos/{task_id}/content` URL ist eine Ausnahme. Behandeln Sie sie als sensibel, da der Besitz der Task-URL Zugriff auf das abgeschlossene Video gewährt.
+
+## Anfrageformat
+
+- Alle Anfragen verwenden **HTTPS**
+- Anfrage-Bodies müssen **JSON** sein (`Content-Type: application/json`)
+- Antworten sind JSON, SSE für Streaming oder `video/mp4` für abgeschlossene Videoinhalte
+
+## Verfügbare Endpunkte
+
+| Endpunkt | Methode | Beschreibung |
+|---|---|---|
+| `/v1/chat/completions` | POST | Chat und Texterzeugung (OpenAI-kompatibel) |
+| `/v1/responses` | POST | OpenAI Responses API (zustandsbehaftetes Multi-Turn) |
+| `/v1/embeddings` | POST | Text-Embeddings |
+| `/v1/images/generations` | POST | Bildgenerierung |
+| `/v1/videos` | POST | Seedance-Videogenerierungs-Task erstellen |
+| `/v1/videos/{task_id}` | GET | Seedance-Task-Status und -Ergebnis abrufen |
+| `/v1/videos/{task_id}/content` | GET | Abgeschlossenes Video ohne Bearer-Authentifizierung herunterladen |
+| `/v1/models` | GET | Verfügbare Modelle auflisten |
+
+## OpenAI SDK-Kompatibilität
+
+Da die API OpenAI-kompatibel ist, können Sie das offizielle OpenAI Python- oder Node.js-SDK ohne Änderungen am Anfrage-Code verwenden — setzen Sie einfach `base_url`:
+
+<CodeGroup>
+```python python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-fk-your-api-key",
+    base_url="https://router.flatkey.ai/v1",
+)
+```
+```javascript node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: "sk-fk-your-api-key",
+  baseURL: "https://router.flatkey.ai/v1",
+});
+```
+</CodeGroup>
+
+## Versionierung
+
+Flatkey verwendet dasselbe Versionierungsschema wie die OpenAI API. Das `/v1`-Pfadpräfix ist stabil. Wenn neue OpenAI API-Versionen veröffentlicht werden, fügt Flatkey Unterstützung hinzu und wahrt dabei die Rückwärtskompatibilität mit `/v1`.
+
+## Ratenlimits
+
+Ratenlimits werden pro API-Schlüssel angewendet. Wenn Sie das Limit überschreiten, erhalten Sie eine `429 Too Many Requests`-Antwort. Kontaktieren Sie [support@flatkey.ai](mailto:support@flatkey.ai), wenn Sie höhere Ratenlimits für Produktions-Workloads benötigen.
+
+## Unterstützte Inhaltstypen
+
+| Inhaltstyp | Verwendet für |
+|---|---|
+| `application/json` | JSON-Anfrage-Bodies und API-Antworten |
+| `text/event-stream` | Streaming-Antworten (wenn `stream: true`) |
+| `video/mp4` | Abgeschlossene Videoinhalte |

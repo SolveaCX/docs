@@ -1,0 +1,256 @@
+---
+title: "Tạo video MiniMax H3 với Flatkey"
+sidebarTitle: "MiniMax H3"
+description: "Tạo tác vụ video MiniMax H3 từ văn bản hoặc phương tiện tham chiếu, kiểm tra trạng thái và tải xuống file MP4 hoàn chỉnh qua Flatkey."
+---
+
+URL cơ sở: `https://router.flatkey.ai`
+
+Sử dụng `MiniMax-H3` khi bạn cần chuyển văn bản thành video, kiểm soát khung đầu và khung cuối, hoặc tham chiếu hình ảnh, video và âm thanh. Mọi yêu cầu đều theo cùng một quy trình bất đồng bộ: tạo tác vụ, kiểm tra trạng thái, rồi tải xuống file MP4 hoàn chỉnh.
+
+<CardGroup cols={2}>
+  <Card title="Đầu vào linh hoạt" icon="images">
+    Tạo từ văn bản, hình ảnh khung, hoặc hình ảnh, video và âm thanh tham chiếu.
+  </Card>
+  <Card title="Một quy trình bất đồng bộ" icon="video">
+    Tạo bằng `POST /v1/videos`, kiểm tra bằng `GET /v1/videos/{task_id}`, và tải xuống từ `metadata.url`.
+  </Card>
+</CardGroup>
+
+Sử dụng header này cho các yêu cầu tạo tác vụ và kiểm tra trạng thái:
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+Giữ bí mật API key của bạn. Không dán nó vào nhật ký công khai, trang web hoặc phiếu hỗ trợ.
+
+## Tạo video H3 đầu tiên của bạn
+
+### 1. Gửi tác vụ chuyển văn bản thành video
+
+Gửi `POST /v1/videos` với model `MiniMax-H3` và một prompt văn bản. Các yêu cầu chỉ có văn bản cần có tỷ lệ khung hình rõ ràng khác với `adaptive`.
+
+<CodeGroup>
+```bash Bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "MiniMax-H3",
+    "content": [
+      {
+        "type": "text",
+        "text": "A paper boat crosses a rain puddle in a cinematic macro shot"
+      }
+    ],
+    "resolution": "768P",
+    "duration": 6,
+    "ratio": "16:9",
+    "aigc_watermark": false
+  }'
+```
+```powershell Windows PowerShell
+curl.exe --fail-with-body -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "MiniMax-H3",
+    "content": [
+      {
+        "type": "text",
+        "text": "A paper boat crosses a rain puddle in a cinematic macro shot"
+      }
+    ],
+    "resolution": "768P",
+    "duration": 6,
+    "ratio": "16:9",
+    "aigc_watermark": false
+  }'
+```
+</CodeGroup>
+
+Phản hồi chứa ID tác vụ công khai trong cả `id` và `task_id`:
+
+```json
+{
+  "id": "task_3f9a00000000000000000000000000e2",
+  "task_id": "task_3f9a00000000000000000000000000e2",
+  "object": "video",
+  "model": "MiniMax-H3",
+  "status": "queued",
+  "progress": 0
+}
+```
+
+Lưu lại giá trị `task_...` được trả về. Bạn cần nó để kiểm tra tác vụ sau này.
+
+### 2. Kiểm tra và tải xuống kết quả
+
+Kiểm tra `GET /v1/videos/{task_id}` cho đến khi `status` trở thành `completed` hoặc `failed`. Khi là `completed`, đọc URL tải xuống tạm thời từ `metadata.url`.
+
+<CodeGroup>
+```bash Bash
+TASK_ID="task_3f9a00000000000000000000000000e2"
+
+curl --fail-with-body -sS \
+  "https://router.flatkey.ai/v1/videos/$TASK_ID" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+
+# Run the status request again until status is completed.
+# Then copy metadata.url from the response and paste it below.
+VIDEO_URL="PASTE_METADATA_URL_HERE"
+curl --fail --location "$VIDEO_URL" --output minimax-h3.mp4
+```
+```powershell Windows PowerShell
+$taskId = "task_3f9a00000000000000000000000000e2"
+
+while ($true) {
+  $result = curl.exe --fail-with-body -sS `
+    "https://router.flatkey.ai/v1/videos/$taskId" `
+    -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" | ConvertFrom-Json
+  Write-Host "status: $($result.status)"
+
+  if ($result.status -eq "completed") { break }
+  if ($result.status -eq "failed") {
+    $result | ConvertTo-Json -Depth 10
+    exit 1
+  }
+  Start-Sleep -Seconds 5
+}
+
+curl.exe --fail --location $result.metadata.url --output minimax-h3.mp4
+```
+</CodeGroup>
+
+`metadata.url` là URL tải xuống tạm thời. Nó hoạt động mà không cần header xác thực Flatkey, vì vậy bất kỳ ai có nó đều có thể truy cập video đã tạo cho đến khi hết hạn. Hãy coi nó là thông tin riêng tư, và không ghi nhật ký, xuất bản hoặc chia sẻ nó. Tải xuống video ngay và lưu trữ trong bộ nhớ của riêng bạn. Việc lặp lại truy vấn tác vụ không làm mới URL đã hết hạn.
+
+## Chọn đầu vào của bạn
+
+Mọi yêu cầu đều phải chứa một mục văn bản không rỗng. Bạn có thể thêm hình ảnh khung hoặc phương tiện tham chiếu để kiểm soát kết quả.
+
+| Đầu vào | `type` | `role` bắt buộc | Giới hạn |
+| --- | --- | --- | --- |
+| Prompt | `text` | Không đặt role | 7.000 ký tự Unicode trên tất cả các mục văn bản |
+| Khung đầu | `image_url` | `first_frame`, hoặc bỏ qua role | 1 hình ảnh |
+| Khung cuối | `image_url` | `last_frame` | 1 hình ảnh |
+| Hình ảnh tham chiếu | `image_url` | `reference_image` | 9 hình ảnh |
+| Video tham chiếu | `video_url` | `reference_video` | 3 video |
+| Âm thanh tham chiếu | `audio_url` | `reference_audio` | 3 file âm thanh; cũng cần bao gồm hình ảnh hoặc video tham chiếu |
+
+<Warning>
+  Không kết hợp đầu vào khung đầu/khung cuối với đầu vào tham chiếu trong cùng một yêu cầu. Mỗi mục `content` phải chứa đúng một payload khớp với `type` của nó.
+</Warning>
+
+### Kiểm soát khung đầu và khung cuối
+
+Sử dụng `first_frame` và `last_frame` khi bạn muốn video nội suy giữa hai hình ảnh.
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "MiniMax-H3",
+    "content": [
+      {
+        "type": "text",
+        "text": "The camera slowly pulls back as morning fog crosses the valley"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/first.jpg" },
+        "role": "first_frame"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/last.jpg" },
+        "role": "last_frame"
+      }
+    ],
+    "resolution": "2K",
+    "duration": 8,
+    "ratio": "adaptive"
+  }'
+```
+
+### Tạo với phương tiện tham chiếu
+
+Đầu vào tham chiếu giúp giữ nguyên chủ thể, phong cách chuyển động hoặc âm thanh. Âm thanh tham chiếu không thể là đầu vào phương tiện duy nhất.
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "MiniMax-H3",
+    "content": [
+      {
+        "type": "text",
+        "text": "Keep the character and movement style consistent while crossing a snowy street"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/character.jpg" },
+        "role": "reference_image"
+      },
+      {
+        "type": "video_url",
+        "video_url": { "url": "https://example.com/motion.mp4" },
+        "role": "reference_video"
+      },
+      {
+        "type": "audio_url",
+        "audio_url": { "url": "https://example.com/ambience.mp3" },
+        "role": "reference_audio"
+      }
+    ],
+    "resolution": "768P",
+    "duration": 10,
+    "ratio": "adaptive"
+  }'
+```
+
+## Cài đặt yêu cầu
+
+| Trường | Bắt buộc | Giá trị được hỗ trợ |
+| --- | --- | --- |
+| `model` | Có | `MiniMax-H3` |
+| `content` | Có | Văn bản cộng với phương tiện khung hoặc tham chiếu tùy chọn |
+| `resolution` | Có | `768P` hoặc `2K`; giá trị phân biệt chữ hoa chữ thường |
+| `duration` | Có | Một số nguyên từ `4` đến `15` giây |
+| `ratio` | Đối với yêu cầu chỉ có văn bản | `21:9`, `16:9`, `4:3`, `1:1`, `3:4`, `9:16`, hoặc `adaptive` khi có phương tiện |
+| `aigc_watermark` | Không | `true` hoặc `false` |
+
+Khi một yêu cầu chứa phương tiện và bỏ qua `ratio`, Flatkey sẽ sử dụng `adaptive`. Yêu cầu chỉ có văn bản phải sử dụng rõ ràng một tỷ lệ khác `adaptive`.
+
+## Hiểu kết quả tác vụ
+
+| `status` | Ý nghĩa |
+| --- | --- |
+| `queued` | Tác vụ đang chờ chạy. |
+| `in_progress` | Video đang được tạo. Đọc `progress` để lấy giá trị từ 0 đến 100. |
+| `completed` | Video đã sẵn sàng tại `metadata.url`. |
+| `failed` | Quá trình tạo thất bại. Đọc `error.code` và `error.message`. |
+
+Đối với các phản hồi video H3, tên trường sử dụng chung biểu thị số giây:
+
+- `usage.completion_tokens` là thời lượng đầu ra được tạo.
+- `usage.total_tokens` là tổng thời lượng tính phí, bao gồm thời gian đầu vào video tham chiếu.
+
+Các giá trị này là số giây, không phải token của mô hình ngôn ngữ. Kiểm tra **Nhật ký sử dụng** trong [Flatkey Console](https://console.flatkey.ai/usage-logs/common) để xem khoản phí cuối cùng.
+
+## Giới hạn hiện tại
+
+- `callback_url` không được hỗ trợ. Hãy kiểm tra trạng thái tác vụ thay thế.
+- Liệt kê tác vụ, hủy, xóa, tạo lại và remix không được hỗ trợ.
+- `MiniMax-H3-Context-IR` không được hỗ trợ.
+- URL phương tiện từ xa phải có thể truy cập trong khi tác vụ đang được xử lý.
+
+| Mã lỗi | Cần kiểm tra |
+| --- | --- |
+| `invalid_duration` | Đặt `duration` từ `4` đến `15`. |
+| `invalid_resolution` | Sử dụng chính xác `768P` hoặc `2K`. |
+| `invalid_ratio` | Sử dụng tỷ lệ được hỗ trợ. Yêu cầu chỉ có văn bản không thể bỏ qua hoặc sử dụng `adaptive`. |
+| `invalid_content` | Kiểm tra prompt, role, giới hạn phương tiện và các tổ hợp đầu vào không tương thích. |
+| `unsupported_callback_url` | Xóa `callback_url` và kiểm tra trạng thái tác vụ. |

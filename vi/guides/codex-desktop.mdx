@@ -1,0 +1,170 @@
+---
+title: "Sử dụng Flatkey với Codex Desktop"
+sidebarTitle: "Codex Desktop"
+description: "Cấu hình ứng dụng Codex desktop để sử dụng Flatkey theo cách thủ công hoặc với CC Switch trong khi vẫn giữ nguyên thông tin đăng nhập ChatGPT chính thức của bạn."
+---
+
+Codex Desktop đọc cùng cấu hình Codex cấp người dùng như Codex CLI. Bạn có thể thêm Flatkey làm nhà cung cấp mô hình tùy chỉnh mà không cần thay thế thông tin đăng nhập ChatGPT hoặc Codex chính thức của bạn.
+
+## Điều kiện tiên quyết
+
+- Đã cài đặt Codex Desktop
+- Đã hoàn tất một lần đăng nhập ChatGPT hoặc Codex chính thức trong ứng dụng desktop
+- Một API key Flatkey — [tạo một key trong Flatkey Console](https://console.flatkey.ai/keys)
+- Một model ID được hỗ trợ từ [Flatkey Model Directory](https://flatkey.ai/models)
+- CC Switch, nếu bạn sử dụng thiết lập với CC Switch
+
+## Cấu hình thủ công
+
+### 1. Thiết lập API key
+
+Lưu key trong một biến môi trường cấp người dùng thay vì viết nó vào một tệp cấu hình.
+
+<CodeGroup>
+```powershell Windows PowerShell
+[Environment]::SetEnvironmentVariable(
+  "FLATKEY_API_KEY",
+  "sk-fk-...",
+  "User"
+)
+```
+```bash macOS
+launchctl setenv FLATKEY_API_KEY "sk-fk-..."
+```
+```bash Linux
+export FLATKEY_API_KEY="sk-fk-..."
+```
+</CodeGroup>
+
+Sau khi thay đổi biến, hãy tắt hoàn toàn Codex Desktop trước khi mở lại nó.
+
+### 2. Cập nhật `config.toml`
+
+Mở tệp cấu hình Codex cấp người dùng:
+
+| Nền tảng | Đường dẫn cấu hình |
+|---|---|
+| Windows | `%USERPROFILE%\.codex\config.toml` |
+| macOS và Linux | `~/.codex/config.toml` |
+
+Trước khi thay thế các thiết lập `model` và `model_provider` ở cấp cao nhất, hãy ghi lại giá trị hiện tại của chúng để bạn có thể khôi phục lại sau này. Sau đó cập nhật cả hai thiết lập. Nếu một trong hai key đã tồn tại, hãy thay thế giá trị của nó thay vì thêm một key trùng lặp. Giữ nguyên mọi thiết lập không liên quan. Thêm bảng nhà cung cấp dưới đây; nếu `[model_providers.flatkey]` đã tồn tại, hãy cập nhật bảng đó thay vì tạo một bản sao trùng lặp:
+
+```toml
+model = "gpt-5.4"
+model_provider = "flatkey"
+
+[model_providers.flatkey]
+name = "Flatkey"
+base_url = "https://router.flatkey.ai/v1"
+env_key = "FLATKEY_API_KEY"
+wire_api = "responses"
+```
+
+`gpt-5.4` có sẵn trong Flatkey Model Directory tại thời điểm viết bài. Hãy kiểm tra danh mục này trước khi chuyển sang một model ID khác.
+
+<Warning>
+  Thông tin xác thực chính thức có thể được lưu trữ trong `auth.json` hoặc bộ lưu trữ thông tin xác thực của hệ điều hành của bạn. Không bao giờ chỉnh sửa, thay thế, ghi đè, xuất, hoặc chia sẻ bất kỳ bộ lưu trữ thông tin xác thực nào khi thiết lập Flatkey. Không bao giờ dán API key Flatkey vào bất kỳ bộ lưu trữ nào trong số này. `config.toml` kiểm soát việc định tuyến mô hình và nhà cung cấp.
+</Warning>
+
+### 3. Khởi động lại và xác minh
+
+Tắt hoàn toàn Codex Desktop, mở lại nó, và gửi một prompt nhỏ. Mở [Flatkey Usage Logs](https://console.flatkey.ai/usage-logs/common) và xác nhận model, số lượng token, độ trễ, và chi phí.
+
+## Cấu hình với CC Switch
+
+[CC Switch](https://ccswitch.io) là một công cụ quản lý cấu hình của bên thứ ba, không phải là sản phẩm của Flatkey. Bạn cũng có thể tải xuống nó từ [CC Switch GitHub repository](https://github.com/farion1231/cc-switch). Các bước dưới đây theo giao diện hiện tại của CC Switch.
+
+Cấu hình thủ công và CC Switch là các phương pháp thiết lập thay thế cho nhau. Sử dụng một phương pháp cho nhà cung cấp đang hoạt động. Codex Desktop và Codex CLI chia sẻ `~/.codex/config.toml` trên macOS và Linux, hoặc `%USERPROFILE%\.codex\config.toml` trên Windows. CC Switch kiểm soát các thiết lập model và nhà cung cấp trong tệp chia sẻ đó. Giữ nguyên các thiết lập và nhà cung cấp không liên quan.
+
+### 1. Hoàn tất một lần đăng nhập chính thức
+
+Mở Codex Desktop và hoàn tất một lần đăng nhập ChatGPT hoặc Codex chính thức trước khi chuyển đổi nhà cung cấp. Thực hiện điều này ít nhất một lần để ứng dụng desktop có một phiên chính thức hợp lệ cho việc truy cập tài khoản và danh mục mô hình của nó.
+
+Thông tin xác thực chính thức được lưu trữ trong `auth.json` hoặc bộ lưu trữ thông tin xác thực của hệ điều hành của bạn. Hãy coi cả hai là nhạy cảm.
+
+### 2. Giữ nguyên đăng nhập chính thức cho các lần chuyển đổi trực tiếp
+
+Trong CC Switch, mở **Settings** > **General** > **Codex App Enhancements**, sau đó bật **Keep official login for direct switches**. Thiết lập này ngăn việc chuyển đổi nhà cung cấp trực tiếp làm mất đăng nhập chính thức mà Codex Desktop vẫn cần.
+
+![Bật thiết lập giữ nguyên đăng nhập chính thức hiện tại cho Codex](/images/guides/cc-switch/en/codex-login-preservation.png)
+
+<Warning>
+  Không bao giờ mở `auth.json` để sao chép, thay thế hoặc ghi đè nó, dán API key Flatkey vào đó, hoặc chia sẻ nó. Không bao giờ để lộ API key Flatkey của bạn trong ảnh chụp màn hình hoặc trong các bản xuất nhà cung cấp của CC Switch. Nếu bất kỳ thông tin xác thực nào bị lộ, hãy xoay hoặc thu hồi nó ngay lập tức.
+</Warning>
+
+### 3. Thêm Flatkey làm nhà cung cấp tùy chỉnh
+
+Mở bảng **Codex** trong CC Switch và thêm một **Custom Provider**. Sử dụng các giá trị sau. Hướng dẫn này không phụ thuộc vào một nhà cung cấp Flatkey được tích hợp sẵn.
+
+![Mở bảng nhà cung cấp Codex và chọn nút thêm nhà cung cấp trong CC Switch](/images/guides/cc-switch/en/codex-provider-list.png)
+
+| Trường nhà cung cấp | Giá trị |
+|---|---|
+| Provider Name | `flatkey` |
+| API Key | `sk-fk-...` |
+| API Request URL | `https://router.flatkey.ai/v1` |
+| Default Model | `gpt-5.6-sol` trong ảnh chụp màn hình — hãy xác minh một ID chính xác hiện tại trong [Flatkey Model Directory](https://flatkey.ai/models) |
+| Upstream Format | **Responses (native)** |
+
+![Nhập các trường nhà cung cấp Flatkey hiện tại trong CC Switch](/images/guides/cc-switch/en/codex-provider-form.png)
+
+### 4. Cấu hình mô hình
+
+Đặt **Default Model** của nhà cung cấp thành model ID chính xác của Flatkey mà bạn muốn sử dụng. Ảnh chụp màn hình hiển thị `gpt-5.6-sol` như một ví dụ. Hãy kiểm tra [Flatkey Model Directory](https://flatkey.ai/models) trước khi chọn một ID.
+
+Nhấp vào **Fetch Models** để tải các ID hiện tại. Thêm mô hình vào **Model Mapping** của nhà cung cấp khi bạn muốn nó xuất hiện trong menu `/model` của Codex. Bạn cũng có thể đặt một ID chính xác làm **Default Model** của nhà cung cấp hoặc truyền nó từ Codex CLI với `codex --model <id>`. Đối với Codex Desktop, hãy coi nhà cung cấp đang hoạt động và mô hình mặc định là tuyến đường dự kiến ngay cả khi bộ chọn không hiển thị mô hình tùy chỉnh. Xác nhận tuyến đường thực tế bằng Flatkey Usage Logs sau khi gửi một yêu cầu.
+
+![Chọn Responses native và cấu hình model mapping của Codex](/images/guides/cc-switch/en/codex-model-mapping.png)
+
+Flatkey hỗ trợ Responses API một cách gốc (native). Giữ **Local Routing** ở trạng thái tắt; nó không cần thiết cho thiết lập này.
+
+### 5. Lưu, kích hoạt, và khởi động lại
+
+Lưu nhà cung cấp tùy chỉnh và kích hoạt nó cho Codex. Không xóa các thiết lập hoặc nhà cung cấp không liên quan từ `config.toml` chia sẻ.
+
+![Xác nhận rằng nhà cung cấp Flatkey Codex đang được sử dụng](/images/guides/cc-switch/en/codex-provider-active.png)
+
+Tắt hoàn toàn Codex Desktop. Đảm bảo không còn tiến trình Codex Desktop cũ nào, sau đó mở lại ứng dụng để nó đọc các thiết lập nhà cung cấp mới.
+
+### 6. Xác minh tuyến đường thực tế
+
+Bắt đầu một cuộc hội thoại mới với một ngữ cảnh nhỏ và gửi một prompt tối thiểu. Sau đó mở [Flatkey Usage Logs](https://console.flatkey.ai/usage-logs/common) và xác nhận model, số lượng token, độ trễ, và chi phí cho yêu cầu đó.
+
+![Xác minh tuyến đường Flatkey với một phản hồi Codex Desktop tối thiểu](/images/guides/cc-switch/en/codex-desktop-verify.png)
+
+Việc giữ nguyên đăng nhập chính thức không có nghĩa là yêu cầu sử dụng hình thức thanh toán của OpenAI. Các thiết lập nhà cung cấp và mô hình hiện tại trong `config.toml` chia sẻ kiểm soát tuyến đường. Flatkey Usage Logs là xác nhận có thẩm quyền rằng yêu cầu đã đến được Flatkey.
+
+Các system prompt, công cụ, lịch sử hội thoại, tệp đính kèm, và đầu ra lệnh có thể làm tăng số lượng input token vượt quá văn bản trong prompt hiển thị của bạn. Số lượng input token cao hơn có thể làm tăng chi phí được tính phí.
+
+### Nếu mô hình không hiển thị
+
+Codex Desktop có thể hiển thị danh mục mô hình chính thức và bỏ qua một mô hình tùy chỉnh từ bộ chọn của nó. Việc thiếu một mô hình tùy chỉnh trong giao diện không chứng minh rằng việc định tuyến đã thất bại.
+
+1. Xác nhận đăng nhập ChatGPT hoặc Codex chính thức vẫn đang hoạt động.
+2. Xác nhận **Settings** > **General** > **Codex App Enhancements** > **Keep official login for direct switches** đã được bật.
+3. Xác nhận nhà cung cấp Flatkey đang hoạt động và **Default Model** của nó chứa model ID chính xác.
+4. Kiểm tra model mapping của nhà cung cấp. Sử dụng **Fetch Models** khi bạn muốn mô hình xuất hiện trong menu `/model`.
+5. Xác nhận `config.toml` chia sẻ chứa nhà cung cấp và mô hình đang hoạt động dự kiến mà không thay đổi các thiết lập không liên quan.
+6. Tắt hoàn toàn mọi tiến trình Codex Desktop và mở lại ứng dụng.
+7. Gửi một prompt tối thiểu và kiểm tra [Flatkey Usage Logs](https://console.flatkey.ai/usage-logs/common) để biết tuyến đường thực tế.
+
+### Chuyển về nhà cung cấp chính thức
+
+Nếu bạn đã sử dụng CC Switch, hãy kích hoạt nhà cung cấp Codex chính thức. Tắt hoàn toàn Codex Desktop, đảm bảo không còn tiến trình cũ nào, và mở lại nó. Bạn không cần xóa nhà cung cấp tùy chỉnh Flatkey.
+
+Nếu bạn đã sử dụng cấu hình thủ công, hãy khôi phục các giá trị `model` và `model_provider` cấp cao nhất trước đó trong `config.toml`. Giữ nguyên các thiết lập và bảng nhà cung cấp không liên quan. Để nguyên thông tin xác thực chính thức trong `auth.json` hoặc bộ lưu trữ thông tin xác thực của hệ điều hành mà không thay đổi. Tắt hoàn toàn Codex Desktop, đảm bảo không còn tiến trình cũ nào, và mở lại nó.
+
+### Xử lý sự cố CC Switch
+
+| Sự cố | Cần kiểm tra |
+|---|---|
+| Đăng nhập chính thức bị thiếu hoặc đã hết hạn | Đăng nhập lại qua Codex Desktop, sau đó bật **Keep official login for direct switches** trước khi kích hoạt Flatkey |
+| Xác thực thất bại hoặc key Flatkey bị từ chối | Xác nhận API key đang hoạt động và đã được nhập vào trường API key của nhà cung cấp tùy chỉnh; xoay hoặc thu hồi nó nếu nó đã bị lộ |
+| Lỗi endpoint hoặc Responses | Đặt **API Request URL** thành `https://router.flatkey.ai/v1`, chọn **Responses (native)**, và giữ **Local Routing** ở trạng thái tắt |
+| `Model not found`, mô hình tùy chỉnh bị ẩn, hoặc thiếu model mapping trong `/model` | Sao chép một ID chính xác từ [Model Directory](https://flatkey.ai/models), đặt nó làm **Default Model**, và sử dụng **Fetch Models** hoặc model mapping |
+| Usage Logs hiển thị sai nhà cung cấp hoặc mô hình | Kích hoạt nhà cung cấp tùy chỉnh Flatkey và xác nhận mô hình mặc định của nó và các giá trị đang hoạt động trong `config.toml` chia sẻ |
+| Các thay đổi không có hiệu lực | Tắt hoàn toàn Codex Desktop, kết thúc mọi tiến trình Codex Desktop bị treo, và mở lại ứng dụng |
+| Số dư Flatkey không đủ | Nạp thêm số dư hoặc sử dụng một key Flatkey có tín dụng khả dụng, sau đó thử lại một prompt tối thiểu |
+| Local Routing bị bật nhầm | Tắt **Local Routing** vì Flatkey chấp nhận các yêu cầu Responses gốc (native) |
+| Một yêu cầu bị thiếu trong Usage Logs | Bắt đầu một cuộc hội thoại mới với ngữ cảnh nhỏ, gửi một prompt tối thiểu, sau đó kiểm tra lại nhà cung cấp đang hoạt động, endpoint API, và [Usage Logs](https://console.flatkey.ai/usage-logs/common) |
+| Đăng nhập chính thức biến mất sau khi chuyển đổi | Đăng nhập lại qua Codex Desktop và bật thiết lập giữ nguyên đăng nhập; không bao giờ thay thế hoặc ghi đè `auth.json` |

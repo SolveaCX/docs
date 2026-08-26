@@ -1,0 +1,263 @@
+---
+title: "Быстрый старт: первый вызов Flatkey API"
+sidebarTitle: "Быстрый старт"
+description: "Создайте ключ Flatkey API, отправьте OpenAI-совместимый запрос и проверьте его в журнале использования — примерно за пять минут."
+---
+
+Выполните первый запрос к Flatkey примерно за пять минут. Вам понадобится один ключ API и OpenAI-совместимый базовый URL `https://router.flatkey.ai/v1`.
+
+<Tip>
+  Уже используете OpenAI SDK? Оставьте код запроса без изменений и замените базовый URL на `https://router.flatkey.ai/v1`.
+</Tip>
+
+## Выберите свой путь
+
+Все начинают с ключа и одного запроса. Дальше переходите к тому, что вы разрабатываете.
+
+<CardGroup cols={2}>
+  <Card title="Написать код" icon="code" href="/ru/guides/openai-sdk">
+    Используйте OpenAI или Anthropic SDK, либо вызывайте REST API напрямую.
+  </Card>
+  <Card title="Генерация изображений и видео" icon="image" href="/ru/guides/image-generation">
+    Создавайте изображения с помощью `gpt-image-2` или [генерируйте видео](/ru/guides/video-generation) с Seedance и `MiniMax-H3`.
+  </Card>
+  <Card title="Подключить AI-инструмент" icon="terminal" href="/ru/guides/claude-code">
+    Направьте Claude Code, Codex CLI или Codex Desktop на Flatkey.
+  </Card>
+  <Card title="Вызов собственных функций" icon="wrench" href="/ru/guides/text-generation#вызов-собственных-функций">
+    Добавьте вызов инструментов и структурированные выходные данные в запрос.
+  </Card>
+</CardGroup>
+
+## Перед началом работы
+
+Вам понадобится:
+
+- [Аккаунт Flatkey](https://console.flatkey.ai/sign-up)
+- cURL, Python 3.10+, Node.js 22+ или PowerShell
+- Предоплаченный кредит для запроса к модели
+
+<Steps>
+  <Step title="Настройте аккаунт и ключ API">
+    Войдите в [консоль Flatkey](https://console.flatkey.ai). Откройте **Wallet** и выберите предоплаченный пакет, подходящий для вашей нагрузки.
+
+    ![Выберите предоплаченный пакет в Flatkey Wallet](/images/quickstart/flatkey-top-up.png)
+
+    Затем откройте **API Keys** и нажмите **Create API Key**.
+
+    ![Откройте API Keys и нажмите Create API Key](/images/quickstart/flatkey-api-keys.png)
+
+    Дайте ключу понятное название. Также можно задать лимит кредитов и срок действия перед нажатием **Save changes**.
+
+    ![Настройте название, лимит кредитов и срок действия ключа Flatkey API](/images/quickstart/flatkey-create-api-key.png)
+
+    Скопируйте сгенерированный секрет и сохраните его в надёжном месте. Ключи Flatkey API начинаются с `sk-fk-`.
+
+    <Warning>
+      Никогда не записывайте ключ API в систему контроля версий и не раскрывайте его в клиентском коде браузера. Используйте переменную среды или менеджер секретов.
+    </Warning>
+  </Step>
+
+  <Step title="Отправьте первый запрос">
+    Установите ключ API в текущей оболочке:
+
+    <CodeGroup>
+    ```bash macOS and Linux
+    export FLATKEY_API_KEY="sk-fk-..."
+    ```
+    ```powershell Windows PowerShell
+    $env:FLATKEY_API_KEY="sk-fk-..."
+    ```
+    </CodeGroup>
+
+    Для Python установите OpenAI SDK командой `pip install openai`. Для TypeScript выполните `npm install openai`. cURL и PowerShell SDK не требуют.
+
+    Следующие примеры вызывают одну и ту же модель через один и тот же эндпоинт Flatkey:
+
+    <CodeGroup>
+    ```bash cURL
+    curl https://router.flatkey.ai/v1/chat/completions \
+      -H "Authorization: Bearer $FLATKEY_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "model": "gpt-4o-mini",
+        "messages": [
+          {"role": "user", "content": "Hello! What can you do?"}
+        ]
+      }'
+    ```
+    ```python Python
+    import os
+    from openai import OpenAI
+
+    client = OpenAI(
+        api_key=os.environ["FLATKEY_API_KEY"],
+        base_url="https://router.flatkey.ai/v1",
+    )
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "user", "content": "Hello! What can you do?"}
+        ],
+    )
+
+    print(response.choices[0].message.content)
+    ```
+    ```typescript TypeScript
+    import OpenAI from "openai";
+
+    const client = new OpenAI({
+      apiKey: process.env.FLATKEY_API_KEY,
+      baseURL: "https://router.flatkey.ai/v1",
+    });
+
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "user", content: "Hello! What can you do?" },
+      ],
+    });
+
+    console.log(response.choices[0].message.content);
+    ```
+    ```powershell PowerShell
+    $headers = @{
+      Authorization = "Bearer $env:FLATKEY_API_KEY"
+      "Content-Type" = "application/json"
+    }
+
+    $body = @{
+      model = "gpt-4o-mini"
+      messages = @(
+        @{ role = "user"; content = "Hello! What can you do?" }
+      )
+    } | ConvertTo-Json -Depth 4
+
+    $response = Invoke-RestMethod `
+      -Uri "https://router.flatkey.ai/v1/chat/completions" `
+      -Method Post `
+      -Headers $headers `
+      -Body $body
+
+    $response.choices[0].message.content
+    ```
+    </CodeGroup>
+
+    После выполнения запроса откройте **Usage Logs** в консоли Flatkey. Введите `gpt-4o-mini` в поле **Model Name** и нажмите **Search**. На скриншоте показано, где применить фильтр; ваш выполненный запрос должен появиться в таблице с количеством токенов, задержкой и стоимостью.
+
+    ![Используйте фильтр Model Name в Flatkey Usage Logs](/images/quickstart/flatkey-usage-logs.png)
+
+    Если в таблице по-прежнему отображается **No Logs Found**, подождите несколько секунд и повторите поиск. Если она остаётся пустой, проверьте ключ API и базовый URL, используемые в запросе.
+  </Step>
+
+  <Step title="Продолжайте разработку">
+    Подключите Flatkey к инструменту разработки, который вы используете:
+
+    <CardGroup cols={3}>
+      <Card title="Claude Code" icon="terminal" href="/ru/guides/claude-code">
+        Настройте Claude Code вручную или с помощью CC Switch.
+      </Card>
+      <Card title="Codex CLI" icon="code" href="/ru/guides/codex-cli">
+        Направьте запросы Codex CLI через Flatkey.
+      </Card>
+      <Card title="Codex Desktop" icon="desktop" href="/ru/guides/codex-desktop">
+        Настройте десктопное приложение Codex вручную или с помощью CC Switch.
+      </Card>
+    </CardGroup>
+  </Step>
+</Steps>
+
+## Чтение ответа
+
+Для ответов Chat Completions наиболее часто используемые поля:
+
+- `choices[0].message.content` — сгенерированный текст
+- `model` — модель, обработавшая запрос
+- `usage` — количество токенов в запросе, ответе и суммарно
+
+Полную схему см. в [справочнике Chat Completions](/ru/api-reference/chat-completions).
+
+## Потоковая передача ответа
+
+Установите `stream` в значение `true`, если хотите получать токены по мере их генерации.
+
+Примеры на Python и TypeScript используют `client`, созданный в шаге **Отправьте первый запрос**.
+
+<CodeGroup>
+```bash cURL
+curl --no-buffer https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [
+      {"role": "user", "content": "Write a two-line welcome message."}
+    ],
+    "stream": true
+  }'
+```
+```python Python
+stream = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role": "user", "content": "Write a two-line welcome message."}
+    ],
+    stream=True,
+)
+
+for chunk in stream:
+    content = chunk.choices[0].delta.content
+    if content:
+        print(content, end="", flush=True)
+```
+```typescript TypeScript
+const stream = await client.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [
+    { role: "user", content: "Write a two-line welcome message." },
+  ],
+  stream: true,
+});
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk.choices[0]?.delta?.content ?? "");
+}
+```
+</CodeGroup>
+
+## Обработка распространённых ошибок
+
+| HTTP-статус | Что это обычно означает | Что делать |
+|---|---|---|
+| `401` | Ключ API отсутствует, недействителен или отозван | Проверьте заголовок `Authorization: Bearer` и при необходимости создайте новый ключ |
+| `401 insufficient_balance` | Предоплаченный баланс исчерпан | Пополните счёт в разделе **Wallet** |
+| `503 model_not_found` | Идентификатор модели написан с ошибкой или модель недоступна | Проверьте точный идентификатор в [каталоге моделей](https://flatkey.ai/models). Повторные попытки не помогут |
+| `429` | Запрос превысил ограничение частоты | Повторите попытку с экспоненциальной выдержкой и джиттером |
+| `500` или `503` | Провайдер или маршрут временно недоступен | Сначала прочитайте `error.code` в теле ответа. Повторите попытку с выдержкой и проверьте [состояние моделей](https://flatkey.ai/status) |
+
+<Note>
+  Код `503` может означать как временный сбой, так и неизвестный идентификатор модели. Прочитайте `error.code` в теле ответа, прежде чем повторять запрос.
+</Note>
+
+Форматы ответов и сведения об устранении неполадок см. в разделе [Ошибки API](/ru/api-reference/errors).
+
+## Следующие шаги
+
+<CardGroup cols={2}>
+  <Card title="Аутентификация" icon="key" href="/ru/api-reference/authentication">
+    Узнайте, как работают ключи Flatkey API и заголовки авторизации.
+  </Card>
+  <Card title="Каталог моделей" icon="list" href="https://flatkey.ai/models">
+    Найдите поддерживаемые идентификаторы моделей и актуальные цены.
+  </Card>
+  <Card title="OpenAI SDK" icon="code" href="/ru/guides/openai-sdk">
+    Используйте Flatkey с OpenAI SDK для Python и TypeScript.
+  </Card>
+  <Card title="Журнал использования" icon="chart-bar" href="/ru/dashboard/usage">
+    Отслеживайте запросы, использование токенов, задержку и стоимость.
+  </Card>
+  <Card title="Оплата" icon="wallet" href="https://flatkey.ai/pricing">
+    Узнайте о предоплаченных кредитах и тарификации.
+  </Card>
+</CardGroup>

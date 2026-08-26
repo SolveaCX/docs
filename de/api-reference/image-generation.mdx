@@ -1,0 +1,224 @@
+---
+title: "API für Bildgenerierung und -bearbeitung"
+sidebarTitle: "Images API"
+description: "Generieren oder bearbeiten Sie Bilder über die mit OpenAI Images kompatiblen Endpunkte /v1/images/generations und /v1/images/edits."
+---
+
+Verwenden Sie `/v1/images/generations`, um ein Bild aus einer Textbeschreibung zu generieren, und `/v1/images/edits`, um ein vorhandenes Bild zu bearbeiten. Beide Endpunkte verwenden mit OpenAI Images kompatible Anforderungsformate. Welche Operationen verfügbar sind, hängt vom Modell und dem von Ihrem Flatkey-Dienst bereitgestellten Kanal ab.
+
+<Warning>
+  Gemini-Bildmodelle verwenden den nativen Gemini-Endpunkt `generateContent` und können nicht über diese OpenAI-Images-Endpunkte aufgerufen werden. Weitere Informationen finden Sie im [Leitfaden für Gemini-Bildmodelle](/de/guides/image-generation#gemini-bildmodelle-verwenden).
+</Warning>
+
+## Bild generieren
+
+### Endpunkt
+
+```
+POST https://router.flatkey.ai/v1/images/generations
+```
+
+### Header
+
+| Header | Wert |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### JSON-Body-Parameter
+
+<ParamField body="model" type="string" required>
+  ID des Bildmodells, das von Ihrem Flatkey-Dienst bereitgestellt wird, z. B. `"gpt-image-2"`.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Textbeschreibung des zu generierenden Bildes.
+</ParamField>
+
+<ParamField body="size" type="string">
+  Ausgabeabmessungen, z. B. `"1024x1024"`. Unterstützte Werte hängen vom Modell ab.
+</ParamField>
+
+<ParamField body="quality" type="string">
+  Ausgabequalität: `"low"`, `"medium"` oder `"high"`. Wird dieser Parameter weggelassen, wird der Standard des vorgelagerten Dienstes verwendet. Höhere Qualität erhöht die Latenz und den Verbrauch.
+</ParamField>
+
+<ParamField body="background" type="string">
+  Hintergrundverarbeitung, z. B. `"transparent"` oder `"opaque"`, sofern vom Modell unterstützt.
+</ParamField>
+
+<ParamField body="output_format" type="string">
+  Ausgabeformat, z. B. `"png"`, `"jpeg"` oder `"webp"`, sofern vom Modell unterstützt.
+</ParamField>
+
+<ParamField body="output_compression" type="integer">
+  Komprimierungsstufe der Ausgabe, sofern vom Modell unterstützt.
+</ParamField>
+
+<ParamField body="moderation" type="string">
+  Inhaltsmoderationsstufe, sofern vom Modell unterstützt.
+</ParamField>
+
+<ParamField body="response_format" type="string">
+  `gpt-image-2`-Ergebnisse werden in `data[].b64_json` zurückgegeben. Gehostete Bild-URLs werden nicht bereitgestellt, und `response_format: "url"` wird nicht unterstützt.
+</ParamField>
+
+<ParamField body="n" type="integer">
+  Gewünschte Anzahl von Bildern. `gpt-image-2` gibt derzeit ein Bild pro Anfrage zurück, da das vorgelagerte Bildwerkzeug `n` nicht akzeptiert. Senden Sie mehrere Anfragen, wenn Sie mehrere Bilder benötigen.
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  Auf `true` setzen, um eine SSE-Antwort zu erhalten. Weglassen für eine synchrone Antwort.
+</ParamField>
+
+### Beispielanfragen
+
+<CodeGroup>
+```python python
+import base64
+import os
+from pathlib import Path
+
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.images.generate(
+    model="gpt-image-2",
+    prompt="A futuristic city skyline at dusk, cyberpunk style",
+    size="1024x1024",
+    quality="high",
+)
+
+Path("generated.png").write_bytes(
+    base64.b64decode(response.data[0].b64_json)
+)
+```
+```javascript node
+import { writeFileSync } from "node:fs";
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const response = await client.images.generate({
+  model: "gpt-image-2",
+  prompt: "A futuristic city skyline at dusk, cyberpunk style",
+  size: "1024x1024",
+  quality: "high",
+});
+
+writeFileSync(
+  "generated.png",
+  Buffer.from(response.data[0].b64_json, "base64"),
+);
+```
+```bash curl
+curl https://router.flatkey.ai/v1/images/generations \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-2",
+    "prompt": "A serene forest clearing with morning mist and sunbeams",
+    "size": "1024x1024",
+    "quality": "high"
+  }'
+```
+</CodeGroup>
+
+## Bild bearbeiten
+
+`/v1/images/edits` akzeptiert ein Eingabebild und Bearbeitungsanweisungen als `multipart/form-data`.
+
+### Endpunkt
+
+```
+POST https://router.flatkey.ai/v1/images/edits
+```
+
+### Header
+
+| Header | Wert |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `multipart/form-data`; curl fügt die Grenze automatisch hinzu, wenn Sie `-F` verwenden |
+
+### Formularfelder
+
+| Feld | Typ | Erforderlich | Beschreibung |
+|---|---|---|---|
+| `model` | string | Ja | ID des Bildmodells, das von Ihrem Flatkey-Dienst bereitgestellt wird, z. B. `gpt-image-2`. |
+| `prompt` | string | Ja | Anweisungen, die beschreiben, wie das Bild bearbeitet werden soll. |
+| `image` | file | Ja | Eingabebild im PNG-, JPEG- oder WebP-Format. Für mehrere Bilder verwenden Sie `image[]` oder indizierte Felder wie `image[0]` und `image[1]`. |
+| `mask` | file | Nein | Maske für Inpainting. Transparente Bereiche kennzeichnen die Regionen, die neu gezeichnet werden sollen. |
+| `size` | string | Nein | Ausgabeabmessungen. Unterstützte Werte hängen vom Modell ab. |
+| `quality` | string | Nein | Ausgabequalität: `low`, `medium` oder `high`. |
+| `stream` | boolean | Nein | Auf `true` setzen, um eine SSE-Antwort zu erhalten. |
+
+### Beispielanfrage
+
+```bash
+curl https://router.flatkey.ai/v1/images/edits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -F "model=gpt-image-2" \
+  -F "prompt=add a small yellow star in the center" \
+  -F "image=@input.png" \
+  -F "mask=@mask.png"
+```
+
+Das Feld `mask` ist optional. Lassen Sie es weg, um das gesamte Bild anhand des Prompts zu bearbeiten. Setzen Sie den `Content-Type`-Header nicht manuell; curl leitet die korrekte Multipart-Grenze aus den `-F`-Feldern ab.
+
+<Warning>
+  Wenn eine bereitgestellte Maske beschädigt oder unleserlich ist oder das Dienstlimit überschreitet, schlägt die Anfrage fehl, anstatt auf eine Bearbeitung des gesamten Bildes zurückzufallen.
+</Warning>
+
+## Antwort
+
+Synchrone Generierungs- und Bearbeitungsanfragen geben dasselbe Antwortformat zurück. Flatkey gibt das Bild als Base64-Daten zurück; für `gpt-image-2` wird keine gehostete Bild-URL bereitgestellt.
+
+```json
+{
+  "created": 1710000000,
+  "data": [
+    {
+      "b64_json": "iVBORw0KGgoAAA...",
+      "revised_prompt": "Add a small yellow five-pointed star in the center...",
+      "url": ""
+    }
+  ]
+}
+```
+
+### Antwortfelder
+
+<ResponseField name="created" type="integer">
+  Unix-Zeitstempel des Anfragezeitpunkts.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array von Bildobjekten.
+  <Expandable title="Bildobjekt">
+    <ResponseField name="b64_json" type="string">Base64-kodierte Bilddaten.</ResponseField>
+    <ResponseField name="revised_prompt" type="string">Der vom Modell nach der Überarbeitung tatsächlich verwendete Prompt.</ResponseField>
+    <ResponseField name="url" type="string">Leer für `gpt-image-2`; gehostete URLs werden nicht bereitgestellt.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+Bei Bearbeitungen wird auch das Eingabebild auf den Modellverbrauch angerechnet, sodass eine Bearbeitung typischerweise mehr Verbrauch verursacht als eine reine Textgenerierung.
+
+## Streaming
+
+Setzen Sie `stream` auf `true` im JSON-Body einer Generierungsanfrage oder fügen Sie `-F "stream=true"` einer Bearbeitungsanfrage hinzu, um eine `text/event-stream`-Ausgabe zu erhalten. Das letzte Ereignis enthält das Bildergebnis, gefolgt von `data: [DONE]`.
+
+| Ereignis | Bedeutung |
+|---|---|
+| `image_generation.completed` | Bildgenerierung abgeschlossen. |
+| `image_edit.completed` | Bildbearbeitung abgeschlossen. |
+| `[DONE]` | Der Stream wurde beendet. |
+
+Die Streaming-Unterstützung kann vom ausgewählten Modell und Kanal abhängen. Für synchrone Anfragen mit hoher Qualität konfigurieren Sie ein Client-Timeout von mindestens 150 Sekunden.

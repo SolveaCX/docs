@@ -1,0 +1,104 @@
+---
+title: "Modelle auflisten — GET /v1/models"
+sidebarTitle: "Modelle"
+description: "Alle KI-Modelle, die über Ihr Flatkey-Konto verfügbar sind, mit GET /v1/models abrufen. Gibt Modell-IDs, Anbieter und Zeitstempel im OpenAI-kompatiblen Format zurück."
+---
+
+Der `/v1/models`-Endpunkt gibt eine Liste aller Modelle zurück, die über Ihr Flatkey-Konto verfügbar sind. Die Antwort folgt dem OpenAI-API-Format — dieselben Modell-IDs, die hier zurückgegeben werden, können in `/v1/chat/completions`, `/v1/embeddings` und anderen Endpunkten verwendet werden.
+
+## Endpunkt
+
+```
+GET https://router.flatkey.ai/v1/models
+```
+
+## Anfrage
+
+### Header
+
+| Header | Wert |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+
+Es wird kein Anfrage-Body benötigt.
+
+## Beispielanfrage
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+models = client.models.list()
+
+for model in models.data:
+    print(model.id)
+```
+```javascript node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const models = await client.models.list();
+
+for (const model of models.data) {
+  console.log(model.id);
+}
+```
+```bash curl
+curl https://router.flatkey.ai/v1/models \
+  -H "Authorization: Bearer $FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+## Antwort
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-4o",
+      "object": "model",
+      "created": 1710000000,
+      "owned_by": "openai"
+    },
+    {
+      "id": "claude-sonnet-4-5",
+      "object": "model",
+      "created": 1710000000,
+      "owned_by": "anthropic"
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "object": "model",
+      "created": 1710000000,
+      "owned_by": "google"
+    }
+  ]
+}
+```
+
+### Antwortfelder
+
+<ResponseField name="data" type="array">
+  Array von Modell-Objekten.
+  <Expandable title="Modell-Objekt">
+    <ResponseField name="id" type="string">Die Modellkennung, die in Anfragen verwendet werden soll.</ResponseField>
+    <ResponseField name="object" type="string">Immer `"model"`.</ResponseField>
+    <ResponseField name="created" type="integer">Unix-Zeitstempel, wann das Modell hinzugefügt wurde.</ResponseField>
+    <ResponseField name="owned_by" type="string">Der Anbieter: `"openai"`, `"anthropic"`, `"google"`, usw.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Tip>
+  Für Preisinformationen, Statusdaten und detaillierte Modellspezifikationen besuchen Sie [flatkey.ai/models](https://flatkey.ai/models) oder das [Modellverzeichnis](https://flatkey.ai/models).
+</Tip>

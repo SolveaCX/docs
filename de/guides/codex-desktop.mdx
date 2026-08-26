@@ -1,0 +1,170 @@
+---
+title: "Flatkey mit Codex Desktop verwenden"
+sidebarTitle: "Codex Desktop"
+description: "Konfigurieren Sie die Codex-Desktop-App so, dass sie Flatkey manuell oder mit CC Switch verwendet, während Ihr offizieller ChatGPT-Login erhalten bleibt."
+---
+
+Codex Desktop liest dieselbe benutzerbezogene Codex-Konfiguration wie Codex CLI. Sie können Flatkey als benutzerdefinierten Modellanbieter hinzufügen, ohne Ihren offiziellen ChatGPT- oder Codex-Login zu ersetzen.
+
+## Voraussetzungen
+
+- Codex Desktop installiert
+- Ein abgeschlossener offizieller ChatGPT- oder Codex-Login in der Desktop-App
+- Ein Flatkey-API-Schlüssel — [erstellen Sie einen in der Flatkey-Console](https://console.flatkey.ai/keys)
+- Eine unterstützte Modell-ID aus dem [Flatkey-Modellverzeichnis](https://flatkey.ai/models)
+- CC Switch, falls Sie das CC-Switch-Setup verwenden
+
+## Manuelle Konfiguration
+
+### 1. API-Schlüssel festlegen
+
+Speichern Sie den Schlüssel in einer Benutzer-Umgebungsvariable, anstatt ihn in eine Konfigurationsdatei zu schreiben.
+
+<CodeGroup>
+```powershell Windows PowerShell
+[Environment]::SetEnvironmentVariable(
+  "FLATKEY_API_KEY",
+  "sk-fk-...",
+  "User"
+)
+```
+```bash macOS
+launchctl setenv FLATKEY_API_KEY "sk-fk-..."
+```
+```bash Linux
+export FLATKEY_API_KEY="sk-fk-..."
+```
+</CodeGroup>
+
+Nach dem Ändern der Variable beenden Sie Codex Desktop vollständig, bevor Sie es erneut öffnen.
+
+### 2. `config.toml` aktualisieren
+
+Öffnen Sie die benutzerbezogene Codex-Konfigurationsdatei:
+
+| Plattform | Konfigurationspfad |
+|---|---|
+| Windows | `%USERPROFILE%\.codex\config.toml` |
+| macOS und Linux | `~/.codex/config.toml` |
+
+Bevor Sie die obersten Einstellungen `model` und `model_provider` ersetzen, notieren Sie deren aktuelle Werte, damit Sie sie später wiederherstellen können. Aktualisieren Sie dann beide Einstellungen. Falls einer der Schlüssel bereits existiert, ersetzen Sie dessen Wert, anstatt einen doppelten Schlüssel hinzuzufügen. Erhalten Sie alle nicht zusammenhängenden Einstellungen. Fügen Sie die untenstehende Provider-Tabelle hinzu; falls `[model_providers.flatkey]` bereits existiert, aktualisieren Sie diese Tabelle, anstatt eine Dublette zu erstellen:
+
+```toml
+model = "gpt-5.4"
+model_provider = "flatkey"
+
+[model_providers.flatkey]
+name = "Flatkey"
+base_url = "https://router.flatkey.ai/v1"
+env_key = "FLATKEY_API_KEY"
+wire_api = "responses"
+```
+
+`gpt-5.4` ist zum Zeitpunkt der Erstellung im Flatkey-Modellverzeichnis verfügbar. Überprüfen Sie das Verzeichnis, bevor Sie zu einer anderen Modell-ID wechseln.
+
+<Warning>
+  Offizielle Anmeldedaten können in `auth.json` oder im Anmeldeinformationsspeicher Ihres Betriebssystems gespeichert sein. Bearbeiten, ersetzen, überschreiben, exportieren oder teilen Sie keinen der beiden Anmeldeinformationsspeicher für die Flatkey-Einrichtung. Fügen Sie niemals einen Flatkey-API-Schlüssel in einen von beiden ein. `config.toml` steuert das Modell- und Provider-Routing.
+</Warning>
+
+### 3. Neu starten und überprüfen
+
+Beenden Sie Codex Desktop vollständig, öffnen Sie es erneut und senden Sie einen kleinen Prompt. Öffnen Sie die [Flatkey-Nutzungsprotokolle](https://console.flatkey.ai/usage-logs/common) und überprüfen Sie Modell, Token-Anzahl, Latenz und Kosten.
+
+## Konfiguration mit CC Switch
+
+[CC Switch](https://ccswitch.io) ist ein Konfigurationsmanager von Drittanbietern, kein Flatkey-Produkt. Sie können es auch aus dem [CC-Switch-GitHub-Repository](https://github.com/farion1231/cc-switch) herunterladen. Die folgenden Schritte folgen der aktuellen CC-Switch-Benutzeroberfläche.
+
+Manuelle Konfiguration und CC Switch sind alternative Einrichtungsmethoden. Verwenden Sie eine Methode für den aktiven Provider. Codex Desktop und Codex CLI teilen sich `~/.codex/config.toml` unter macOS und Linux bzw. `%USERPROFILE%\.codex\config.toml` unter Windows. CC Switch steuert die Modell- und Provider-Einstellungen in dieser gemeinsamen Datei. Erhalten Sie nicht zusammenhängende Einstellungen und Provider.
+
+### 1. Einen offiziellen Login abschließen
+
+Öffnen Sie Codex Desktop und schließen Sie einen offiziellen ChatGPT- oder Codex-Login ab, bevor Sie den Provider wechseln. Tun Sie dies mindestens einmal, damit die Desktop-App eine gültige offizielle Sitzung für den Kontozugriff und ihren Modellkatalog hat.
+
+Die offiziellen Anmeldedaten werden in `auth.json` oder im Anmeldeinformationsspeicher Ihres Betriebssystems gespeichert. Behandeln Sie beides als vertraulich.
+
+### 2. Den offiziellen Login für direkte Wechsel erhalten
+
+Öffnen Sie in CC Switch **Einstellungen** > **Allgemein** > **Codex-App-Erweiterungen** und aktivieren Sie dann **Offiziellen Login für direkte Wechsel beibehalten**. Diese Einstellung verhindert, dass ein direkter Providerwechsel den offiziellen Login verwirft, den Codex Desktop weiterhin benötigt.
+
+![Aktuelle Einstellung zur Erhaltung des offiziellen Logins für Codex aktivieren](/images/guides/cc-switch/en/codex-login-preservation.png)
+
+<Warning>
+  Öffnen Sie `auth.json` niemals zum Kopieren, ersetzen oder überschreiben Sie sie nicht, fügen Sie keinen Flatkey-API-Schlüssel darin ein und teilen Sie sie nicht. Geben Sie Ihren Flatkey-API-Schlüssel niemals in Screenshots oder CC-Switch-Provider-Exporten frei. Wenn eine der beiden Anmeldedaten offengelegt wird, rotieren oder widerrufen Sie sie sofort.
+</Warning>
+
+### 3. Flatkey als benutzerdefinierten Provider hinzufügen
+
+Öffnen Sie das **Codex**-Panel in CC Switch und fügen Sie einen **benutzerdefinierten Provider** hinzu. Verwenden Sie die folgenden Werte. Dieses Tutorial verlässt sich nicht auf einen integrierten Flatkey-Provider.
+
+![Öffnen Sie das Codex-Provider-Panel und wählen Sie die Schaltfläche zum Hinzufügen eines Providers in CC Switch](/images/guides/cc-switch/en/codex-provider-list.png)
+
+| Provider-Feld | Wert |
+|---|---|
+| Provider Name | `flatkey` |
+| API Key | `sk-fk-...` |
+| API Request URL | `https://router.flatkey.ai/v1` |
+| Default Model | `gpt-5.6-sol` im Screenshot — überprüfen Sie eine aktuelle exakte ID im [Flatkey-Modellverzeichnis](https://flatkey.ai/models) |
+| Upstream Format | **Responses (native)** |
+
+![Geben Sie die aktuellen Flatkey-Provider-Felder in CC Switch ein](/images/guides/cc-switch/en/codex-provider-form.png)
+
+### 4. Das Modell konfigurieren
+
+Setzen Sie das **Default Model** des Providers auf die exakte Flatkey-Modell-ID, die Sie verwenden möchten. Der Screenshot zeigt `gpt-5.6-sol` als Beispiel. Überprüfen Sie das [Flatkey-Modellverzeichnis](https://flatkey.ai/models), bevor Sie eine ID auswählen.
+
+Klicken Sie auf **Fetch Models**, um aktuelle IDs zu laden. Fügen Sie das Modell dem **Model Mapping** des Providers hinzu, wenn Sie es im Codex-`/model`-Menü haben möchten. Sie können auch eine exakte ID als **Default Model** des Providers festlegen oder sie von Codex CLI mit `codex --model <id>` übergeben. Bei Codex Desktop sollten Sie den aktiven Provider und das Standardmodell als die vorgesehene Route betrachten, selbst wenn die Auswahl das benutzerdefinierte Modell nicht auflistet. Bestätigen Sie die tatsächliche Route nach dem Senden einer Anfrage mit den Flatkey-Nutzungsprotokollen.
+
+![Wählen Sie Responses native aus und konfigurieren Sie das Codex-Modell-Mapping](/images/guides/cc-switch/en/codex-model-mapping.png)
+
+Flatkey unterstützt die Responses-API nativ. Lassen Sie **Local Routing** ausgeschaltet; es ist für dieses Setup nicht erforderlich.
+
+### 5. Speichern, aktivieren und neu starten
+
+Speichern Sie den benutzerdefinierten Provider und aktivieren Sie ihn für Codex. Entfernen Sie keine nicht zusammenhängenden Einstellungen oder Provider aus der gemeinsamen `config.toml`.
+
+![Bestätigen, dass der Flatkey-Codex-Provider verwendet wird](/images/guides/cc-switch/en/codex-provider-active.png)
+
+Beenden Sie Codex Desktop vollständig. Stellen Sie sicher, dass kein alter Codex-Desktop-Prozess mehr läuft, und öffnen Sie die App dann erneut, damit sie die neuen Provider-Einstellungen liest.
+
+### 6. Die tatsächliche Route überprüfen
+
+Starten Sie eine neue Konversation mit einem kleinen Kontext und senden Sie einen minimalen Prompt. Öffnen Sie dann die [Flatkey-Nutzungsprotokolle](https://console.flatkey.ai/usage-logs/common) und überprüfen Sie Modell, Token-Anzahl, Latenz und Kosten für diese Anfrage.
+
+![Die Flatkey-Route mit einer minimalen Codex-Desktop-Antwort überprüfen](/images/guides/cc-switch/en/codex-desktop-verify.png)
+
+Die Erhaltung des offiziellen Logins bedeutet nicht, dass die Anfrage über die OpenAI-Abrechnung läuft. Die aktuellen Provider- und Modelleinstellungen in der gemeinsamen `config.toml` steuern die Route. Die Flatkey-Nutzungsprotokolle sind die maßgebliche Bestätigung dafür, dass die Anfrage Flatkey erreicht hat.
+
+Systemprompts, Tools, Konversationsverlauf, angehängte Dateien und Befehlsausgaben können die Eingabe-Token über den Text in Ihrem sichtbaren Prompt hinaus erhöhen. Höhere Eingabe-Token-Anzahlen können die abgerechneten Kosten erhöhen.
+
+### Wenn das Modell nicht sichtbar ist
+
+Codex Desktop zeigt möglicherweise den offiziellen Modellkatalog an und lässt ein benutzerdefiniertes Modell in seiner Auswahl aus. Ein fehlendes benutzerdefiniertes Modell in der Benutzeroberfläche beweist nicht, dass das Routing fehlgeschlagen ist.
+
+1. Bestätigen Sie, dass der offizielle ChatGPT- oder Codex-Login noch aktiv ist.
+2. Bestätigen Sie, dass **Einstellungen** > **Allgemein** > **Codex-App-Erweiterungen** > **Offiziellen Login für direkte Wechsel beibehalten** aktiviert ist.
+3. Bestätigen Sie, dass der Flatkey-Provider aktiv ist und dessen **Default Model** die exakte Modell-ID enthält.
+4. Überprüfen Sie das Model Mapping des Providers. Verwenden Sie **Fetch Models**, wenn Sie das Modell im `/model`-Menü haben möchten.
+5. Bestätigen Sie, dass die gemeinsame `config.toml` den vorgesehenen aktiven Provider und das Modell enthält, ohne nicht zusammenhängende Einstellungen zu ändern.
+6. Beenden Sie jeden Codex-Desktop-Prozess vollständig und öffnen Sie die App erneut.
+7. Senden Sie einen minimalen Prompt und überprüfen Sie die [Flatkey-Nutzungsprotokolle](https://console.flatkey.ai/usage-logs/common) auf die tatsächliche Route.
+
+### Zurück zum offiziellen Provider wechseln
+
+Wenn Sie CC Switch verwendet haben, aktivieren Sie den offiziellen Codex-Provider. Beenden Sie Codex Desktop vollständig, stellen Sie sicher, dass kein alter Prozess mehr läuft, und öffnen Sie es erneut. Sie müssen den benutzerdefinierten Flatkey-Provider nicht löschen.
+
+Wenn Sie die manuelle Konfiguration verwendet haben, stellen Sie die vorherigen obersten Werte `model` und `model_provider` in `config.toml` wieder her. Erhalten Sie nicht zusammenhängende Einstellungen und Provider-Tabellen. Lassen Sie die offiziellen Anmeldedaten in `auth.json` oder im Anmeldeinformationsspeicher des Betriebssystems unberührt. Beenden Sie Codex Desktop vollständig, stellen Sie sicher, dass kein alter Prozess mehr läuft, und öffnen Sie es erneut.
+
+### Fehlerbehebung bei CC Switch
+
+| Problem | Was zu überprüfen ist |
+|---|---|
+| Offizieller Login fehlt oder ist abgelaufen | Melden Sie sich erneut über Codex Desktop an und aktivieren Sie dann **Offiziellen Login für direkte Wechsel beibehalten**, bevor Sie Flatkey aktivieren |
+| Authentifizierung schlägt fehl oder der Flatkey-Schlüssel wird abgelehnt | Bestätigen Sie, dass der API-Schlüssel aktiv ist und im API-Schlüssel-Feld des benutzerdefinierten Providers eingegeben wurde; rotieren oder widerrufen Sie ihn, falls er offengelegt wurde |
+| Endpunkt- oder Responses-Fehler | Setzen Sie **API Request URL** auf `https://router.flatkey.ai/v1`, wählen Sie **Responses (native)** aus und lassen Sie **Local Routing** ausgeschaltet |
+| `Model not found`, benutzerdefiniertes Modell ist ausgeblendet, oder `/model`-Mapping fehlt | Kopieren Sie eine exakte ID aus dem [Modellverzeichnis](https://flatkey.ai/models), setzen Sie sie als **Default Model** und verwenden Sie **Fetch Models** oder das Model Mapping |
+| Nutzungsprotokolle zeigen den falschen Provider oder das falsche Modell | Aktivieren Sie den benutzerdefinierten Flatkey-Provider und bestätigen Sie dessen Standardmodell und die aktiven Werte in der gemeinsamen `config.toml` |
+| Änderungen zeigen keine Wirkung | Beenden Sie Codex Desktop vollständig, beenden Sie jeden veralteten Codex-Desktop-Prozess und öffnen Sie die App erneut |
+| Flatkey-Guthaben ist unzureichend | Fügen Sie Guthaben hinzu oder verwenden Sie einen Flatkey-Schlüssel mit verfügbarem Guthaben und wiederholen Sie dann einen minimalen Prompt |
+| Local Routing ist versehentlich aktiviert | Schalten Sie **Local Routing** aus, da Flatkey native Responses-Anfragen akzeptiert |
+| Eine Anfrage fehlt in den Nutzungsprotokollen | Starten Sie eine neue Konversation mit kleinem Kontext, senden Sie einen minimalen Prompt und überprüfen Sie dann erneut den aktiven Provider, den API-Endpunkt und die [Nutzungsprotokolle](https://console.flatkey.ai/usage-logs/common) |
+| Offizieller Login ist nach dem Wechsel verschwunden | Melden Sie sich erneut über Codex Desktop an und aktivieren Sie die Einstellung zur Erhaltung des Logins; ersetzen oder überschreiben Sie `auth.json` niemals |

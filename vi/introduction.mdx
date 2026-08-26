@@ -1,0 +1,74 @@
+---
+title: "Flatkey: Một Khóa, 300+ Mô Hình AI Chính Thức & 1000+ Công Cụ, Tiết Kiệm Đến 50%"
+sidebarTitle: "Giới thiệu"
+description: "Flatkey là cổng API AI cho GPT, Claude, Gemini, DeepSeek và 300+ mô hình, cùng 1000+ công cụ, thông qua một khóa tương thích OpenAI. Truy cập các mô hình chính thức với mức giảm giá lên đến 50%."
+---
+
+Flatkey là cổng API AI cho phép bạn truy cập 300+ mô hình chính thức từ OpenAI, Anthropic, Google, DeepSeek, Qwen, GLM và nhiều nhà cung cấp khác, cùng với 1000+ công cụ — tất cả thông qua một khóa API duy nhất tương thích OpenAI. Đây là giải pháp thay thế hoàn toàn tương thích cho bất kỳ client nào hỗ trợ OpenAI: chỉ cần thay đổi một dòng code (`base_url`) và các yêu cầu của bạn sẽ được định tuyến qua Flatkey với mức giá giảm đến 50% so với giá niêm yết chính thức.
+
+## Flatkey mang lại gì cho bạn
+
+<CardGroup cols={2}>
+  <Card title="Một khóa, tất cả mô hình" icon="key">
+    Một khóa API và base URL duy nhất định tuyến tới GPT, Claude, Gemini, DeepSeek, Qwen, GLM và nhiều hơn nữa. Không cần quản lý khóa riêng cho từng nhà cung cấp.
+  </Card>
+  <Card title="Tiết kiệm đến 50%" icon="piggy-bank">
+    Các mô hình được định giá ở mức 60–90% so với giá niêm yết chính thức. Nạp $200 được tặng thêm $100 tín dụng — cộng gộp lại, mức giá có thể thấp bằng một nửa giá chính thức.
+  </Card>
+  <Card title="Độ tin cậy 99,9%" icon="shield-check">
+    Tự động chuyển đổi dự phòng giữa các nhà cung cấp đầu nguồn. Bảng điều khiển theo dõi sức khỏe trực tiếp hiển thị tỷ lệ thành công thực tế từ lưu lượng sản xuất.
+  </Card>
+  <Card title="Không lưu trữ dữ liệu" icon="lock">
+    Prompt và kết quả hoàn thành không bao giờ được lưu trữ. Tuân thủ GDPR, các biện pháp kiểm soát phù hợp với SOC 2 và ISO 27001.
+  </Card>
+  <Card title="Số dư trả trước" icon="receipt">
+    Nạp tiền một lần, sử dụng theo nhu cầu. Không có gói đăng ký, không có hóa đơn bất ngờ.
+  </Card>
+  <Card title="Tương thích API hoàn toàn" icon="plug">
+    Các endpoint tương thích OpenAI: chat completions, responses, embeddings, tạo ảnh và danh sách mô hình.
+  </Card>
+</CardGroup>
+
+## Các nhà cung cấp được hỗ trợ
+
+Flatkey định tuyến tới các API chính thức từ tất cả các nhà cung cấp AI lớn:
+
+| Nhà cung cấp | Các mô hình tiêu biểu |
+|---|---|
+| OpenAI | gpt-4o, gpt-4o-mini, gpt-5, gpt-image-2 |
+| Anthropic | claude-opus-4, claude-sonnet-4, claude-haiku-4 |
+| Google | gemini-2.5-pro, gemini-2.5-flash, gemini-flash-latest |
+| DeepSeek | deepseek-v3, deepseek-v4-pro, deepseek-v4-flash |
+| Qwen | qwen3.5-plus, qwen3.7-max, qwen3.5-flash |
+| Z.ai / GLM | glm-4.7, glm-5-turbo, glm-5.2 |
+| ByteDance | seedance-2.0, seedance-2.5 |
+
+Xem toàn bộ [Danh mục Mô hình](https://flatkey.ai/models) để biết tất cả 300+ mô hình kèm giá cả trực tiếp và dữ liệu sức khỏe.
+
+## Cách hoạt động
+
+Flatkey nằm giữa ứng dụng của bạn và các nhà cung cấp AI. Khi bạn gửi một yêu cầu:
+
+1. Client của bạn gọi `https://router.flatkey.ai/v1` với khóa API Flatkey của bạn.
+2. Flatkey xác thực yêu cầu và trừ chi phí từ số dư trả trước của bạn.
+3. Yêu cầu được chuyển tiếp đến API chính thức của nhà cung cấp (OpenAI, Anthropic, v.v.).
+4. Phản hồi được trả về trực tiếp cho client của bạn — không có sự biến đổi nội dung.
+
+Prompt và kết quả hoàn thành của bạn không bao giờ được lưu trữ. Flatkey chỉ ghi lại metadata (mô hình, số token, dấu thời gian) cho mục đích thanh toán và phân tích.
+
+## Các bước tiếp theo
+
+<CardGroup cols={2}>
+  <Card title="Bắt đầu nhanh" icon="bolt" href="/vi/quickstart">
+    Tạo tài khoản và thực hiện lệnh gọi API đầu tiên trong vòng chưa đến 5 phút
+  </Card>
+  <Card title="Xác thực" icon="lock-keyhole" href="/vi/api-reference/authentication">
+    Tìm hiểu cách tạo và sử dụng khóa API Flatkey của bạn
+  </Card>
+  <Card title="Hướng dẫn OpenAI SDK" icon="python" href="/vi/guides/openai-sdk">
+    Sử dụng Flatkey với OpenAI SDK chính thức — Python hoặc Node.js
+  </Card>
+  <Card title="Tham chiếu API" icon="code" href="/vi/api-reference/overview">
+    Tài liệu tham chiếu endpoint đầy đủ cho tất cả các phương thức API được hỗ trợ
+  </Card>
+</CardGroup>

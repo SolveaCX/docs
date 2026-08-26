@@ -52,7 +52,7 @@ Choose **Custom Provider** and add a provider with these values:
 | Provider Name | `flatkey` |
 | API Key | Your Flatkey key, such as `sk-fk-...` |
 | API Request URL | `https://router.flatkey.ai/v1` |
-| Default Model | `gpt-5.6-sol` in the screenshot. Confirm and copy a current exact ID from the Flatkey [Model Directory](/reference/model-list) before use. |
+| Default Model | `gpt-5.6-sol` in the screenshot. Confirm and copy a current exact ID from the Flatkey [Model Directory](https://flatkey.ai/models) before use. |
 | Upstream Format | `Responses (native)` |
 
 ![Enter the current Flatkey provider fields in CC Switch](/images/guides/cc-switch/en/codex-provider-form.png)
@@ -65,7 +65,7 @@ Flatkey natively supports the Responses API. CC Switch **Local Routing** is not 
 
 ### 4. Configure the model
 
-Find **Flatkey** in the Codex provider panel in CC Switch, then click **Edit**. To change the model used by new Codex sessions, set **Default Model** to an exact model ID from the Flatkey [Model Directory](/reference/model-list). Do not use a display name or guess an ID.
+Find **Flatkey** in the Codex provider panel in CC Switch, then click **Edit**. To change the model used by new Codex sessions, set **Default Model** to an exact model ID from the Flatkey [Model Directory](https://flatkey.ai/models). Do not use a display name or guess an ID.
 
 For example, you can enter any of these text-generation models in the CC Switch **Default Model** field:
 
@@ -123,7 +123,7 @@ Open the Codex provider panel in CC Switch, select the provider you want, and ac
 |---|---|
 | Authentication or invalid key error | Re-enter your Flatkey key and confirm that it starts with `sk-fk-`. Unset only stale `OPENAI_API_KEY` values before testing again. |
 | Endpoint or connection error | Set **API Request URL** exactly to `https://router.flatkey.ai/v1`. Check for a stale `OPENAI_BASE_URL` in the new shell. |
-| Model not found or missing from `/model` | Copy the exact ID from the [Model Directory](/reference/model-list). In **Model Mapping**, click **Fetch Models** or **Add Model**, set the **Menu Display Name**, and enter the exact ID as the **Actual Request Model**. Save the provider, fully restart Codex, and enter `/model` again. You can also set the exact ID as the provider **Default Model** or pass it temporarily with `codex --model <id>`. |
+| Model not found or missing from `/model` | Copy the exact ID from the [Model Directory](https://flatkey.ai/models). In **Model Mapping**, click **Fetch Models** or **Add Model**, set the **Menu Display Name**, and enter the exact ID as the **Actual Request Model**. Save the provider, fully restart Codex, and enter `/model` again. You can also set the exact ID as the provider **Default Model** or pass it temporarily with `codex --model <id>`. |
 | Requests use the wrong provider | Return to the Codex provider panel and activate **Flatkey**. Check that manual `OPENAI_*` values do not point elsewhere. |
 | Changes do not affect the current session | Exit the existing Codex session and end its process. Close the specific terminal window or tab that ran Codex, not unrelated terminals. Open a fresh terminal that does not inherit stale relevant `OPENAI_BASE_URL` or `OPENAI_API_KEY` values, then start a new session. |
 | Insufficient balance | Top up your Flatkey balance, then retry the minimal request. |
@@ -161,6 +161,6 @@ The table below applies only to the manual `OPENAI_BASE_URL` and `OPENAI_API_KEY
 | Issue | Fix |
 |---|---|
 | `Authentication error` | Verify `OPENAI_API_KEY` is set to your Flatkey key (starts with `sk-fk-`) |
-| `Model not found` | Check the model ID in the [Model Directory](/reference/model-list) |
+| `Model not found` | Check the model ID in the [Model Directory](https://flatkey.ai/models) |
 | `Insufficient balance` | Top up your balance at [console.flatkey.ai](https://console.flatkey.ai) |
 | Requests not appearing in dashboard | Confirm `OPENAI_BASE_URL` is set in the active shell |

@@ -1,0 +1,263 @@
+---
+title: "Bắt đầu nhanh: Thực hiện lệnh gọi API Flatkey đầu tiên của bạn"
+sidebarTitle: "Bắt đầu nhanh"
+description: "Tạo khóa API Flatkey, gửi yêu cầu tương thích OpenAI và xác minh trong Nhật ký Sử dụng trong khoảng năm phút."
+---
+
+Thực hiện yêu cầu Flatkey đầu tiên của bạn trong khoảng năm phút. Bạn cần một khóa API và URL cơ sở tương thích OpenAI `https://router.flatkey.ai/v1`.
+
+<Tip>
+  Bạn đã dùng OpenAI SDK rồi? Giữ nguyên mã yêu cầu và chỉ cần đổi URL cơ sở thành `https://router.flatkey.ai/v1`.
+</Tip>
+
+## Chọn hướng đi của bạn
+
+Mọi người đều bắt đầu với một khóa và một yêu cầu. Sau đó, hãy chuyển sang phần phù hợp với những gì bạn đang xây dựng.
+
+<CardGroup cols={2}>
+  <Card title="Viết mã" icon="code" href="/vi/guides/openai-sdk">
+    Sử dụng OpenAI hoặc Anthropic SDK, hoặc gọi trực tiếp REST API.
+  </Card>
+  <Card title="Tạo ảnh và video" icon="image" href="/vi/guides/image-generation">
+    Tạo ảnh với `gpt-image-2`, hoặc [tạo video](/vi/guides/video-generation) với Seedance và `MiniMax-H3`.
+  </Card>
+  <Card title="Tích hợp vào công cụ AI" icon="terminal" href="/vi/guides/claude-code">
+    Trỏ Claude Code, Codex CLI hoặc Codex Desktop vào Flatkey.
+  </Card>
+  <Card title="Gọi hàm của riêng bạn" icon="wrench" href="/vi/guides/text-generation#goi-ham-cua-rieng-ban">
+    Thêm tính năng gọi công cụ và đầu ra có cấu trúc vào yêu cầu.
+  </Card>
+</CardGroup>
+
+## Trước khi bắt đầu
+
+Bạn cần:
+
+- Một [tài khoản Flatkey](https://console.flatkey.ai/sign-up)
+- cURL, Python 3.10+, Node.js 22+, hoặc PowerShell
+- Tín dụng trả trước cho yêu cầu model
+
+<Steps>
+  <Step title="Thiết lập tài khoản và khóa API">
+    Đăng nhập vào [Flatkey Console](https://console.flatkey.ai). Mở **Wallet** và chọn gói trả trước phù hợp với khối lượng công việc của bạn.
+
+    ![Chọn gói trả trước trong Flatkey Wallet](/images/quickstart/flatkey-top-up.png)
+
+    Tiếp theo, mở **API Keys** và chọn **Create API Key**.
+
+    ![Mở API Keys và chọn Create API Key](/images/quickstart/flatkey-api-keys.png)
+
+    Đặt tên rõ ràng cho khóa. Bạn cũng có thể đặt giới hạn tín dụng và thời gian hết hạn trước khi chọn **Save changes**.
+
+    ![Cấu hình tên, giới hạn tín dụng và thời gian hết hạn cho khóa API Flatkey](/images/quickstart/flatkey-create-api-key.png)
+
+    Sao chép bí mật đã tạo và lưu trữ an toàn. Khóa API Flatkey bắt đầu bằng `sk-fk-`.
+
+    <Warning>
+      Không bao giờ commit khóa API vào source control hoặc để lộ trong mã phía trình duyệt. Hãy sử dụng biến môi trường hoặc trình quản lý bí mật.
+    </Warning>
+  </Step>
+
+  <Step title="Gửi yêu cầu đầu tiên của bạn">
+    Đặt khóa API trong shell hiện tại của bạn:
+
+    <CodeGroup>
+    ```bash macOS and Linux
+    export FLATKEY_API_KEY="sk-fk-..."
+    ```
+    ```powershell Windows PowerShell
+    $env:FLATKEY_API_KEY="sk-fk-..."
+    ```
+    </CodeGroup>
+
+    Với Python, cài đặt OpenAI SDK bằng `pip install openai`. Với TypeScript, chạy `npm install openai`. cURL và PowerShell không cần SDK.
+
+    Các ví dụ sau đây gọi cùng một model thông qua cùng một endpoint Flatkey:
+
+    <CodeGroup>
+    ```bash cURL
+    curl https://router.flatkey.ai/v1/chat/completions \
+      -H "Authorization: Bearer $FLATKEY_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "model": "gpt-4o-mini",
+        "messages": [
+          {"role": "user", "content": "Hello! What can you do?"}
+        ]
+      }'
+    ```
+    ```python Python
+    import os
+    from openai import OpenAI
+
+    client = OpenAI(
+        api_key=os.environ["FLATKEY_API_KEY"],
+        base_url="https://router.flatkey.ai/v1",
+    )
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "user", "content": "Hello! What can you do?"}
+        ],
+    )
+
+    print(response.choices[0].message.content)
+    ```
+    ```typescript TypeScript
+    import OpenAI from "openai";
+
+    const client = new OpenAI({
+      apiKey: process.env.FLATKEY_API_KEY,
+      baseURL: "https://router.flatkey.ai/v1",
+    });
+
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "user", content: "Hello! What can you do?" },
+      ],
+    });
+
+    console.log(response.choices[0].message.content);
+    ```
+    ```powershell PowerShell
+    $headers = @{
+      Authorization = "Bearer $env:FLATKEY_API_KEY"
+      "Content-Type" = "application/json"
+    }
+
+    $body = @{
+      model = "gpt-4o-mini"
+      messages = @(
+        @{ role = "user"; content = "Hello! What can you do?" }
+      )
+    } | ConvertTo-Json -Depth 4
+
+    $response = Invoke-RestMethod `
+      -Uri "https://router.flatkey.ai/v1/chat/completions" `
+      -Method Post `
+      -Headers $headers `
+      -Body $body
+
+    $response.choices[0].message.content
+    ```
+    </CodeGroup>
+
+    Sau khi yêu cầu hoàn tất, mở **Usage Logs** trong Flatkey Console. Nhập `gpt-4o-mini` vào **Model Name** và chọn **Search**. Ảnh chụp màn hình cho thấy nơi áp dụng bộ lọc; yêu cầu đã hoàn tất của bạn sẽ xuất hiện trong bảng cùng với số lượng token, độ trễ và chi phí.
+
+    ![Sử dụng bộ lọc Model Name trong Flatkey Usage Logs](/images/quickstart/flatkey-usage-logs.png)
+
+    Nếu bảng vẫn hiển thị **No Logs Found**, hãy đợi vài giây và tìm kiếm lại. Nếu vẫn trống, hãy xác nhận khóa API và Base URL được sử dụng trong yêu cầu.
+  </Step>
+
+  <Step title="Tiếp tục xây dựng">
+    Kết nối Flatkey với công cụ lập trình bạn đang dùng:
+
+    <CardGroup cols={3}>
+      <Card title="Claude Code" icon="terminal" href="/vi/guides/claude-code">
+        Cấu hình Claude Code thủ công hoặc dùng CC Switch.
+      </Card>
+      <Card title="Codex CLI" icon="code" href="/vi/guides/codex-cli">
+        Định tuyến yêu cầu Codex CLI qua Flatkey.
+      </Card>
+      <Card title="Codex Desktop" icon="desktop" href="/vi/guides/codex-desktop">
+        Cấu hình ứng dụng Codex desktop thủ công hoặc dùng CC Switch.
+      </Card>
+    </CardGroup>
+  </Step>
+</Steps>
+
+## Đọc phản hồi
+
+Đối với phản hồi Chat Completions, các trường bạn sẽ dùng thường xuyên nhất là:
+
+- `choices[0].message.content` — văn bản được tạo ra
+- `model` — model đã xử lý yêu cầu
+- `usage` — số lượng token prompt, completion và tổng cộng
+
+Xem [tài liệu tham khảo Chat Completions](/vi/api-reference/chat-completions) để biết schema đầy đủ.
+
+## Truyền phát phản hồi
+
+Đặt `stream` thành `true` khi bạn muốn nhận token ngay khi chúng được tạo ra.
+
+Các ví dụ Python và TypeScript sử dụng lại `client` bạn đã tạo trong **Gửi yêu cầu đầu tiên của bạn**.
+
+<CodeGroup>
+```bash cURL
+curl --no-buffer https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [
+      {"role": "user", "content": "Write a two-line welcome message."}
+    ],
+    "stream": true
+  }'
+```
+```python Python
+stream = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role": "user", "content": "Write a two-line welcome message."}
+    ],
+    stream=True,
+)
+
+for chunk in stream:
+    content = chunk.choices[0].delta.content
+    if content:
+        print(content, end="", flush=True)
+```
+```typescript TypeScript
+const stream = await client.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [
+    { role: "user", content: "Write a two-line welcome message." },
+  ],
+  stream: true,
+});
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk.choices[0]?.delta?.content ?? "");
+}
+```
+</CodeGroup>
+
+## Xử lý các lỗi thường gặp
+
+| Trạng thái HTTP | Thường có nghĩa là gì | Cần làm gì |
+|---|---|---|
+| `401` | Khóa API bị thiếu, không hợp lệ hoặc đã bị thu hồi | Kiểm tra header `Authorization: Bearer` và tạo khóa mới nếu cần |
+| `401 insufficient_balance` | Số dư trả trước đã hết | Thêm tín dụng từ **Wallet** |
+| `503 model_not_found` | ID model bị viết sai hoặc không khả dụng | Kiểm tra [Model Directory](https://flatkey.ai/models) để lấy ID chính xác. Thử lại không có tác dụng |
+| `429` | Yêu cầu vượt quá giới hạn tốc độ | Thử lại với exponential backoff và jitter |
+| `500` hoặc `503` | Provider hoặc tuyến đường tạm thời không khả dụng | Đọc `error.code` trong nội dung phản hồi trước. Thử lại với backoff và kiểm tra [Model Health](https://flatkey.ai/status) |
+
+<Note>
+  Mã `503` có thể có nghĩa là sự cố tạm thời hoặc ID model không tồn tại. Hãy đọc `error.code` trong nội dung phản hồi trước khi thử lại.
+</Note>
+
+Xem [Lỗi API](/vi/api-reference/errors) để biết định dạng phản hồi và chi tiết khắc phục sự cố.
+
+## Các bước tiếp theo
+
+<CardGroup cols={2}>
+  <Card title="Xác thực" icon="key" href="/vi/api-reference/authentication">
+    Tìm hiểu cách khóa API Flatkey và header xác thực hoạt động.
+  </Card>
+  <Card title="Danh mục Model" icon="list" href="https://flatkey.ai/models">
+    Tìm ID model được hỗ trợ và giá hiện tại.
+  </Card>
+  <Card title="OpenAI SDK" icon="code" href="/vi/guides/openai-sdk">
+    Sử dụng Flatkey với OpenAI Python và TypeScript SDK.
+  </Card>
+  <Card title="Nhật ký Sử dụng" icon="chart-bar" href="/vi/dashboard/usage">
+    Theo dõi yêu cầu, mức sử dụng token, độ trễ và chi phí.
+  </Card>
+  <Card title="Thanh toán" icon="wallet" href="https://flatkey.ai/pricing">
+    Tìm hiểu về tín dụng trả trước và phí sử dụng.
+  </Card>
+</CardGroup>

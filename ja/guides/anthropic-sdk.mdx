@@ -1,0 +1,103 @@
+---
+title: "Anthropic SDKを使用してFlatkey経由でClaudeリクエストをルーティングする"
+sidebarTitle: "Anthropic SDK"
+description: "Anthropic SDKのベースURLを設定することで、Flatkey経由でAnthropicのClaudeリクエストをルーティングします。公式価格より最大50%オフでClaudeにアクセスできます。"
+---
+
+Anthropic Python SDKをFlatkey経由でルーティングすることで、公式Anthropic価格より最大50%オフでClaudeモデルにアクセスできます。`base_url`パラメータを一度設定するだけで、既存のSDKコードはそのまま動作します — 他の変更は不要です。
+
+## インストール
+
+```bash pip
+pip install anthropic
+```
+
+## 基本設定
+
+```python python
+import os
+import anthropic
+
+client = anthropic.Anthropic(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai",
+)
+```
+
+<Note>
+  Anthropic SDKを使用する場合、`base_url`を`https://router.flatkey.ai`に設定してください（`/v1`なし）。SDKが自動的にパスを追加します。
+</Note>
+
+## メッセージの送信
+
+```python python
+message = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=1024,
+    messages=[
+        {"role": "user", "content": "Write a Python function to reverse a linked list."}
+    ],
+)
+
+print(message.content[0].text)
+```
+
+## システムプロンプト
+
+```python python
+message = client.messages.create(
+    model="claude-opus-4-5",
+    max_tokens=2048,
+    system="You are a senior software engineer. Provide concise, idiomatic code.",
+    messages=[
+        {"role": "user", "content": "Implement a rate limiter in Python."}
+    ],
+)
+
+print(message.content[0].text)
+```
+
+## ストリーミング
+
+```python python
+with client.messages.stream(
+    model="claude-haiku-4-5-20251001",
+    max_tokens=512,
+    messages=[{"role": "user", "content": "Explain how HTTPS works."}],
+) as stream:
+    for text in stream.text_stream:
+        print(text, end="", flush=True)
+print()
+```
+
+## マルチターン会話
+
+```python python
+conversation = [
+    {"role": "user", "content": "What is the capital of France?"},
+    {"role": "assistant", "content": "The capital of France is Paris."},
+    {"role": "user", "content": "What is its population?"},
+]
+
+response = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=256,
+    messages=conversation,
+)
+
+print(response.content[0].text)
+```
+
+## 利用可能なClaudeモデル
+
+| モデル | 最適な用途 | 入力価格（ボーナス適用後） |
+|---|---|---|
+| `claude-opus-4-5` | 複雑な推論、長文執筆 | 約$3 / 100万トークン |
+| `claude-sonnet-4-5` | 品質とスピードのバランス | 約$1.6 / 100万トークン |
+| `claude-haiku-4-5-20251001` | 高速でコスト効率の高いタスク | 約$0.53 / 100万トークン |
+
+すべてのClaudeモデルと現在の価格については[モデルディレクトリ](https://flatkey.ai/models)をご覧ください。
+
+<Tip>
+  FlatkeYを通じてOpenAI SDKでClaudeモデルを使用することもできます — `client.chat.completions.create()`の呼び出しで`model="claude-sonnet-4-5"`を設定するだけです。プロジェクトに合ったSDKをお使いください。
+</Tip>

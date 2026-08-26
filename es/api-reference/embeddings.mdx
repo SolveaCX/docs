@@ -1,0 +1,171 @@
+---
+title: "Embeddings — POST /v1/embeddings"
+sidebarTitle: "Embeddings"
+description: "Genera embeddings vectoriales para texto usando POST /v1/embeddings. Compatible con entrada por lotes y múltiples modelos de embedding para búsqueda semántica, clustering y RAG."
+---
+
+El endpoint `/v1/embeddings` genera embeddings vectoriales para texto de entrada. Los embeddings representan el significado semántico del texto como un array de flotantes de alta dimensión, lo que permite la búsqueda por similitud, el clustering y la generación aumentada por recuperación (RAG). El endpoint es compatible con la API de Embeddings de OpenAI.
+
+## Endpoint
+
+```
+POST https://router.flatkey.ai/v1/embeddings
+```
+
+## Modelos de embedding compatibles
+
+| Modelo | Dimensiones | Proveedor |
+|---|---|---|
+| `gemini-embedding-001` | 3072 | Google |
+| `text-embedding-3-small` | 1536 | OpenAI |
+| `text-embedding-3-large` | 3072 | OpenAI |
+
+Consulta el [Directorio de modelos](https://flatkey.ai/models) para conocer la disponibilidad actual y los precios.
+
+## Solicitud
+
+### Cabeceras
+
+| Cabecera | Valor |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### Parámetros del cuerpo
+
+<ParamField body="model" type="string" required>
+  ID del modelo de embedding. Ejemplo: `"gemini-embedding-001"`, `"text-embedding-3-small"`.
+</ParamField>
+
+<ParamField body="input" type="string | array" required>
+  Texto a vectorizar. Puede ser una cadena de texto individual o un array de cadenas para embedding por lotes.
+</ParamField>
+
+<ParamField body="encoding_format" type="string">
+  `"float"` (predeterminado) devuelve un array de flotantes. `"base64"` devuelve una cadena codificada en base64.
+</ParamField>
+
+<ParamField body="dimensions" type="integer">
+  Número de dimensiones para el embedding de salida. No es compatible con todos los modelos.
+</ParamField>
+
+## Ejemplos de solicitudes
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+# Single text
+response = client.embeddings.create(
+    model="gemini-embedding-001",
+    input="The quick brown fox jumps over the lazy dog",
+)
+
+embedding = response.data[0].embedding
+print(f"Embedding dimensions: {len(embedding)}")
+print(f"First 5 values: {embedding[:5]}")
+```
+```python python batch
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+# Batch embedding
+texts = [
+    "What is machine learning?",
+    "How does neural network training work?",
+    "Explain gradient descent",
+]
+
+response = client.embeddings.create(
+    model="gemini-embedding-001",
+    input=texts,
+)
+
+for i, item in enumerate(response.data):
+    print(f"{texts[i]}: {len(item.embedding)} dimensions")
+```
+```bash curl
+curl https://router.flatkey.ai/v1/embeddings \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini-embedding-001",
+    "input": "The quick brown fox jumps over the lazy dog"
+  }'
+```
+</CodeGroup>
+
+## Respuesta
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "object": "embedding",
+      "index": 0,
+      "embedding": [0.0023064255, -0.009327292, ...]
+    }
+  ],
+  "model": "gemini-embedding-001",
+  "usage": {
+    "prompt_tokens": 9,
+    "total_tokens": 9
+  }
+}
+```
+
+### Campos de la respuesta
+
+<ResponseField name="data" type="array">
+  Array de objetos de embedding, uno por cada cadena de entrada.
+  <Expandable title="objeto embedding">
+    <ResponseField name="index" type="integer">Posición en el array de entrada.</ResponseField>
+    <ResponseField name="embedding" type="array">Array de flotantes del vector de embedding.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage.prompt_tokens" type="integer">
+  Número de tokens procesados.
+</ResponseField>
+
+## Ejemplo de similitud coseno
+
+```python python
+import os
+import numpy as np
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+def embed(text):
+    return client.embeddings.create(
+        model="gemini-embedding-001",
+        input=text,
+    ).data[0].embedding
+
+def cosine_similarity(a, b):
+    a, b = np.array(a), np.array(b)
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+q = embed("capital city of France")
+doc1 = embed("Paris is the capital and most populous city of France.")
+doc2 = embed("The Eiffel Tower is a famous landmark.")
+
+print(cosine_similarity(q, doc1))  # higher — more relevant
+print(cosine_similarity(q, doc2))  # lower
+```

@@ -1,0 +1,532 @@
+---
+title: "Генерация видео Seedance с помощью Flatkey"
+sidebarTitle: "Seedance"
+description: "Создавайте задачи на видео Seedance, опрашивайте результаты, скачивайте готовый MP4 и повторно используйте виртуальные или связанные с реальным человеком ассеты через Flatkey."
+---
+
+Базовый URL: `https://router.flatkey.ai`
+
+Это руководство даёт вам готовый к копированию путь для использования Seedance через Flatkey. Начните с задачи "текст в видео", опрашивайте задачу до завершения, затем скачайте сгенерированный MP4. Если вам нужны переиспользуемые ссылки на продукт, фон, аудио или реального человека, переходите к разделам о библиотеке ассетов.
+
+<CardGroup cols={2}>
+  <Card title="Готовые к копированию примеры" icon="copy">
+    Используйте иконку копирования на любом блоке команд, затем замените `YOUR_FLATKEY_API_KEY`, `task_...`, `ast_...` и `rph_...` на собственные значения.
+  </Card>
+  <Card title="Один асинхронный воркфлоу" icon="video">
+    Создайте задачу через `POST /v1/videos`, опрашивайте её через `GET /v1/videos/{task_id}` и скачайте MP4 из `metadata.url`.
+  </Card>
+</CardGroup>
+
+Используйте этот заголовок авторизации в каждом API-запросе этого руководства. Единственное исключение — URL скачивания видео, возвращаемый в `metadata.url`.
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+Держите свой API-ключ в тайне. Не вставляйте его в публичные логи, страницы или тикеты поддержки.
+
+## Вызов Seedance
+
+Начните здесь, если вы просто хотите создать задачу "текст в видео" и скачать готовое видео.
+
+### 1. Создайте задачу "текст в видео"
+
+Отправьте `POST /v1/videos` с моделью `seedance-2.0` и текстовым промптом.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a calm 5 second video of a ceramic mug on a kitchen table in morning light"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a calm 5 second video of a ceramic mug on a kitchen table in morning light"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
+
+Скопируйте возвращённое значение `task_...`. Сохраните его в вашей базе данных или заметках, так как оно понадобится для проверки видео.
+
+### 2. Опросите задачу
+
+Используйте этот эндпоинт с сохранённым ID задачи:
+
+```http
+GET /v1/videos/{task_id}
+```
+
+Опрашивайте, пока `status` не станет `completed`, затем прочитайте URL скачивания из `metadata.url`. Если статус `failed`, прочитайте `error.message`, исправьте запрос и создайте новую задачу.
+
+<CodeGroup>
+```bash Bash
+TASK_ID="task_3f9a00000000000000000000000000e2"
+
+curl -sS "https://router.flatkey.ai/v1/videos/$TASK_ID" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+
+# Run the command above again until status is completed.
+# Then copy metadata.url from the response and paste it below.
+VIDEO_URL="PASTE_METADATA_URL_HERE"
+curl -L "$VIDEO_URL" -o output.mp4
+```
+```powershell Windows PowerShell
+$taskId = "task_3f9a00000000000000000000000000e2"
+
+while ($true) {
+  $result = curl.exe -sS "https://router.flatkey.ai/v1/videos/$taskId" `
+    -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" | ConvertFrom-Json
+  Write-Host "status: $($result.status)"
+
+  if ($result.status -eq "completed") { break }
+  if ($result.status -eq "failed") {
+    $result | ConvertTo-Json -Depth 10
+    exit 1
+  }
+  Start-Sleep -Seconds 5
+}
+
+$videoUrl = $result.metadata.url
+curl.exe -L "$videoUrl" -o output.mp4
+```
+</CodeGroup>
+
+После завершения задачи `metadata.url` позволяет скачать MP4-файл без заголовка авторизации. Относитесь к этому URL как к приватному и не публикуйте его.
+
+## Использование библиотеки ассетов
+
+Используйте библиотеку ассетов, когда хотите зарегистрировать ссылку один раз, дождаться её готовности и повторно использовать в запросах Seedance. Есть два типа ассетов:
+
+| Тип ассета | Для чего используется |
+| --- | --- |
+| Виртуальные ассеты | Изображения продукта, фоновые видео, аудио или другие ссылки, не связанные с человеком. |
+| Ассеты реального человека | Лицо, голос или видео конкретного человека. Эта возможность имеет ограниченный доступ и должна быть включена для вашей учётной записи. |
+
+Используйте URI `asset://ast_...`, возвращаемый Flatkey, в ваших запросах к Seedance.
+
+### Виртуальные ассеты
+
+Виртуальные ассеты не требуют верификации реального человека. Создавайте их из публичного URL или загружайте локальный файл, затем повторно используйте возвращённый URI ассета Flatkey.
+
+#### 1. Создайте виртуальный ассет из публичного HTTPS URL
+
+Отправьте публичный URL `https://`.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://cdn.example.com/reference/product.png",
+    "asset_type": "Image",
+    "moderation": {
+      "strategy": "Default"
+    }
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "url": "https://cdn.example.com/reference/product.png",
+    "asset_type": "Image",
+    "moderation": {
+      "strategy": "Default"
+    }
+  }'
+```
+</CodeGroup>
+
+Ответ включает `id`, например `ast_1234567890abcdef1234567890abcdef`, и статус, например `Processing`. Постройте переиспользуемый URI, добавив `asset://` перед ID:
+
+```text
+asset://ast_1234567890abcdef1234567890abcdef
+```
+
+Не отправляйте `model` при создании, загрузке или запросе ассета. Flatkey определяет соответствующие модели Seedance из API-ключа, использованного для запроса.
+
+#### 2. Загрузите локальный виртуальный ассет
+
+Для локального файла изображения, видео или аудио отправьте `multipart/form-data` на `POST /v1/assets/upload`. Используйте одно поле `file`. `asset_type` может быть `Image`, `Video` или `Audio`.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets/upload \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -F "file=@./reference-a.png" \
+  -F "asset_type=Image"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets/upload `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -F "file=@./reference-a.png" `
+  -F "asset_type=Image"
+```
+</CodeGroup>
+
+Ответ имеет ту же форму ассета, что и при создании из URL. Сохраните его `id` или `asset_url` для опроса и последующих запросов на видео.
+
+#### 3. Опрашивайте, пока выбранная модель не станет доступна
+
+Запрашивайте каждый ассет с тем же API-ключом, который будет создавать задачу на видео. Например, проверьте два ассета изображений отдельно:
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets/ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+curl -sS https://router.flatkey.ai/v1/assets/ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets/ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+curl.exe -sS https://router.flatkey.ai/v1/assets/ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+Каждый ответ ассета включает `available_models`. `available_models` — это всегда массив, содержащий модели, которые могут использовать этот ассет прямо сейчас. Частично готовый ассет может выглядеть так:
+
+```json
+{
+  "id": "ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "object": "asset",
+  "asset_type": "Image",
+  "status": "Processing",
+  "available_models": ["seedance-2.0-fast"],
+  "asset_url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "created_at": 1785292000
+}
+```
+
+`status` — это агрегированное состояние по соответствующим моделям Seedance для данного API-ключа:
+
+| Статус | Значение |
+| --- | --- |
+| `Creating` | Загрузка источника не завершена. |
+| `Processing` | По крайней мере одна соответствующая модель ещё подготавливается. Проверьте `available_models` — другая модель может быть уже доступна. |
+| `Active` | Каждая соответствующая модель для этого API-ключа готова. |
+| `Failed` | Источник не удался, или готовность не удалось установить хотя бы для одной соответствующей модели. |
+| `Expired` | Источник больше не может использоваться. Создайте новый ассет. |
+
+Вам не нужно ждать агрегированного статуса `Active`, если выбранная вами модель уже указана в списке. Перед созданием задачи убедитесь, что выбранная модель присутствует в `available_models` каждого ассета. Для быстрого режима используйте `seedance-2.0-fast`; для профессионального — `seedance-2.0`. Запрос на создание задачи заново проверяет готовность, поэтому повторите опрос, если маршрутизация изменилась между GET- и POST-запросами.
+
+URI `asset://` идентифицирует ассет, но сам по себе не подтверждает готовность. `Deleting` означает, что удаление в процессе и ассет не может быть использован для новой задачи. После завершения удаления `GET /v1/assets/{asset_id}` возвращает `404 asset_not_found`; не ждите опрашиваемого статуса `Deleted`.
+
+#### 4. Вызовите Seedance с двумя виртуальными ассетами
+
+Поместите каждый URI `asset://ast_...` в поле медиа, соответствующее типу ассета: `image_url.url` для `Image`, `video_url.url` для `Video` или `audio_url.url` для `Audio`. Запросу Seedance нужен текст или хотя бы одно изображение/видео; одного аудио недостаточно. Этот пример запускается только после того, как оба ассета указывают `seedance-2.0-fast` в `available_models`.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0-fast",
+    "content": [
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "text",
+        "text": "Create a clean studio product video while keeping the product consistent"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "seedance-2.0-fast",
+    "content": [
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "text",
+        "text": "Create a clean studio product video while keeping the product consistent"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
+
+Скопируйте возвращённый `task_...` и используйте `GET /v1/videos/{task_id}` из первого раздела, чтобы скачать готовое видео из `metadata.url`.
+
+### Ассеты реального человека
+
+Ассеты реального человека предназначены для лица, голоса или видео конкретного человека. Эта возможность имеет ограниченный доступ. Используйте её только после того, как Flatkey включит её для вашей учётной записи.
+
+Вы создадите профиль, отправите `verification_url` человеку, дождётесь, пока профиль станет `active`, создадите ассет, дождётесь, пока `status` ассета станет `Active`, затем вызовете Seedance с `asset://ast_...`.
+
+| Эндпоинт | Когда использовать |
+| --- | --- |
+| `POST /v1/real-persons` | Создать профиль реального человека и первую ссылку для верификации. |
+| `GET /v1/real-persons` | Получить список ваших профилей реальных людей. |
+| `POST /v1/real-persons/{person_id}/verification-sessions` | Создать новую ссылку для верификации при необходимости. |
+| `GET /v1/real-persons/{person_id}` | Опросить статус профиля. |
+| `POST /v1/real-persons/{person_id}/assets` | Создать ассет из публичного URL или локального файла. |
+| `GET /v1/real-persons/{person_id}/assets` | Получить список ассетов одного профиля. |
+
+Ограничения размера файла:
+
+| Тип файла | Ограничение |
+| --- | --- |
+| Изображение | &lt; 30 МиБ |
+| Видео | &lt;= 50 МиБ |
+| Аудио | &lt;= 15 МиБ |
+
+Запросы на запись в этом разделе требуют `Idempotency-Key`. Заменяйте каждый плейсхолдер `YOUR_UNIQUE_KEY_...` новым UUID для каждого нового запроса на запись. Повторно используйте ключ только при повторе точно такого же запроса.
+
+#### 1. Создайте профиль реального человека
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_PROFILE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My first real-person profile"
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_PROFILE" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "name": "My first real-person profile"
+  }'
+```
+</CodeGroup>
+
+Ответ включает `id` профиля, `status` и одноразовый `verification_url`. Отправьте `verification_url` реальному человеку и попросите его открыть эту ссылку самостоятельно. Не публикуйте эту ссылку.
+
+Если ссылка истекла или человеку нужна другая ссылка, создайте новую сессию верификации:
+
+<CodeGroup>
+```bash Bash
+curl -sS -X POST https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/verification-sessions \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_VERIFICATION_SESSION"
+```
+```powershell Windows PowerShell
+curl.exe -sS -X POST https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/verification-sessions `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_VERIFICATION_SESSION"
+```
+</CodeGroup>
+
+После того как человек завершит страницу верификации, переходите к следующему шагу.
+
+#### 2. Опрашивайте, пока профиль не станет активным
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+Подождите, пока статус профиля станет `active`, прежде чем создавать ассеты. Если он `pending_verification` или `verifying`, подождите и опросите снова. Если он `failed` или `expired`, создайте новую сессию верификации.
+
+#### 3. Создайте ассет реального человека из публичного URL
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_URL_ASSET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://cdn.example.com/reference/person.png",
+    "asset_type": "Image",
+    "name": "Front-facing reference"
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_URL_ASSET" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "url": "https://cdn.example.com/reference/person.png",
+    "asset_type": "Image",
+    "name": "Front-facing reference"
+  }'
+```
+</CodeGroup>
+
+#### 4. Загрузите локальный файл
+
+Локальная загрузка использует `multipart/form-data` и доступна только для ассетов реального человека. Используйте одно поле `file` и позвольте curl установить границу multipart.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_FILE_ASSET" \
+  -F "asset_type=Image" \
+  -F "name=Front-facing reference" \
+  -F "file=@./person-reference.png"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_FILE_ASSET" `
+  -F "asset_type=Image" `
+  -F "name=Front-facing reference" `
+  -F "file=@./person-reference.png"
+```
+</CodeGroup>
+
+Ответ создания включает ID ассета или `asset_uri`, например `asset://ast_1234567890abcdef1234567890abcdef`.
+
+#### 5. Опросите готовность и вызовите Seedance
+
+Ответы ассетов реального человека не включают `available_models`. Получайте список ассетов под профилем, пока `status` ассета не станет `Active`:
+
+<CodeGroup>
+```bash Bash
+curl -sS "https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets?limit=20" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS "https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets?limit=20" `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+Если указанный ассет всё ещё `Processing`, подождите и опросите снова. Если он `Failed`, создайте новый ассет из более качественной ссылки.
+
+После того как ассет станет `Active`, вызовите Seedance с URI `asset://ast_...`.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a short greeting video with natural movement"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_1234567890abcdef1234567890abcdef"
+        },
+        "role": "reference_image"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a short greeting video with natural movement"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_1234567890abcdef1234567890abcdef"
+        },
+        "role": "reference_image"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
+
+Скопируйте возвращённый `task_...` и используйте `GET /v1/videos/{task_id}` из первого раздела, чтобы скачать готовое видео из `metadata.url`.
+
+#### 6. Удалите ассет, когда он больше не нужен
+
+<CodeGroup>
+```bash Bash
+curl -sS -X DELETE https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS -X DELETE https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+Запрос на удаление возвращает `204 No Content`. После завершения удаления `GET /v1/assets/{asset_id}` возвращает `404 asset_not_found`.

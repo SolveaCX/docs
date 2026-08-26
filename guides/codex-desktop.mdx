@@ -11,7 +11,7 @@ Codex Desktop reads the same user-level Codex configuration as Codex CLI. You ca
 - Codex Desktop installed
 - One completed official ChatGPT or Codex sign-in in the desktop app
 - A Flatkey API key — [create one in the Flatkey Console](https://console.flatkey.ai/keys)
-- A supported model ID from the [Flatkey Model Directory](/reference/model-list)
+- A supported model ID from the [Flatkey Model Directory](https://flatkey.ai/models)
 - CC Switch, if you use the CC Switch setup
 
 ## Manual configuration
@@ -103,14 +103,14 @@ Open the **Codex** panel in CC Switch and add a **Custom Provider**. Use the fol
 | Provider Name | `flatkey` |
 | API Key | `sk-fk-...` |
 | API Request URL | `https://router.flatkey.ai/v1` |
-| Default Model | `gpt-5.6-sol` in the screenshot — verify a current exact ID in the [Flatkey Model Directory](/reference/model-list) |
+| Default Model | `gpt-5.6-sol` in the screenshot — verify a current exact ID in the [Flatkey Model Directory](https://flatkey.ai/models) |
 | Upstream Format | **Responses (native)** |
 
 ![Enter the current Flatkey provider fields in CC Switch](/images/guides/cc-switch/en/codex-provider-form.png)
 
 ### 4. Configure the model
 
-Set the provider's **Default Model** to the exact Flatkey model ID you want to use. The screenshot shows `gpt-5.6-sol` as an example. Check the [Flatkey Model Directory](/reference/model-list) before choosing an ID.
+Set the provider's **Default Model** to the exact Flatkey model ID you want to use. The screenshot shows `gpt-5.6-sol` as an example. Check the [Flatkey Model Directory](https://flatkey.ai/models) before choosing an ID.
 
 Click **Fetch Models** to load current IDs. Add the model to the provider's **Model Mapping** when you want it in the Codex `/model` menu. You can also set an exact ID as the provider's **Default Model** or pass it from Codex CLI with `codex --model <id>`. For Codex Desktop, treat the active provider and default model as the intended route even if the picker does not list the custom model. Confirm the actual route with Flatkey Usage Logs after sending a request.
 
@@ -161,7 +161,7 @@ If you used manual configuration, restore the previous top-level `model` and `mo
 | Official login is missing or expired | Sign in again through Codex Desktop, then enable **Keep official login for direct switches** before activating Flatkey |
 | Authentication fails or the Flatkey key is rejected | Confirm the API key is active and was entered in the custom provider's API key field; rotate or revoke it if it was exposed |
 | Endpoint or Responses errors | Set **API Request URL** to `https://router.flatkey.ai/v1`, select **Responses (native)**, and keep **Local Routing** off |
-| `Model not found`, custom model is hidden, or `/model` mapping is missing | Copy an exact ID from the [Model Directory](/reference/model-list), set it as **Default Model**, and use **Fetch Models** or model mapping |
+| `Model not found`, custom model is hidden, or `/model` mapping is missing | Copy an exact ID from the [Model Directory](https://flatkey.ai/models), set it as **Default Model**, and use **Fetch Models** or model mapping |
 | Usage Logs show the wrong provider or model | Activate the Flatkey custom provider and confirm its default model and the active values in the shared `config.toml` |
 | Changes do not take effect | Fully quit Codex Desktop, end any stale Codex Desktop process, and reopen the app |
 | Flatkey balance is insufficient | Add balance or use a Flatkey key with available credit, then retry a minimal prompt |

@@ -1,0 +1,68 @@
+---
+title: "Flatkey API-Authentifizierung: Bearer-Token und API-Schlüssel"
+sidebarTitle: "Authentifizierung"
+description: "Authentifizieren Sie Flatkey-API-Anfragen, indem Sie Ihren API-Schlüssel als Bearer-Token im Authorization-Header übergeben. Erfahren Sie mehr über Schlüsselformate, Fehler und Best Practices."
+---
+
+Jede Anfrage an die Flatkey API muss einen gültigen API-Schlüssel im `Authorization`-Header als Bearer-Token enthalten. Schlüssel erstellen und verwalten Sie in der [Flatkey-Konsole](https://console.flatkey.ai/keys).
+
+## Header-Format
+
+```http
+Authorization: Bearer sk-fk-your-api-key
+```
+
+Flatkey API-Schlüssel beginnen mit `sk-fk-`. Schlüssel unterscheiden Groß- und Kleinschreibung und müssen exakt so übergeben werden, wie sie generiert wurden.
+
+## Beispielanfrage
+
+```bash
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+## Einen API-Schlüssel erstellen
+
+1. Melden Sie sich bei [console.flatkey.ai](https://console.flatkey.ai) an
+2. Klicken Sie in der linken Seitenleiste auf **Keys**
+3. Klicken Sie auf **Create Key** und geben Sie einen Namen ein
+4. Kopieren Sie den Schlüssel — er wird **nur einmal** angezeigt
+
+Wenn Sie einen Schlüssel verlieren, müssen Sie einen neuen erstellen. Alte Schlüssel bleiben aktiv, bis sie ausdrücklich widerrufen werden.
+
+## Authentifizierungsfehler
+
+| HTTP-Status | Bedingung | Lösung |
+|---|---|---|
+| `401 Unauthorized` | Schlüssel fehlt in der Anfrage | `Authorization: Bearer sk-fk-...`-Header hinzufügen |
+| `401 Unauthorized` | Schlüssel ist ungültig oder widerrufen | Neuen Schlüssel in der Konsole generieren |
+| `401 Unauthorized` | Guthaben beträgt $0.00 | Guthaben aufladen unter [console.flatkey.ai](https://console.flatkey.ai) |
+| `403 Forbidden` | Schlüssel hat keinen Modellzugriff | Schlüsselberechtigungen in der Konsole prüfen |
+
+### Fehlerantwort-Format
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided.",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## Sicherheits-Best-Practices
+
+- Schlüssel in Umgebungsvariablen speichern, nicht im Quellcode
+- Einen Schlüssel pro Deployment-Umgebung verwenden
+- Schlüssel sofort widerrufen, wenn sie kompromittiert wurden
+- Schlüssel für Produktions-Workloads regelmäßig rotieren
+
+<Warning>
+  Fügen Sie API-Schlüssel niemals in clientseitiges JavaScript, mobile App-Bundles oder öffentliche Repositories ein. Schlüssel können missbraucht werden, um Ihr Guthaben zu erschöpfen.
+</Warning>

@@ -1,0 +1,245 @@
+---
+title: "Générer une vidéo avec Flatkey"
+sidebarTitle: "Génération de vidéo"
+description: "Soumettez une tâche vidéo, interrogez-la et téléchargez le fichier MP4. Couvre les deux formats de requête, les résolutions par modèle, ainsi que les paramètres applicables et non applicables."
+---
+
+URL de base : `https://router.flatkey.ai`
+
+Flatkey génère des vidéos via un unique endpoint asynchrone. Vous soumettez une tâche, vous l'interrogez jusqu'à ce qu'elle se termine, puis vous téléchargez le fichier MP4. Cette page couvre ce qui est commun à tous les modèles vidéo. Pour les options propres à un modèle, consultez [Seedance](/fr/guides/seedance) ou [MiniMax H3](/fr/guides/minimax-h3).
+
+<CardGroup cols={2}>
+  <Card title="Un seul flux asynchrone" icon="video">
+    Créez la tâche avec `POST /v1/videos`, interrogez-la avec `GET /v1/videos/{task_id}`, et téléchargez le fichier MP4 depuis `metadata.url`.
+  </Card>
+  <Card title="Deux formats de requête" icon="code-branch">
+    Certains modèles utilisent un tableau `content`, d'autres une chaîne `prompt`. Envoyer le mauvais format renvoie `400`.
+  </Card>
+</CardGroup>
+
+Utilisez cet en-tête d'autorisation sur chaque requête de cette page, y compris pour le téléchargement :
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+## Trouver un modèle vidéo
+
+Listez tous les modèles et conservez ceux dont le `type` est `video` :
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/models \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  | jq '.data[] | select(.type == "video") | .id'
+```
+
+```json
+"grok-imagine-video"
+"grok-imagine-video-1.5"
+"MiniMax-H3"
+"seedance-2.5"
+"veo-3.1-fast-generate-preview"
+"veo-3.1-generate-preview"
+```
+
+<Warning>
+  `/v1/models` ignore les paramètres de requête. Le filtrage s'effectue dans votre propre code, comme dans l'exemple `jq` ci-dessus.
+</Warning>
+
+Vous pouvez également parcourir la même liste avec les tarifs dans le [répertoire des modèles](https://flatkey.ai/models).
+
+## Choisir le bon format de requête
+
+L'endpoint accepte deux formats différents, et chaque modèle n'en accepte qu'un seul.
+
+| Modèle | Champ de prompt |
+| --- | --- |
+| `seedance-2.5` | tableau `content` |
+| `seedance-2.0-pro` | tableau `content` |
+| `MiniMax-H3` | tableau `content` |
+| `grok-imagine-video` | chaîne `prompt` |
+| `grok-imagine-video-1.5` | chaîne `prompt` |
+| `veo-3.1-generate-preview` | chaîne `prompt` |
+| `veo-3.1-fast-generate-preview` | chaîne `prompt` |
+
+Envoyer un tableau `content` à un modèle `prompt` renvoie :
+
+```json
+{ "code": "invalid_request", "message": "prompt is required" }
+```
+
+### Le format `content`
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.5",
+    "content": [
+      { "type": "text", "text": "a quiet neon-lit street at dusk, slow camera drift" }
+    ],
+    "duration": 5,
+    "resolution": "720p"
+  }'
+```
+
+Le tableau accepte également des images. Ajoutez une entrée `image_url` pour interpoler entre des images clés ou fournir une référence. Les noms de champs varient selon le modèle, consultez donc le guide propre au modèle.
+
+### Le format `prompt`
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "grok-imagine-video",
+    "prompt": "a quiet neon-lit street at dusk, slow camera drift",
+    "duration": 10
+  }'
+```
+
+## Les résolutions varient selon le modèle
+
+Il n'existe pas d'ensemble commun de valeurs de résolution. Envoyer une valeur non prise en charge renvoie `400` avant même que la tâche soit créée.
+
+| Modèle | Valeurs acceptées | Notes |
+| --- | --- | --- |
+| `seedance-2.5` | `480p`, `720p` | `1080p` renvoie `unsupported resolution` |
+| `MiniMax-H3` | `768P`, `2K` | `P` en majuscule. Les autres valeurs renvoient `resolution must be 768P or 2K` |
+| `grok-imagine-video` | `720p` | La sortie est `848x480` quelle que soit la valeur |
+| `veo-3.1-*` | `720p` | |
+
+<Warning>
+  Consultez le guide du modèle avant de choisir une résolution. `1080p` est rejeté par `seedance-2.5`, et `720p` est rejeté par `MiniMax-H3`.
+</Warning>
+
+## Paramètres de la requête
+
+| Paramètre | Type | Requis | Description |
+| --- | --- | --- | --- |
+| `model` | string | Oui | Identifiant du modèle depuis `/v1/models` |
+| `content` | array | Conditionnel | Prompt et médias pour les modèles de type `content` |
+| `prompt` | string | Conditionnel | Prompt pour les modèles de type `prompt` |
+| `duration` | integer | Non | Durée en secondes. `MiniMax-H3` accepte de `4` à `15` |
+| `resolution` | string | Non | Voir le tableau ci-dessus |
+
+<Warning>
+  `aspect_ratio` et `seed` sont acceptés sans erreur mais ne modifient pas la sortie sur tous les modèles. Sur `grok-imagine-video`, demander `9:16` renvoie toujours un clip paysage `848x480`, et le même `seed` produit un fichier différent à chaque fois. Lorsqu'un modèle prend en charge l'orientation, cela est documenté sur sa propre page. Ne vous fiez pas à ces deux champs pour un comportement cohérent entre les modèles.
+</Warning>
+
+## Interroger la tâche
+
+Une soumission réussie renvoie immédiatement une tâche :
+
+```json
+{
+  "id": "task_aaaaaaaaaaaaaaaa",
+  "task_id": "task_aaaaaaaaaaaaaaaa",
+  "object": "video",
+  "model": "seedance-2.5",
+  "status": "queued",
+  "progress": 0,
+  "created_at": 1787110914
+}
+```
+
+Interrogez avec l'identifiant de tâche jusqu'à ce que le statut soit terminal :
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+
+```json
+{
+  "id": "task_aaaaaaaaaaaaaaaa",
+  "status": "completed",
+  "progress": 100,
+  "completed_at": 1787111135,
+  "metadata": {
+    "url": "https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa/content"
+  }
+}
+```
+
+| Statut | Signification |
+| --- | --- |
+| `queued` | Acceptée et en attente |
+| `in_progress` | En cours de génération |
+| `completed` | Prête à être téléchargée depuis `metadata.url` |
+| `failed` | La génération a échoué. Consultez le champ d'erreur |
+
+Interrogez environ toutes les 15 secondes. Un clip de cinq secondes se termine généralement en deux à quatre minutes.
+
+## Télécharger le fichier MP4
+
+L'URL de téléchargement est disponible dans `metadata.url` et nécessite le même en-tête d'autorisation :
+
+```bash
+curl -L "https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa/content" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -o output.mp4
+```
+
+## Exemple de bout en bout
+
+```python
+import os, time, requests
+
+BASE = "https://router.flatkey.ai/v1"
+HEAD = {"Authorization": f"Bearer {os.environ['FLATKEY_API_KEY']}",
+        "Content-Type": "application/json"}
+
+task = requests.post(f"{BASE}/videos", headers=HEAD, json={
+    "model": "seedance-2.5",
+    "content": [{"type": "text", "text": "a quiet neon-lit street at dusk"}],
+    "duration": 5,
+    "resolution": "720p",
+}).json()
+
+task_id = task["task_id"]
+
+while True:
+    time.sleep(15)
+    state = requests.get(f"{BASE}/videos/{task_id}", headers=HEAD).json()
+    if state["status"] == "completed":
+        mp4 = requests.get(state["metadata"]["url"], headers=HEAD).content
+        open("output.mp4", "wb").write(mp4)
+        break
+    if state["status"] == "failed":
+        raise RuntimeError(state)
+```
+
+## Dépannage
+
+**`prompt is required`**
+
+Vous avez envoyé un tableau `content` à un modèle qui attend un `prompt`. Consultez le tableau dans [Choisir le bon format de requête](#choisir-le-bon-format-de-requête).
+
+**`unsupported resolution` ou `resolution must be 768P or 2K`**
+
+La valeur est valide pour un autre modèle. Consultez [Les résolutions varient selon le modèle](#les-résolutions-varient-selon-le-modèle).
+
+**`No available channel for model ...`**
+
+Le modèle n'est pas routable pour le moment. Choisissez un autre modèle vidéo plutôt que de réessayer — cette erreur ne se résout pas d'elle-même. Consultez le [répertoire des modèles](https://flatkey.ai/models) pour la disponibilité actuelle.
+
+**`duration must be between 4 and 15`**
+
+`MiniMax-H3` requiert un `duration` dans cette plage. Envoyez-en un explicitement.
+
+**La tâche reste à l'état `queued`**
+
+La génération vidéo prend des minutes, pas des secondes. Continuez à interroger toutes les 15 secondes avant de considérer la tâche comme bloquée.
+
+## Guides des modèles
+
+<CardGroup cols={2}>
+  <Card title="Seedance" icon="film" href="/fr/guides/seedance">
+    Texte vers vidéo, ainsi que la bibliothèque d'assets de personnages virtuels et réels.
+  </Card>
+  <Card title="MiniMax H3" icon="wand-magic-sparkles" href="/fr/guides/minimax-h3">
+    Contrôle de la première et dernière image, médias de référence et paramètres de tâche.
+  </Card>
+</CardGroup>

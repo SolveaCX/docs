@@ -1,0 +1,131 @@
+---
+title: "Gunakan Flatkey CLI dengan agen AI"
+sidebarTitle: "Flatkey CLI dengan Agen AI"
+description: "Hasilkan gambar, video, audio, dan teks dari terminal, serta jalankan perintah yang sama dari skrip, job CI, atau agen AI dengan output JSON."
+---
+
+Flatkey CLI menghadirkan pembuatan media ke terminal Anda dalam satu saldo. Setiap perintah menerima `--json`, yang membuatnya aman untuk dipanggil dari skrip, job CI, atau agen AI yang mem-parsing stdout.
+
+## Instal dan autentikasi
+
+```bash
+npm install -g @flatkey-ai/cli
+flatkey login
+```
+
+Membutuhkan Node.js 18 atau lebih baru. Untuk CI, atur variabel lingkungan sebagai pengganti login:
+
+```bash
+export FLATKEY_API_KEY="sk-fk-..."
+```
+
+Periksa apa yang digunakan CLI:
+
+```bash
+flatkey auth status --json
+```
+
+## Buat file pertama Anda
+
+<Warning>
+  Selalu sertakan `--model`. Model gambar bawaan saat ini tidak dapat dirutekan dan mengembalikan `No available channel`.
+</Warning>
+
+```bash
+flatkey image generate \
+  --prompt "editorial cover, neon city at dawn" \
+  --model gpt-image-2 \
+  --output cover.png
+```
+
+```json
+{
+  "kind": "image",
+  "artifacts": [{ "path": "cover.png" }],
+  "response": { "data": [{ "url": "https://..." }] }
+}
+```
+
+## Perintah
+
+| Perintah | Tujuan |
+| --- | --- |
+| `flatkey image generate --prompt <txt>` | Hasilkan gambar |
+| `flatkey image upload --file <path>` | Unggah gambar lokal, dapatkan URL sementara |
+| `flatkey video generate --prompt <txt>` | Hasilkan video |
+| `flatkey audio generate --prompt <txt>` | Hasilkan ucapan |
+| `flatkey audio sfx --prompt <txt>` | Hasilkan efek suara |
+| `flatkey audio music --prompt <txt>` | Hasilkan musik |
+| `flatkey audio voices` | Tampilkan daftar suara yang tersedia |
+| `flatkey text generate --prompt <txt>` | Pembuatan teks satu kali |
+| `flatkey models` | Tampilkan daftar model, filter dengan `--type image\|video\|audio\|text` |
+| `flatkey credits` | Tampilkan saldo yang tersisa |
+| `flatkey help --ai` | Cetak panduan protokol agen |
+
+### Opsi global
+
+| Flag | Arti |
+| --- | --- |
+| `--json` | Output yang dapat dibaca mesin, animasi dinonaktifkan |
+| `--output`, `-o <file>` | Tulis artefak ke jalur ini |
+| `--model <id>` | Model yang akan digunakan |
+| `--verbose` | Log permintaan dan respons di stderr |
+
+<Warning>
+  Tempatkan `-o` **sebelum** `--json`. Format pendek ditolak sebagai argumen tak terduga jika muncul setelah `--json`. `--output` berfungsi di posisi mana pun.
+</Warning>
+
+### Opsi video
+
+```bash
+flatkey video generate \
+  --prompt "cinematic product launch clip" \
+  --model seedance2 --ratio 16:9 --resolution 720p --output launch.mp4
+```
+
+`--ratio` menerima `16:9`, `9:16`, `4:3`, `3:4`, `21:9`, dan `1:1`. `--resolution` menerima `480p`, `720p`, dan `1080p`, namun setiap model hanya mendukung sebagian dari rentang tersebut — lihat [Pembuatan video](/id/guides/video-generation).
+
+### Opsi audio
+
+```bash
+flatkey audio generate --prompt "Welcome to Flatkey" --output welcome.mp3
+flatkey audio sfx --prompt "heavy door closing" --duration 4 --output door.mp3
+flatkey audio music --prompt "warm lo-fi loop, 80 bpm" --music-length-ms 30000 --output loop.mp3
+```
+
+Jalankan `flatkey audio voices --json` dan berikan `voice_id` yang terdaftar ke `--voice-id`.
+
+## Jalankan dari agen
+
+Dalam mode `--json`, stdout berisi tepat satu objek JSON dan stderr berisi error JSON. Jalankan `flatkey help --ai` untuk mencetak deskripsi protokol ringkas yang dapat dibaca agen saat runtime.
+
+```python
+import json, subprocess
+
+def flatkey(*args):
+    p = subprocess.run(["flatkey", *args, "--json"], capture_output=True, text=True)
+    if p.returncode != 0:
+        raise RuntimeError(json.loads(p.stderr or "{}").get("error", {}).get("message"))
+    return json.loads(p.stdout)
+
+models = [m["id"] for m in flatkey("models", "--type", "image")["models"]]
+out = flatkey("image", "generate", "--prompt", "a paper boat on still water",
+              "--model", models[0], "--output", "boat.png")
+print(out["artifacts"][0]["path"])
+```
+
+Tampilkan daftar model terlebih dahulu, lalu lakukan pembuatan. ID model yang dikodekan secara statis adalah penyebab paling umum dari kegagalan eksekusi.
+
+### Pemulihan
+
+| Kegagalan | Pemulihan |
+| --- | --- |
+| Kunci tidak ada | Buat satu di [console.flatkey.ai](https://console.flatkey.ai), lalu `flatkey onboard --api-key <key>` |
+| `No available channel` | Jalankan `flatkey models --json`, coba lagi dengan ID yang terdaftar. Jangan coba ulang model yang sama |
+| Suara tidak dikenal | `flatkey audio voices --json`, coba lagi dengan ID yang terdaftar |
+| Kredit tidak mencukupi | `flatkey credits --json`, lalu isi ulang |
+| `unsupported resolution` | Gunakan fallback ke `720p` |
+
+<Warning>
+  Coba ulang hanya setelah mengubah permintaan. Error ini bersifat deterministik, sehingga mengulang argumen yang sama hanya membuang waktu tanpa mengubah hasilnya.
+</Warning>

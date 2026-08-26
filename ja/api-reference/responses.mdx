@@ -1,0 +1,165 @@
+---
+title: "Responses API — POST /v1/responses"
+sidebarTitle: "Responses"
+description: "POST /v1/responses を使用して、OpenAI Responses API 形式でステートフルなマルチターン会話を実行します。Flatkey は対応モデル向けにこのエンドポイントをプロキシします。"
+---
+
+`/v1/responses` エンドポイントは OpenAI Responses API を実装しており、組み込みの会話履歴管理によるステートフルなマルチターン会話をサポートします。これは、OpenAI の新しいレスポンス形式を必要とするワークフロー向けの `/v1/chat/completions` の代替手段です。`previous_response_id` を渡すことで、完全なメッセージ履歴を再送信することなく会話を継続できます。
+
+## エンドポイント
+
+```
+POST https://router.flatkey.ai/v1/responses
+```
+
+## このエンドポイントを使用するタイミング
+
+以下に該当する場合は `/v1/responses` を使用してください：
+- アプリケーションが OpenAI Responses API 上に構築されている
+- ステートフルな会話管理が必要
+- マルチターン会話に `previous_response_id` パラメータを使用している
+
+ほとんどの新しい統合では、`/v1/chat/completions` が推奨エンドポイントであり、より広いモデルサポートを持っています。
+
+## リクエスト
+
+### ヘッダー
+
+| ヘッダー | 値 |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### ボディパラメータ
+
+<ParamField body="model" type="string" required>
+  使用するモデル ID。Responses API 形式をサポートするモデルのみ有効です。
+</ParamField>
+
+<ParamField body="input" type="string | array" required>
+  このターンのユーザー入力。文字列またはコンテンツオブジェクトの配列を指定できます。
+</ParamField>
+
+<ParamField body="instructions" type="string">
+  モデルへのシステムレベルの指示（チャット補完における `system` メッセージに相当）。
+</ParamField>
+
+<ParamField body="previous_response_id" type="string">
+  直前のレスポンスの `id`。指定すると、クライアントが履歴を送信することなく、モデルはその時点から会話を継続します。
+</ParamField>
+
+<ParamField body="max_output_tokens" type="integer">
+  生成するトークンの最大数。
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  `true` の場合、サーバー送信イベントのストリームを返します。デフォルト：`false`。
+</ParamField>
+
+## リクエスト例
+
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.responses.create(
+    model="gpt-4o",
+    input="What is the capital of Japan?",
+    instructions="Answer concisely.",
+)
+
+print(response.output_text)
+```
+
+## previous_response_id を使ったマルチターン
+
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+# First turn
+response1 = client.responses.create(
+    model="gpt-4o",
+    input="My name is Alice.",
+)
+
+# Second turn — continue from the first
+response2 = client.responses.create(
+    model="gpt-4o",
+    input="What is my name?",
+    previous_response_id=response1.id,
+)
+
+print(response2.output_text)  # "Your name is Alice."
+```
+
+## レスポンス
+
+```json
+{
+  "id": "resp_abc123",
+  "object": "response",
+  "created_at": 1710000000,
+  "model": "gpt-4o",
+  "output": [
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {"type": "output_text", "text": "The capital of Japan is Tokyo."}
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 15,
+    "output_tokens": 9,
+    "total_tokens": 24
+  }
+}
+```
+
+### レスポンスフィールド
+
+<ResponseField name="id" type="string">
+  このレスポンスの一意識別子。会話を継続するには `previous_response_id` として渡してください。
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  常に `"response"` です。
+</ResponseField>
+
+<ResponseField name="created_at" type="integer">
+  レスポンスが作成された時刻の Unix タイムスタンプ。
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  レスポンスを生成したモデル。
+</ResponseField>
+
+<ResponseField name="output" type="array">
+  モデルが生成した出力オブジェクトの配列。
+  <Expandable title="output アイテムのプロパティ">
+    <ResponseField name="type" type="string">出力タイプ。テキストレスポンスの場合は `"message"`。</ResponseField>
+    <ResponseField name="role" type="string">生成された出力では常に `"assistant"`。</ResponseField>
+    <ResponseField name="content" type="array">コンテンツブロックの配列。各ブロックは `type`（`"output_text"`）と `text` 文字列を持ちます。</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  課金用のトークン数。
+  <Expandable title="usage のプロパティ">
+    <ResponseField name="input_tokens" type="integer">処理された入力トークン数。</ResponseField>
+    <ResponseField name="output_tokens" type="integer">生成された出力トークン数。</ResponseField>
+    <ResponseField name="total_tokens" type="integer">入力トークンと出力トークンの合計。</ResponseField>
+  </Expandable>
+</ResponseField>

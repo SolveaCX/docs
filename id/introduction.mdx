@@ -1,0 +1,74 @@
+---
+title: "Flatkey: Satu Kunci, 300+ Model AI Resmi & 1000+ Alat, Hemat hingga 50%"
+sidebarTitle: "Pengantar"
+description: "Flatkey adalah gateway API AI untuk GPT, Claude, Gemini, DeepSeek, dan 300+ model, ditambah 1000+ alat, melalui satu kunci yang kompatibel dengan OpenAI. Akses model resmi dengan harga hemat hingga 50%."
+---
+
+Flatkey adalah gateway API AI yang memungkinkan Anda mengakses 300+ model resmi dari OpenAI, Anthropic, Google, DeepSeek, Qwen, GLM, dan lainnya, ditambah 1000+ alat — semua melalui satu kunci API yang kompatibel dengan OpenAI. Ini adalah pengganti langsung untuk klien apa pun yang kompatibel dengan OpenAI: ubah satu baris kode (`base_url`) dan permintaan Anda akan diarahkan melalui Flatkey dengan harga hemat hingga 50% dari harga resmi.
+
+## Apa yang Flatkey berikan kepada Anda
+
+<CardGroup cols={2}>
+  <Card title="Satu kunci, semua model" icon="key">
+    Satu kunci API dan base URL mengarahkan ke GPT, Claude, Gemini, DeepSeek, Qwen, GLM, dan lainnya. Tidak perlu mengelola kunci per-penyedia.
+  </Card>
+  <Card title="Hemat hingga 50%" icon="piggy-bank">
+    Model dihargai 60–90% dari daftar harga resmi. Isi saldo $200, dapatkan bonus kredit $100 — dengan penumpukan, harganya bisa serendah setengah harga resmi.
+  </Card>
+  <Card title="Keandalan 99,9%" icon="shield-check">
+    Failover otomatis ke penyedia upstream. Dasbor kesehatan langsung menampilkan tingkat keberhasilan nyata dari lalu lintas produksi.
+  </Card>
+  <Card title="Tanpa penyimpanan data" icon="lock">
+    Prompt dan hasil tidak pernah disimpan. Sesuai GDPR, dengan kontrol yang selaras dengan SOC 2 dan ISO 27001.
+  </Card>
+  <Card title="Saldo prabayar" icon="receipt">
+    Isi saldo sekali, gunakan sesuai kebutuhan. Tanpa langganan, tanpa tagihan mengejutkan.
+  </Card>
+  <Card title="Kompatibilitas API penuh" icon="plug">
+    Endpoint yang kompatibel dengan OpenAI: chat completions, responses, embeddings, pembuatan gambar, dan daftar model.
+  </Card>
+</CardGroup>
+
+## Penyedia yang didukung
+
+Flatkey mengarahkan ke API resmi dari semua vendor AI utama:
+
+| Penyedia | Contoh model |
+|---|---|
+| OpenAI | gpt-4o, gpt-4o-mini, gpt-5, gpt-image-2 |
+| Anthropic | claude-opus-4, claude-sonnet-4, claude-haiku-4 |
+| Google | gemini-2.5-pro, gemini-2.5-flash, gemini-flash-latest |
+| DeepSeek | deepseek-v3, deepseek-v4-pro, deepseek-v4-flash |
+| Qwen | qwen3.5-plus, qwen3.7-max, qwen3.5-flash |
+| Z.ai / GLM | glm-4.7, glm-5-turbo, glm-5.2 |
+| ByteDance | seedance-2.0, seedance-2.5 |
+
+Lihat [Direktori Model](https://flatkey.ai/models) lengkap untuk semua 300+ model dengan harga dan data kesehatan secara langsung.
+
+## Cara kerjanya
+
+Flatkey berada di antara aplikasi Anda dan penyedia AI. Ketika Anda mengirim permintaan:
+
+1. Klien Anda memanggil `https://router.flatkey.ai/v1` dengan kunci API Flatkey Anda.
+2. Flatkey mengautentikasi permintaan dan mengurangi biaya dari saldo prabayar Anda.
+3. Permintaan diteruskan ke API penyedia resmi (OpenAI, Anthropic, dll.).
+4. Respons dikembalikan langsung ke klien Anda — tanpa transformasi konten.
+
+Prompt dan hasil Anda tidak pernah disimpan. Flatkey hanya mencatat metadata (model, jumlah token, stempel waktu) untuk penagihan dan analitik.
+
+## Langkah selanjutnya
+
+<CardGroup cols={2}>
+  <Card title="Mulai Cepat" icon="bolt" href="/id/quickstart">
+    Buat akun dan lakukan panggilan API pertama Anda dalam waktu kurang dari 5 menit
+  </Card>
+  <Card title="Autentikasi" icon="lock-keyhole" href="/id/api-reference/authentication">
+    Pelajari cara membuat dan menggunakan kunci API Flatkey Anda
+  </Card>
+  <Card title="Panduan OpenAI SDK" icon="python" href="/id/guides/openai-sdk">
+    Gunakan Flatkey dengan OpenAI SDK resmi — Python atau Node.js
+  </Card>
+  <Card title="Referensi API" icon="code" href="/id/api-reference/overview">
+    Referensi endpoint lengkap untuk semua metode API yang didukung
+  </Card>
+</CardGroup>

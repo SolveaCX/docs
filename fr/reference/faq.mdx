@@ -1,0 +1,83 @@
+---
+title: "FAQ Flatkey : Réponses aux questions fréquentes"
+sidebarTitle: "FAQ"
+description: "Réponses aux questions les plus fréquentes sur Flatkey — notamment la compatibilité des modèles, la facturation, la confidentialité, la gestion des clés API et les options entreprise."
+---
+
+Cette page répond aux questions les plus fréquentes sur l'utilisation de Flatkey. Si votre question n'y figure pas, contactez [support@flatkey.ai](mailto:support@flatkey.ai) ou utilisez le chat en direct dans la console.
+
+## Premiers pas
+
+<Accordion title="Qu'est-ce que Flatkey ?">
+  Flatkey est une passerelle API d'IA qui donne accès à plus de 300 modèles d'IA officiels provenant de OpenAI, Anthropic, Google, DeepSeek, Qwen, GLM et d'autres, ainsi qu'à plus de 1 000 outils — le tout via une seule clé API compatible OpenAI. C'est un remplacement direct pour tout client compatible OpenAI : changez `base_url` en `https://router.flatkey.ai/v1`, utilisez votre clé Flatkey, et accédez à n'importe quel modèle à des tarifs réduits.
+</Accordion>
+
+<Accordion title="Ai-je besoin d'une clé API distincte pour chaque fournisseur ?">
+  Non. Une seule clé API Flatkey route vers plus de 300 modèles chez tous les fournisseurs. Vous n'avez pas besoin de clés API séparées pour OpenAI, Anthropic ou Google.
+</Accordion>
+
+<Accordion title="Les modèles sont-ils les versions officielles des fournisseurs d'origine ?">
+  Oui. Flatkey achemine vos requêtes vers les API officielles des fournisseurs — OpenAI, Anthropic, Google, DeepSeek, etc. Les résultats des modèles proviennent directement de l'infrastructure du fournisseur d'origine. Flatkey n'héberge, n'affine ni ne modifie aucun modèle.
+</Accordion>
+
+## Facturation et tarification
+
+<Accordion title="Comment fonctionne la facturation ?">
+  Flatkey fonctionne en prépayé. Vous rechargez votre solde (10 $, 20 $, 200 $, ou un montant personnalisé pour les entreprises) et le coût de chaque requête API est déduit de votre solde en temps réel. Il n'y a pas d'abonnement ni de frais récurrents.
+</Accordion>
+
+<Accordion title="Comment fonctionne le bonus de recharge ?">
+  Chaque recharge génère un crédit bonus : +3 $ pour 10 $, +8 $ pour 20 $, +100 $ pour 200 $. Le crédit bonus est ajouté instantanément à votre solde, n'expire jamais et s'utilise exactement comme du crédit payant. Ce n'est pas un code de réduction — c'est du vrai crédit qui apparaît dans votre solde.
+</Accordion>
+
+<Accordion title="Puis-je effectuer plusieurs recharges ?">
+  Oui. Vous pouvez recharger autant de fois que vous le souhaitez, et vous obtenez un crédit bonus à chaque recharge. Trois recharges de 200 $ rapportent 300 $ de crédit bonus au total.
+</Accordion>
+
+<Accordion title="Que se passe-t-il si mon solde atteint zéro ?">
+  Les requêtes API renvoient une erreur `401 Insufficient Balance`. Aucun prélèvement automatique n'est effectué. Rechargez votre solde pour reprendre. Activez les alertes de solde faible dans **Paramètres → Notifications** pour éviter les interruptions.
+</Accordion>
+
+## Compatibilité et modèles
+
+<Accordion title="Flatkey est-il compatible avec le SDK officiel OpenAI ?">
+  Oui. Les SDK OpenAI pour Python et Node.js prennent en charge un paramètre `base_url`. Définissez-le sur `https://router.flatkey.ai/v1` et utilisez votre clé API Flatkey. Aucune autre modification n'est nécessaire.
+</Accordion>
+
+<Accordion title="Puis-je utiliser Flatkey avec le SDK Anthropic ?">
+  Oui. Définissez `base_url` sur `https://router.flatkey.ai` (sans `/v1`) dans le constructeur du SDK Anthropic et utilisez votre clé API Flatkey. Consultez le [guide du SDK Anthropic](/fr/guides/anthropic-sdk) pour plus de détails.
+</Accordion>
+
+<Accordion title="Quels noms de modèles dois-je utiliser ?">
+  Utilisez les mêmes identifiants de modèles canoniques que vous utiliseriez avec le fournisseur d'origine — par exemple `gpt-4o`, `claude-sonnet-4-5`, `gemini-2.5-flash`. La liste complète est disponible dans le [Répertoire des modèles](https://flatkey.ai/models).
+</Accordion>
+
+<Accordion title="Flatkey prend-il en charge le streaming ?">
+  Oui. Définissez `stream: true` dans votre requête. Flatkey renvoie des événements envoyés par le serveur (SSE) dans le même format que l'API OpenAI. Le streaming fonctionne pour tous les modèles de chat et de génération de texte.
+</Accordion>
+
+## Confidentialité et sécurité
+
+<Accordion title="Flatkey stocke-t-il mes invites ou mes réponses ?">
+  Non. Flatkey ne conserve aucun contenu de requête — les invites et les réponses ne sont jamais écrites sur disque ni stockées. Seules les métadonnées (modèle, nombre de tokens, horodatages, coût) sont enregistrées à des fins de facturation et d'analyse.
+</Accordion>
+
+<Accordion title="Quelles certifications de conformité Flatkey possède-t-il ?">
+  Flatkey opère sur une infrastructure conforme au RGPD et maintient des contrôles alignés sur les normes SOC 2 et ISO 27001.
+</Accordion>
+
+<Accordion title="Que faire si ma clé API est compromise ?">
+  Révoquez la clé immédiatement depuis la page **Clés** dans la console. La révocation est instantanée. Créez ensuite une nouvelle clé et mettez à jour votre application. Consultez [Gestion des clés API](/fr/dashboard/api-keys) pour plus de détails.
+</Accordion>
+
+## Entreprise
+
+Les remises sur volume engagé, le routage personnalisé, la facturation et les achats sont présentés sur la page [Entreprise](/fr/reference/enterprise).
+
+## Assistance
+
+<Accordion title="Comment contacter l'assistance ?">
+  - **E-mail** : [support@flatkey.ai](mailto:support@flatkey.ai)
+  - **Chat en direct** : Disponible sur [flatkey.ai](https://flatkey.ai) et dans la console
+  - **X (Twitter)** : [@flatkey101](https://x.com/flatkey101)
+</Accordion>

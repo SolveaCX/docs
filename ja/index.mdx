@@ -1,0 +1,79 @@
+---
+title: "Flatkey: 300以上のモデルと1000以上のツールに対応するAI APIゲートウェイ — 1つのキーで最大50%オフ"
+sidebarTitle: "ホーム"
+description: "Flatkeyは、300以上の公式モデル（GPT、Claude、Gemini、DeepSeekなど）と1000以上のツールへのアクセスを、単一のOpenAI互換APIキーで提供します。公式価格より最大50%オフでご利用いただけます。"
+---
+
+Flatkeyは、OpenAI、Anthropic、Google、DeepSeek、Qwen、GLMなど300以上の公式モデルへの単一のOpenAI互換エンドポイントと、1000以上のツールへのアクセスを提供するAI APIゲートウェイです。`base_url` を `https://router.flatkey.ai/v1` に変更するだけで、既存のコードをそのまま使いながらすぐに節約を始められます。モデルは公式定価より最大50%オフの価格で提供されます。
+
+<CardGroup cols={2}>
+  <Card title="クイックスタート" icon="bolt" href="/ja/quickstart">
+    5分以内に最初のAPIコールを実行する
+  </Card>
+  <Card title="APIリファレンス" icon="code" href="/ja/api-reference/overview">
+    リクエストとレスポンスの例を含む完全なエンドポイントリファレンス
+  </Card>
+  <Card title="モデルディレクトリ" icon="list" href="https://flatkey.ai/models">
+    300以上のモデル、プロバイダー、ライブ価格を確認する
+  </Card>
+  <Card title="料金とクレジット" icon="coins" href="https://flatkey.ai/pricing">
+    サブスクリプションプラン、従量課金、アカウントクレジットについて理解する
+  </Card>
+</CardGroup>
+
+## Flatkeyの仕組み
+
+<Steps>
+  <Step title="アカウントを作成する">
+    [console.flatkey.ai](https://console.flatkey.ai/sign-up) でサインアップし、用途に合ったサブスクリプションプランを選択してください。
+  </Step>
+  <Step title="APIキーを生成する">
+    ダッシュボードの **Keys** セクションを開き、新しいAPIキーを作成してください。パスワードと同様に、秘密に保管してください。
+  </Step>
+  <Step title="クライアントをFlatkeyに向ける">
+    OpenAI互換SDKで `base_url` を `https://router.flatkey.ai/v1` に設定してください。他のコード変更は不要です。
+  </Step>
+  <Step title="使用状況とコストを監視する">
+    **Usage** ダッシュボードですべてのリクエスト、トークン数、費用を追跡できます。支出に上限を設けるためにクォータを設定してください。
+  </Step>
+</Steps>
+
+## チームがFlatkeyを使う理由
+
+<CardGroup cols={3}>
+  <Card title="1つのキーで全モデルに対応" icon="key">
+    単一のAPIキーとベースURLで、GPT、Claude、Gemini、DeepSeek、Qwen、GLMなどにアクセスできます。
+  </Card>
+  <Card title="最大50%の節約" icon="piggy-bank">
+    モデルは公式定価より最大50%オフの価格で提供されます。
+  </Card>
+  <Card title="99.9%の成功率" icon="shield-check">
+    アップストリームプロバイダー間の自動フェイルオーバー。全モデルのライブヘルスダッシュボードを提供。
+  </Card>
+  <Card title="データ保持なし" icon="lock">
+    プロンプトや補完のデータは保存しません。GDPR準拠、SOC 2およびISO 27001に対応。
+  </Card>
+  <Card title="ドロップイン置き換え" icon="plug">
+    OpenAI互換API。コード1行を変更するだけ — SDKの書き直しや移行作業は不要です。
+  </Card>
+  <Card title="サブスクリプション課金" icon="receipt">
+    ワークロードに合ったプランを選択し、使用状況をリアルタイムで監視できます。
+  </Card>
+</CardGroup>
+
+## ドキュメントを探索する
+
+<CardGroup cols={2}>
+  <Card title="認証" icon="lock-keyhole" href="/ja/api-reference/authentication">
+    Flatkey APIキーの作成と使用方法を学ぶ
+  </Card>
+  <Card title="OpenAI SDKガイド" icon="python" href="/ja/guides/openai-sdk">
+    公式のOpenAI PythonまたはNode.js SDKでFlatkeyを使用する
+  </Card>
+  <Card title="Anthropic SDKガイド" icon="robot" href="/ja/guides/anthropic-sdk">
+    Anthropic SDKを使ってClaudeのリクエストをFlatkey経由でルーティングする
+  </Card>
+  <Card title="モデルの稼働状況" icon="heart-pulse" href="https://flatkey.ai/status">
+    全モデルのリアルタイム成功率とレイテンシを確認する
+  </Card>
+</CardGroup>

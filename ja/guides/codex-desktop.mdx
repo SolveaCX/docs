@@ -1,0 +1,170 @@
+---
+title: "Codex DesktopでFlatkeyを使う"
+sidebarTitle: "Codex Desktop"
+description: "公式のChatGPTログインを維持しながら、手動またはCC Switchを使ってCodexデスクトップアプリでFlatkeyを使用するよう設定します。"
+---
+
+Codex DesktopはCodex CLIと同じユーザーレベルのCodex設定を読み込みます。公式のChatGPTまたはCodexログインを置き換えずに、Flatkeyをカスタムモデルプロバイダーとして追加できます。
+
+## 前提条件
+
+- Codex Desktopがインストールされていること
+- デスクトップアプリで公式のChatGPTまたはCodexサインインを1回完了していること
+- Flatkey APIキー — [Flatkey Consoleで作成してください](https://console.flatkey.ai/keys)
+- [Flatkeyモデルディレクトリ](https://flatkey.ai/models)でサポートされているモデルID
+- CC Switchのセットアップを使用する場合はCC Switch
+
+## 手動設定
+
+### 1. APIキーを設定する
+
+キーは設定ファイルに書き込むのではなく、ユーザー環境変数に保存してください。
+
+<CodeGroup>
+```powershell Windows PowerShell
+[Environment]::SetEnvironmentVariable(
+  "FLATKEY_API_KEY",
+  "sk-fk-...",
+  "User"
+)
+```
+```bash macOS
+launchctl setenv FLATKEY_API_KEY "sk-fk-..."
+```
+```bash Linux
+export FLATKEY_API_KEY="sk-fk-..."
+```
+</CodeGroup>
+
+変数を変更した後、再度開く前にCodex Desktopを完全に終了してください。
+
+### 2. `config.toml`を更新する
+
+ユーザーレベルのCodex設定ファイルを開きます：
+
+| プラットフォーム | 設定ファイルのパス |
+|---|---|
+| Windows | `%USERPROFILE%\.codex\config.toml` |
+| macOSおよびLinux | `~/.codex/config.toml` |
+
+トップレベルの`model`と`model_provider`の設定を置き換える前に、現在の値を記録して後で復元できるようにしてください。次に両方の設定を更新します。いずれかのキーが既に存在する場合は、重複するキーを追加するのではなく値を置き換えてください。関連しない設定はすべて保持してください。以下のプロバイダーテーブルを追加します。`[model_providers.flatkey]`が既に存在する場合は、重複を作成せずそのテーブルを更新してください：
+
+```toml
+model = "gpt-5.4"
+model_provider = "flatkey"
+
+[model_providers.flatkey]
+name = "Flatkey"
+base_url = "https://router.flatkey.ai/v1"
+env_key = "FLATKEY_API_KEY"
+wire_api = "responses"
+```
+
+`gpt-5.4`は本執筆時点でFlatkeyモデルディレクトリで利用可能です。別のモデルIDに切り替える前にディレクトリを確認してください。
+
+<Warning>
+  公式の認証情報は`auth.json`またはお使いのオペレーティングシステムの資格情報ストアに保存されている場合があります。Flatkeyの設定のためにいずれの資格情報ストアも編集、置き換え、上書き、エクスポート、共有しないでください。どちらにもFlatkey APIキーを貼り付けないでください。`config.toml`がモデルとプロバイダーのルーティングを制御します。
+</Warning>
+
+### 3. 再起動して確認する
+
+Codex Desktopを完全に終了し、再度開いて、簡単なプロンプトを送信します。[Flatkey使用状況ログ](https://console.flatkey.ai/usage-logs/common)を開き、モデル、トークン数、レイテンシ、コストを確認してください。
+
+## CC Switchで設定する
+
+[CC Switch](https://ccswitch.io)はサードパーティの設定管理ツールであり、Flatkeyの製品ではありません。[CC SwitchのGitHubリポジトリ](https://github.com/farion1231/cc-switch)からもダウンロードできます。以下の手順は現在のCC Switchインターフェースに基づいています。
+
+手動設定とCC Switchは代替のセットアップ方法です。アクティブなプロバイダーには1つの方法を使用してください。Codex DesktopとCodex CLIは、macOSおよびLinuxでは`~/.codex/config.toml`を、Windowsでは`%USERPROFILE%\.codex\config.toml`を共有しています。CC Switchはその共有ファイル内のモデルとプロバイダーの設定を制御します。関連しない設定やプロバイダーは保持してください。
+
+### 1. 公式サインインを1回完了する
+
+プロバイダーを切り替える前に、Codex Desktopを開いて公式のChatGPTまたはCodexサインインを完了してください。デスクトップアプリがアカウントアクセスとそのモデルカタログのために有効な公式セッションを持つよう、少なくとも1回はこれを行ってください。
+
+公式の認証情報は`auth.json`またはお使いのオペレーティングシステムの資格情報ストアに保存されます。両方を機密情報として扱ってください。
+
+### 2. 直接切り替え時のために公式ログインを保持する
+
+CC Switchで**設定（Settings）** > **一般（General）** > **Codexアプリ拡張機能（Codex App Enhancements）**を開き、**直接切り替え時に公式ログインを保持する（Keep official login for direct switches）**を有効にします。この設定により、直接のプロバイダー切り替えがCodex Desktopに必要な公式ログインを破棄することを防げます。
+
+![Codexの現在の公式ログイン保持設定を有効にする](/images/guides/cc-switch/en/codex-login-preservation.png)
+
+<Warning>
+  `auth.json`をコピーのために開いたり、置き換えたり上書きしたり、Flatkey APIキーを貼り付けたり、共有したりしないでください。スクリーンショットやCC Switchのプロバイダーエクスポートにおいて、Flatkey APIキーを絶対に露出させないでください。いずれかの認証情報が漏えいした場合は、直ちにローテーションまたは無効化してください。
+</Warning>
+
+### 3. Flatkeyをカスタムプロバイダーとして追加する
+
+CC Switchで**Codex**パネルを開き、**カスタムプロバイダー（Custom Provider）**を追加します。以下の値を使用してください。このチュートリアルでは組み込みのFlatkeyプロバイダーには依存しません。
+
+![CC SwitchでCodexプロバイダーパネルを開き、プロバイダー追加ボタンを選択する](/images/guides/cc-switch/en/codex-provider-list.png)
+
+| プロバイダーフィールド | 値 |
+|---|---|
+| Provider Name | `flatkey` |
+| API Key | `sk-fk-...` |
+| API Request URL | `https://router.flatkey.ai/v1` |
+| Default Model | スクリーンショットでは`gpt-5.6-sol` — [Flatkeyモデルディレクトリ](https://flatkey.ai/models)で現在の正確なIDを確認してください |
+| Upstream Format | **Responses (native)** |
+
+![CC Switchに現在のFlatkeyプロバイダーフィールドを入力する](/images/guides/cc-switch/en/codex-provider-form.png)
+
+### 4. モデルを設定する
+
+プロバイダーの**Default Model**を、使用したい正確なFlatkeyモデルIDに設定します。スクリーンショットでは例として`gpt-5.6-sol`が示されています。IDを選ぶ前に[Flatkeyモデルディレクトリ](https://flatkey.ai/models)を確認してください。
+
+**Fetch Models**をクリックして現在のIDを読み込みます。Codexの`/model`メニューに表示させたい場合は、プロバイダーの**Model Mapping**にモデルを追加してください。プロバイダーの**Default Model**に正確なIDを設定することも、Codex CLIから`codex --model <id>`で渡すこともできます。Codex Desktopでは、ピッカーにカスタムモデルが表示されていなくても、アクティブなプロバイダーとデフォルトモデルを意図したルートとして扱ってください。リクエストを送信した後、Flatkey使用状況ログで実際のルートを確認してください。
+
+![Responses nativeを選択し、Codexのモデルマッピングを設定する](/images/guides/cc-switch/en/codex-model-mapping.png)
+
+FlatkeyはResponses APIをネイティブにサポートしています。この設定には**Local Routing**は不要なので、オフのままにしてください。
+
+### 5. 保存、有効化、再起動する
+
+カスタムプロバイダーを保存し、Codexで有効化します。共有の`config.toml`から関連しない設定やプロバイダーを削除しないでください。
+
+![FlatkeyのCodexプロバイダーが使用中であることを確認する](/images/guides/cc-switch/en/codex-provider-active.png)
+
+Codex Desktopを完全に終了します。古いCodex Desktopプロセスが残っていないことを確認してから、新しいプロバイダー設定を読み込むようにアプリを再度開いてください。
+
+### 6. 実際のルートを確認する
+
+小さなコンテキストで新しい会話を開始し、最小限のプロンプトを送信します。次に[Flatkey使用状況ログ](https://console.flatkey.ai/usage-logs/common)を開き、そのリクエストのモデル、トークン数、レイテンシ、コストを確認してください。
+
+![最小限のCodex Desktopの応答でFlatkeyのルートを確認する](/images/guides/cc-switch/en/codex-desktop-verify.png)
+
+公式ログインを保持していても、リクエストがOpenAIの課金を使用するとは限りません。共有の`config.toml`内の現在のプロバイダーとモデル設定がルートを制御します。Flatkey使用状況ログは、リクエストがFlatkeyに到達したことを確認できる唯一の権威ある手段です。
+
+システムプロンプト、ツール、会話履歴、添付ファイル、コマンド出力は、表示されているプロンプトのテキストを超えて入力トークンを増やす可能性があります。入力トークン数が多くなると、課金コストが増加する可能性があります。
+
+### モデルが表示されない場合
+
+Codex Desktopは公式モデルカタログを表示し、カスタムモデルをピッカーから省略することがあります。UIにカスタムモデルが表示されていないことは、ルーティングが失敗したことを証明するものではありません。
+
+1. 公式のChatGPTまたはCodexログインがまだ有効であることを確認してください。
+2. **設定（Settings）** > **一般（General）** > **Codexアプリ拡張機能（Codex App Enhancements）** > **直接切り替え時に公式ログインを保持する（Keep official login for direct switches）**が有効になっていることを確認してください。
+3. Flatkeyプロバイダーが有効で、その**Default Model**に正確なモデルIDが含まれていることを確認してください。
+4. プロバイダーのモデルマッピングを確認してください。`/model`メニューにモデルを表示させたい場合は**Fetch Models**を使用してください。
+5. 関連しない設定を変更せずに、共有の`config.toml`に意図したアクティブなプロバイダーとモデルが含まれていることを確認してください。
+6. すべてのCodex Desktopプロセスを完全に終了し、アプリを再度開いてください。
+7. 最小限のプロンプトを送信し、[Flatkey使用状況ログ](https://console.flatkey.ai/usage-logs/common)で実際のルートを確認してください。
+
+### 公式プロバイダーに戻す
+
+CC Switchを使用した場合は、公式のCodexプロバイダーを有効化してください。Codex Desktopを完全に終了し、古いプロセスが残っていないことを確認してから、再度開いてください。Flatkeyのカスタムプロバイダーを削除する必要はありません。
+
+手動設定を使用した場合は、`config.toml`内の以前のトップレベルの`model`と`model_provider`の値を復元してください。関連しない設定とプロバイダーテーブルは保持してください。公式の認証情報は`auth.json`またはオペレーティングシステムの資格情報ストア内にそのまま残してください。Codex Desktopを完全に終了し、古いプロセスが残っていないことを確認してから、再度開いてください。
+
+### CC Switchのトラブルシューティング
+
+| 問題 | 確認事項 |
+|---|---|
+| 公式ログインが見つからない、または期限切れになっている | Codex Desktopで再度サインインし、Flatkeyを有効化する前に**直接切り替え時に公式ログインを保持する（Keep official login for direct switches）**を有効にしてください |
+| 認証に失敗する、またはFlatkeyキーが拒否される | APIキーが有効で、カスタムプロバイダーのAPIキーフィールドに入力されていることを確認してください。漏えいした場合はローテーションまたは無効化してください |
+| エンドポイントまたはResponsesのエラー | **API Request URL**を`https://router.flatkey.ai/v1`に設定し、**Responses (native)**を選択し、**Local Routing**をオフのままにしてください |
+| `Model not found`、カスタムモデルが表示されない、または`/model`マッピングが見つからない | [モデルディレクトリ](https://flatkey.ai/models)から正確なIDをコピーし、**Default Model**として設定し、**Fetch Models**またはモデルマッピングを使用してください |
+| 使用状況ログに間違ったプロバイダーまたはモデルが表示される | Flatkeyのカスタムプロバイダーを有効化し、そのデフォルトモデルと共有の`config.toml`内のアクティブな値を確認してください |
+| 変更が反映されない | Codex Desktopを完全に終了し、古くなったCodex Desktopプロセスを終了させ、アプリを再度開いてください |
+| Flatkeyの残高が不足している | 残高を追加するか、利用可能なクレジットのあるFlatkeyキーを使用し、最小限のプロンプトを再試行してください |
+| Local Routingが誤って有効になっている | FlatkeyはネイティブのResponsesリクエストを受け付けるため、**Local Routing**をオフにしてください |
+| リクエストが使用状況ログに表示されない | 新しい小さなコンテキストの会話を開始し、最小限のプロンプトを送信してから、アクティブなプロバイダー、APIエンドポイント、[使用状況ログ](https://console.flatkey.ai/usage-logs/common)を再確認してください |
+| 切り替え後に公式ログインが消えた | Codex Desktopで再度サインインし、ログイン保持設定を有効にしてください。`auth.json`は絶対に置き換えたり上書きしたりしないでください |

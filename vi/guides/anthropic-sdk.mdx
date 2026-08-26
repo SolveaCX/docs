@@ -1,0 +1,103 @@
+---
+title: "Định tuyến yêu cầu Claude qua Flatkey bằng Anthropic SDK"
+sidebarTitle: "Anthropic SDK"
+description: "Định tuyến các yêu cầu Anthropic Claude qua Flatkey bằng cách đặt base URL trong Anthropic SDK. Truy cập Claude với mức giá giảm đến 50% so với giá chính thức."
+---
+
+Bạn có thể truy cập các mô hình Claude với mức giá giảm đến 50% so với giá chính thức của Anthropic bằng cách định tuyến Anthropic Python SDK qua Flatkey. Chỉ cần đặt tham số `base_url` một lần và code SDK hiện có của bạn hoạt động ngay — không cần thay đổi gì khác.
+
+## Cài đặt
+
+```bash pip
+pip install anthropic
+```
+
+## Thiết lập cơ bản
+
+```python python
+import os
+import anthropic
+
+client = anthropic.Anthropic(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai",
+)
+```
+
+<Note>
+  Khi sử dụng Anthropic SDK, hãy đặt `base_url` thành `https://router.flatkey.ai` (không có `/v1`). SDK sẽ tự động thêm đường dẫn vào.
+</Note>
+
+## Gửi tin nhắn
+
+```python python
+message = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=1024,
+    messages=[
+        {"role": "user", "content": "Write a Python function to reverse a linked list."}
+    ],
+)
+
+print(message.content[0].text)
+```
+
+## System prompt
+
+```python python
+message = client.messages.create(
+    model="claude-opus-4-5",
+    max_tokens=2048,
+    system="You are a senior software engineer. Provide concise, idiomatic code.",
+    messages=[
+        {"role": "user", "content": "Implement a rate limiter in Python."}
+    ],
+)
+
+print(message.content[0].text)
+```
+
+## Streaming
+
+```python python
+with client.messages.stream(
+    model="claude-haiku-4-5-20251001",
+    max_tokens=512,
+    messages=[{"role": "user", "content": "Explain how HTTPS works."}],
+) as stream:
+    for text in stream.text_stream:
+        print(text, end="", flush=True)
+print()
+```
+
+## Hội thoại nhiều lượt
+
+```python python
+conversation = [
+    {"role": "user", "content": "What is the capital of France?"},
+    {"role": "assistant", "content": "The capital of France is Paris."},
+    {"role": "user", "content": "What is its population?"},
+]
+
+response = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=256,
+    messages=conversation,
+)
+
+print(response.content[0].text)
+```
+
+## Các mô hình Claude khả dụng
+
+| Mô hình | Phù hợp nhất cho | Giá đầu vào (sau ưu đãi) |
+|---|---|---|
+| `claude-opus-4-5` | Lập luận phức tạp, viết dài | ~$3 / 1M token |
+| `claude-sonnet-4-5` | Cân bằng chất lượng và tốc độ | ~$1.6 / 1M token |
+| `claude-haiku-4-5-20251001` | Tác vụ nhanh, tiết kiệm chi phí | ~$0.53 / 1M token |
+
+Xem [Danh mục Mô hình](https://flatkey.ai/models) để biết tất cả các mô hình Claude và giá hiện tại.
+
+<Tip>
+  Bạn cũng có thể sử dụng các mô hình Claude với OpenAI SDK qua Flatkey — chỉ cần đặt `model="claude-sonnet-4-5"` trong lệnh gọi `client.chat.completions.create()`. Hãy dùng SDK nào phù hợp với dự án của bạn.
+</Tip>

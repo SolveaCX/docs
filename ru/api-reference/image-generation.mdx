@@ -1,0 +1,224 @@
+---
+title: "API генерации и редактирования изображений"
+sidebarTitle: "Images API"
+description: "Генерируйте или редактируйте изображения через совместимые с OpenAI Images эндпоинты /v1/images/generations и /v1/images/edits."
+---
+
+Используйте `/v1/images/generations` для генерации изображения из текстового запроса и `/v1/images/edits` для редактирования входного изображения. Оба эндпоинта используют формат запросов, совместимый с OpenAI Images. Доступные операции зависят от модели и канала, предоставленных вашим сервисом Flatkey.
+
+<Warning>
+  Модели Gemini для изображений используют нативный эндпоинт Gemini `generateContent` и не могут вызываться через эти эндпоинты OpenAI Images. См. [руководство по моделям Gemini для изображений](/ru/guides/image-generation#use-gemini-image-models).
+</Warning>
+
+## Генерация изображения
+
+### Эндпоинт
+
+```
+POST https://router.flatkey.ai/v1/images/generations
+```
+
+### Заголовки
+
+| Заголовок | Значение |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### Параметры тела JSON
+
+<ParamField body="model" type="string" required>
+  Идентификатор модели изображений, предоставленной вашим сервисом Flatkey, например `"gpt-image-2"`.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Текстовое описание изображения для генерации.
+</ParamField>
+
+<ParamField body="size" type="string">
+  Размеры выходного изображения, например `"1024x1024"`. Поддерживаемые значения зависят от модели.
+</ParamField>
+
+<ParamField body="quality" type="string">
+  Качество вывода: `"low"`, `"medium"` или `"high"`. Если не указано, используется значение по умолчанию вышестоящего сервиса. Более высокое качество увеличивает задержку и потребление ресурсов.
+</ParamField>
+
+<ParamField body="background" type="string">
+  Обработка фона, например `"transparent"` или `"opaque"`, если поддерживается моделью.
+</ParamField>
+
+<ParamField body="output_format" type="string">
+  Формат вывода, например `"png"`, `"jpeg"` или `"webp"`, если поддерживается моделью.
+</ParamField>
+
+<ParamField body="output_compression" type="integer">
+  Уровень сжатия вывода, если поддерживается моделью.
+</ParamField>
+
+<ParamField body="moderation" type="string">
+  Уровень модерации контента, если поддерживается моделью.
+</ParamField>
+
+<ParamField body="response_format" type="string">
+  Результаты `gpt-image-2` возвращаются в `data[].b64_json`. Размещённые URL изображений не предоставляются, а `response_format: "url"` не поддерживается.
+</ParamField>
+
+<ParamField body="n" type="integer">
+  Запрошенное количество изображений. `gpt-image-2` в настоящее время возвращает одно изображение на запрос, поскольку его вышестоящий инструмент не принимает `n`. Отправляйте несколько запросов, если вам нужно несколько изображений.
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  Установите `true` для получения ответа в формате SSE. Опустите для синхронного ответа.
+</ParamField>
+
+### Примеры запросов
+
+<CodeGroup>
+```python python
+import base64
+import os
+from pathlib import Path
+
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.images.generate(
+    model="gpt-image-2",
+    prompt="A futuristic city skyline at dusk, cyberpunk style",
+    size="1024x1024",
+    quality="high",
+)
+
+Path("generated.png").write_bytes(
+    base64.b64decode(response.data[0].b64_json)
+)
+```
+```javascript node
+import { writeFileSync } from "node:fs";
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const response = await client.images.generate({
+  model: "gpt-image-2",
+  prompt: "A futuristic city skyline at dusk, cyberpunk style",
+  size: "1024x1024",
+  quality: "high",
+});
+
+writeFileSync(
+  "generated.png",
+  Buffer.from(response.data[0].b64_json, "base64"),
+);
+```
+```bash curl
+curl https://router.flatkey.ai/v1/images/generations \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-2",
+    "prompt": "A serene forest clearing with morning mist and sunbeams",
+    "size": "1024x1024",
+    "quality": "high"
+  }'
+```
+</CodeGroup>
+
+## Редактирование изображения
+
+`/v1/images/edits` принимает входное изображение и инструкции по редактированию в формате `multipart/form-data`.
+
+### Эндпоинт
+
+```
+POST https://router.flatkey.ai/v1/images/edits
+```
+
+### Заголовки
+
+| Заголовок | Значение |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `multipart/form-data`; curl добавляет разделитель автоматически при использовании `-F` |
+
+### Поля формы
+
+| Поле | Тип | Обязательное | Описание |
+|---|---|---|---|
+| `model` | string | Да | Идентификатор модели изображений, предоставленной вашим сервисом Flatkey, например `gpt-image-2`. |
+| `prompt` | string | Да | Инструкции, описывающие, как редактировать изображение. |
+| `image` | file | Да | Входное изображение в формате PNG, JPEG или WebP. Для нескольких изображений используйте `image[]` или индексированные поля, например `image[0]` и `image[1]`. |
+| `mask` | file | Нет | Маска для инпейнтинга. Прозрачные области определяют регионы для перерисовки. |
+| `size` | string | Нет | Размеры выходного изображения. Поддерживаемые значения зависят от модели. |
+| `quality` | string | Нет | Качество вывода: `low`, `medium` или `high`. |
+| `stream` | boolean | Нет | Установите `true` для получения ответа в формате SSE. |
+
+### Пример запроса
+
+```bash
+curl https://router.flatkey.ai/v1/images/edits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -F "model=gpt-image-2" \
+  -F "prompt=add a small yellow star in the center" \
+  -F "image=@input.png" \
+  -F "mask=@mask.png"
+```
+
+Поле `mask` необязательно. Опустите его, чтобы редактировать всё изображение на основе запроса. Не задавайте заголовок `Content-Type` вручную; curl определяет правильный разделитель multipart из полей `-F`.
+
+<Warning>
+  Если предоставленная маска повреждена, нечитаема или превышает лимит сервиса, запрос завершится ошибкой, а не перейдёт к редактированию всего изображения.
+</Warning>
+
+## Ответ
+
+Синхронные запросы генерации и редактирования возвращают одинаковую структуру ответа. Flatkey возвращает изображение в виде данных base64; размещённый URL изображения для `gpt-image-2` не предоставляется.
+
+```json
+{
+  "created": 1710000000,
+  "data": [
+    {
+      "b64_json": "iVBORw0KGgoAAA...",
+      "revised_prompt": "Add a small yellow five-pointed star in the center...",
+      "url": ""
+    }
+  ]
+}
+```
+
+### Поля ответа
+
+<ResponseField name="created" type="integer">
+  Unix-временная метка момента завершения запроса.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Массив объектов изображений.
+  <Expandable title="объект изображения">
+    <ResponseField name="b64_json" type="string">Данные изображения в кодировке base64.</ResponseField>
+    <ResponseField name="revised_prompt" type="string">Запрос, фактически использованный моделью после переработки.</ResponseField>
+    <ResponseField name="url" type="string">Пустое для `gpt-image-2`; размещённые URL не предоставляются.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+При редактировании входное изображение также учитывается в потреблении ресурсов модели, поэтому редактирование обычно потребляет больше ресурсов, чем генерация изображения только из текста.
+
+## Стриминг
+
+Установите `stream` в `true` в теле JSON запроса генерации или добавьте `-F "stream=true"` к запросу редактирования, чтобы получить вывод в формате `text/event-stream`. Финальное событие содержит результат изображения, после которого следует `data: [DONE]`.
+
+| Событие | Значение |
+|---|---|
+| `image_generation.completed` | Генерация изображения завершена. |
+| `image_edit.completed` | Редактирование изображения завершено. |
+| `[DONE]` | Поток завершён. |
+
+Поддержка стриминга может зависеть от выбранной модели и канала. Для синхронных запросов высокого качества настройте таймаут клиента не менее 150 секунд.

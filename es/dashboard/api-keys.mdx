@@ -1,0 +1,54 @@
+---
+title: "Crea y gestiona tus claves API de Flatkey en la consola"
+sidebarTitle: "Claves API"
+description: "Aprende a crear, nombrar y revocar claves API de Flatkey en la consola. Gestiona varias claves por entorno y mantén tus integraciones seguras."
+---
+
+Tu clave API de Flatkey autentica cada solicitud a `https://router.flatkey.ai/v1`. Puedes crear y gestionar claves desde la sección **Claves** de la consola. Puedes crear varias claves — una por entorno, aplicación o miembro del equipo — y revocar cualquier clave al instante si se ve comprometida.
+
+## Crear una clave
+
+<Steps>
+  <Step title="Abre la página de Claves">
+    Inicia sesión en [console.flatkey.ai](https://console.flatkey.ai) y haz clic en **Claves** en la barra lateral izquierda.
+  </Step>
+  <Step title="Haz clic en Crear clave">
+    Introduce un nombre descriptivo para la clave. Elige algo significativo como `production-api`, `staging-test` o `john-dev`. El nombre solo es visible para ti.
+  </Step>
+  <Step title="Copia y guarda el secreto">
+    La clave completa (que comienza con `sk-fk-`) se muestra **solo una vez**. Cópiala de inmediato y guárdala en un gestor de secretos, un gestor de contraseñas o una variable de entorno. No podrás recuperarla una vez que cierres el diálogo.
+  </Step>
+</Steps>
+
+<Warning>
+  Si pierdes una clave API, debes crear una nueva. No hay forma de ver el secreto de nuevo una vez creado. La clave antigua seguirá funcionando hasta que la revoques.
+</Warning>
+
+## Buenas prácticas
+
+- **Una clave por entorno**: usa claves separadas para desarrollo, staging y producción. Si una clave se filtra, puedes revocar solo ese entorno sin afectar a los demás.
+- **Nombres descriptivos**: incluye el entorno y el propósito (p. ej., `prod-customer-chatbot`, `dev-local`).
+- **Usa variables de entorno**: nunca escribas claves directamente en el código fuente. Usa `FLATKEY_API_KEY` como nombre de la variable.
+- **Rotación periódica**: revoca y reemplaza las claves con regularidad, especialmente en cargas de trabajo de producción.
+
+## Ver tus claves
+
+La página **Claves** muestra todas tus claves activas con:
+- Nombre de la clave
+- Fecha de creación
+- Marca de tiempo del último uso
+- Prefijo enmascarado de la clave (p. ej., `sk-fk-****abcd`)
+
+No puedes ver el valor completo de la clave tras su creación — solo el prefijo.
+
+## Revocar una clave
+
+Para revocar una clave, haz clic en el icono **Eliminar** (papelera) que aparece junto a ella en la página de Claves. La revocación es inmediata — cualquier solicitud que use esa clave recibirá de inmediato una respuesta `401 Unauthorized`. No existe eliminación temporal ni período de gracia.
+
+<Tip>
+  Antes de revocar una clave que se use en producción, despliega primero la clave de reemplazo en tu aplicación. Revocar la clave antigua antes de que la nueva esté activa causará tiempo de inactividad.
+</Tip>
+
+## Permisos de las claves
+
+Todas las claves comparten el mismo saldo de cuenta y pueden acceder a todos los modelos de forma predeterminada. Si necesitas restringir una clave a modelos específicos o establecer una cuota de gasto, usa los **Grupos** en la consola para aplicar políticas de enrutamiento y acceso.

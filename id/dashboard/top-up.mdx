@@ -1,0 +1,60 @@
+---
+title: "Isi Saldo Akun Flatkey Anda dan Dapatkan Kredit Bonus"
+sidebarTitle: "Isi Saldo"
+description: "Tambahkan kredit prabayar ke akun Flatkey Anda. Pelajari tentang tingkatan isi saldo, kredit bonus, dan cara mengelola saldo Anda untuk akses API tanpa gangguan."
+---
+
+Flatkey menggunakan model saldo prabayar — Anda menambahkan kredit ke akun Anda dan kredit tersebut dikonsumsi seiring penggunaan model oleh permintaan API Anda. Tidak ada langganan atau tagihan berulang. Setiap isi saldo mendapatkan kredit bonus yang langsung dikreditkan ke saldo Anda.
+
+## Tingkatan isi saldo
+
+| Isi saldo | Bonus | Total kredit | Penghematan efektif |
+|---|---|---|---|
+| $10 | +$3 | $13 | 30% |
+| $20 | +$8 | $28 | 40% |
+| $200 | +$100 | $300 | **50% (nilai terbaik)** |
+
+<Tip>
+  Tingkatan isi saldo $200 menawarkan tarif efektif terbaik. Dikombinasikan dengan diskon model (60–90% dari daftar harga resmi), ini membawa biaya hingga serendah 50% dari harga penyedia resmi.
+</Tip>
+
+## Menambahkan isi saldo
+
+<Steps>
+  <Step title="Buka Saldo">
+    Di [konsol](https://console.flatkey.ai), klik **Saldo** di bilah sisi kiri.
+  </Step>
+  <Step title="Pilih jumlah isi saldo">
+    Pilih $10, $20, atau $200. Kredit bonus ditampilkan sebelum Anda mengonfirmasi.
+  </Step>
+  <Step title="Selesaikan pembayaran">
+    Masukkan detail kartu Anda dan konfirmasi. Pembayaran diproses melalui Stripe. Kredit (termasuk bonus) ditambahkan ke saldo Anda segera.
+  </Step>
+</Steps>
+
+## Cara kerja kredit bonus
+
+- **Kredit instan**: Kredit bonus muncul di saldo Anda segera setelah pembayaran diproses.
+- **Tidak pernah kedaluwarsa**: Kredit bonus dan kredit berbayar keduanya tetap ada di saldo Anda tanpa batas waktu — tidak ada tanggal kedaluwarsa.
+- **Digunakan seperti kredit biasa**: Kredit bonus dikonsumsi dengan cara yang sama seperti kredit berbayar. Tidak ada batasan model mana yang dapat digunakan.
+- **Bertambah setiap saat**: Setiap isi saldo mendapatkan bonus baru. Isi saldo $200 tiga kali dan dapatkan total $300 kredit bonus.
+
+## Manajemen saldo
+
+Saldo Anda ditampilkan di bagian **Saldo** pada konsol. Anda dapat:
+
+- Melihat rincian antara kredit berbayar dan kredit bonus
+- Melihat riwayat semua transaksi isi saldo beserta tanggal dan jumlahnya
+- Mengaktifkan notifikasi email saldo rendah dari **Pengaturan → Notifikasi**
+
+## Yang terjadi saat saldo habis
+
+Jika saldo Anda turun ke $0,00, permintaan API akan mengembalikan error `401 Insufficient Balance` hingga Anda mengisi saldo. Tidak ada tagihan otomatis atau overdraft — permintaan Anda hanya berhenti hingga Anda menambahkan lebih banyak kredit.
+
+<Warning>
+  Untuk beban kerja produksi, atur notifikasi saldo rendah untuk memastikan Anda mengisi saldo sebelum saldo habis sepenuhnya. Buka **Pengaturan → Notifikasi** untuk mengonfigurasi ambang batasnya.
+</Warning>
+
+## Penagihan enterprise
+
+Untuk tim yang membutuhkan penagihan berbasis invoice, volume bulanan khusus, atau dukungan pengadaan, hubungi [support@flatkey.ai](mailto:support@flatkey.ai) untuk mendiskusikan ketentuan enterprise. Akun enterprise tidak memerlukan isi saldo prabayar.

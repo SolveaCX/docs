@@ -1,0 +1,60 @@
+---
+title: "Adicione Saldo à Sua Conta Flatkey e Ganhe Crédito Bônus"
+sidebarTitle: "Adicionar Saldo"
+description: "Adicione crédito pré-pago à sua conta Flatkey. Saiba mais sobre os planos de recarga, créditos bônus e como gerenciar seu saldo para acesso ininterrupto à API."
+---
+
+O Flatkey usa um modelo de saldo pré-pago — você adiciona crédito à sua conta e ele é consumido conforme suas requisições à API utilizam os modelos. Não há assinaturas nem cobranças recorrentes. Cada recarga rende crédito bônus, creditado instantaneamente ao seu saldo.
+
+## Planos de recarga
+
+| Recarga | Bônus | Crédito total | Economia efetiva |
+|---|---|---|---|
+| $10 | +$3 | $13 | 30% |
+| $20 | +$8 | $28 | 40% |
+| $200 | +$100 | $300 | **50% (melhor custo-benefício)** |
+
+<Tip>
+  O plano de recarga de $200 oferece a melhor taxa efetiva. Combinado com os descontos nos modelos (60–90% do preço de tabela oficial), isso reduz os custos a até 50% do preço oficial do provedor.
+</Tip>
+
+## Como adicionar saldo
+
+<Steps>
+  <Step title="Abrir Saldo">
+    No [console](https://console.flatkey.ai), clique em **Saldo** na barra lateral esquerda.
+  </Step>
+  <Step title="Selecionar um valor de recarga">
+    Escolha $10, $20 ou $200. O crédito bônus é exibido antes de você confirmar.
+  </Step>
+  <Step title="Concluir o pagamento">
+    Insira os dados do seu cartão e confirme. O pagamento é processado via Stripe. O crédito (incluindo o bônus) é adicionado ao seu saldo imediatamente.
+  </Step>
+</Steps>
+
+## Como o crédito bônus funciona
+
+- **Crédito imediato**: O crédito bônus aparece no seu saldo assim que o pagamento é processado.
+- **Nunca expira**: O crédito bônus e o crédito pago permanecem no seu saldo por tempo indeterminado — não há data de validade.
+- **Funciona como crédito normal**: O crédito bônus é consumido da mesma forma que o crédito pago. Não há restrições sobre quais modelos ele pode ser usado.
+- **Acumula a cada recarga**: Cada recarga rende um novo bônus. Recarregue $200 três vezes e ganhe $300 em crédito bônus no total.
+
+## Gerenciamento de saldo
+
+Seu saldo é exibido na seção **Saldo** do console. Você pode:
+
+- Ver o detalhamento entre crédito pago e crédito bônus
+- Consultar o histórico de todas as recargas com datas e valores
+- Ativar alertas de saldo baixo por e-mail em **Configurações → Notificações**
+
+## O que acontece quando o saldo acaba
+
+Se o seu saldo chegar a $0,00, as requisições à API retornarão um erro `401 Insufficient Balance` até que você recarregue. Não há cobranças automáticas nem saldo negativo — suas requisições simplesmente param até você adicionar mais crédito.
+
+<Warning>
+  Para cargas de trabalho em produção, configure um alerta de saldo baixo para garantir que você recarregue antes que o saldo seja totalmente consumido. Acesse **Configurações → Notificações** para configurar o limite.
+</Warning>
+
+## Faturamento empresarial
+
+Para equipes que precisam de faturamento por nota fiscal, volumes mensais personalizados ou suporte a processos de compra, entre em contato com [support@flatkey.ai](mailto:support@flatkey.ai) para discutir condições empresariais. Contas empresariais não exigem recargas pré-pagas.

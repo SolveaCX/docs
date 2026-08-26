@@ -1,0 +1,83 @@
+---
+title: "Flatkey よくある質問"
+sidebarTitle: "FAQ"
+description: "Flatkey に関するよくある質問への回答 — モデルの互換性、請求、プライバシー、APIキー管理、エンタープライズオプションなど。"
+---
+
+このページでは、Flatkey の使用に関するよくある質問を取り上げています。ここに回答がない質問がある場合は、[support@flatkey.ai](mailto:support@flatkey.ai) にご連絡いただくか、コンソール内のライブチャットをご利用ください。
+
+## はじめに
+
+<Accordion title="Flatkey とは何ですか？">
+  Flatkey は AI API ゲートウェイであり、OpenAI、Anthropic、Google、DeepSeek、Qwen、GLM などから 300 以上の公式 AI モデルと 1000 以上のツールへのアクセスを、単一の OpenAI 互換 API キーで提供します。あらゆる OpenAI 互換クライアントのドロップイン置き換えとして機能します。`base_url` を `https://router.flatkey.ai/v1` に変更し、Flatkey キーを使用するだけで、割引価格で任意のモデルにルーティングできます。
+</Accordion>
+
+<Accordion title="プロバイダーごとに別々の API キーが必要ですか？">
+  いいえ。1 つの Flatkey API キーで、すべてのプロバイダーにまたがる 300 以上のモデルにルーティングできます。OpenAI、Anthropic、または Google の API キーを別途用意する必要はありません。
+</Accordion>
+
+<Accordion title="モデルは元のプロバイダーの公式バージョンですか？">
+  はい。Flatkey はリクエストを公式ベンダー API（OpenAI、Anthropic、Google、DeepSeek など）にルーティングします。モデルの出力は元のプロバイダーのインフラストラクチャから直接届きます。Flatkey はモデルをホスト、ファインチューニング、または変更しません。
+</Accordion>
+
+## 請求と料金
+
+<Accordion title="請求はどのように機能しますか？">
+  Flatkey はプリペイド制です。残高をチャージ（$10、$20、$200、またはカスタムエンタープライズ）し、各 API リクエストのコストがリアルタイムで残高から差し引かれます。サブスクリプションや定期課金はありません。
+</Accordion>
+
+<Accordion title="チャージボーナスはどのように機能しますか？">
+  チャージのたびにボーナスクレジットが付与されます：$10 チャージで +$3、$20 チャージで +$8、$200 チャージで +$100。ボーナスクレジットは即座に残高に追加され、有効期限なく、通常のクレジットと同様に使用できます。割引コードではなく、残高に表示される実際のクレジットです。
+</Accordion>
+
+<Accordion title="複数回チャージできますか？">
+  はい。何度でもチャージでき、チャージのたびにボーナスクレジットが付与されます。$200 のチャージを 3 回行うと、合計 $300 のボーナスクレジットが獲得できます。
+</Accordion>
+
+<Accordion title="残高がゼロになるとどうなりますか？">
+  API リクエストが `401 Insufficient Balance` エラーを返します。自動課金は行われません。再開するには残高をチャージしてください。中断を避けるために、**設定 → 通知** で残高低下アラートを有効にしてください。
+</Accordion>
+
+## 互換性とモデル
+
+<Accordion title="Flatkey は公式の OpenAI SDK と互換性がありますか？">
+  はい。OpenAI の Python および Node.js SDK は `base_url` パラメータをサポートしています。`https://router.flatkey.ai/v1` に設定し、Flatkey API キーを使用してください。その他の変更は不要です。
+</Accordion>
+
+<Accordion title="Anthropic SDK で Flatkey を使用できますか？">
+  はい。Anthropic SDK のコンストラクタで `base_url` を `https://router.flatkey.ai`（`/v1` なし）に設定し、Flatkey API キーを使用してください。詳細は [Anthropic SDK ガイド](/ja/guides/anthropic-sdk) を参照してください。
+</Accordion>
+
+<Accordion title="どのモデル名を使用すればよいですか？">
+  元のプロバイダーで使用するのと同じ標準モデル ID を使用してください。例えば `gpt-4o`、`claude-sonnet-4-5`、`gemini-2.5-flash` などです。完全なリストは [モデルディレクトリ](https://flatkey.ai/models) にあります。
+</Accordion>
+
+<Accordion title="Flatkey はストリーミングをサポートしていますか？">
+  はい。リクエストに `stream: true` を設定してください。Flatkey は OpenAI API と同じ形式でサーバー送信イベント（SSE）を返します。ストリーミングはすべてのチャットおよびテキスト生成モデルで動作します。
+</Accordion>
+
+## プライバシーとセキュリティ
+
+<Accordion title="Flatkey はプロンプトや補完内容を保存しますか？">
+  いいえ。Flatkey はリクエスト内容のゼロリテンションポリシーを採用しており、プロンプトと補完はディスクへの書き込みや保存が一切行われません。請求と分析のために、メタデータ（モデル、トークン数、タイムスタンプ、コスト）のみが記録されます。
+</Accordion>
+
+<Accordion title="Flatkey はどのようなコンプライアンス認定を持っていますか？">
+  Flatkey は GDPR 準拠のインフラストラクチャで運営されており、SOC 2 および ISO 27001 標準に沿ったコントロールを維持しています。
+</Accordion>
+
+<Accordion title="API キーが漏洩した場合はどうすればよいですか？">
+  コンソールの **キー** ページから直ちにキーを失効させてください。失効は即座に反映されます。その後、新しいキーを作成してアプリケーションを更新してください。詳細は [API キー管理](/ja/dashboard/api-keys) を参照してください。
+</Accordion>
+
+## エンタープライズ
+
+コミット済みボリューム割引、カスタムルーティング、請求書発行、および調達については、[エンタープライズ](/ja/reference/enterprise) ページをご覧ください。
+
+## サポート
+
+<Accordion title="サポートに連絡するにはどうすればよいですか？">
+  - **メール**: [support@flatkey.ai](mailto:support@flatkey.ai)
+  - **ライブチャット**: [flatkey.ai](https://flatkey.ai) およびコンソール内で利用可能
+  - **X (Twitter)**: [@flatkey101](https://x.com/flatkey101)
+</Accordion>

@@ -1,0 +1,532 @@
+---
+title: "Membuat video Seedance dengan Flatkey"
+sidebarTitle: "Seedance"
+description: "Buat tugas video Seedance, poll hasilnya, unduh MP4 final, dan gunakan kembali aset virtual atau orang-nyata melalui Flatkey."
+---
+
+Base URL: `https://router.flatkey.ai`
+
+Panduan ini memberikan jalur siap-salin untuk menggunakan Seedance melalui Flatkey. Mulailah dengan tugas text-to-video, poll tugas tersebut hingga selesai, lalu unduh MP4 yang dihasilkan. Jika Anda membutuhkan referensi produk, latar belakang, audio, atau orang-nyata yang dapat digunakan kembali, lanjutkan ke bagian pustaka aset.
+
+<CardGroup cols={2}>
+  <Card title="Contoh siap-salin" icon="copy">
+    Gunakan ikon salin pada blok perintah apa pun, lalu ganti `YOUR_FLATKEY_API_KEY`, `task_...`, `ast_...`, dan `rph_...` dengan nilai Anda sendiri.
+  </Card>
+  <Card title="Satu alur kerja async" icon="video">
+    Buat tugas dengan `POST /v1/videos`, poll dengan `GET /v1/videos/{task_id}`, dan unduh MP4 dari `metadata.url`.
+  </Card>
+</CardGroup>
+
+Gunakan header otorisasi ini pada setiap permintaan API dalam panduan ini. URL unduhan video yang dikembalikan dalam `metadata.url` adalah satu-satunya pengecualian.
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+Rahasiakan API key Anda. Jangan pernah menempelkannya ke log publik, halaman, atau tiket dukungan.
+
+## Memanggil Seedance
+
+Mulailah di sini jika Anda hanya ingin membuat tugas text-to-video dan mengunduh video yang telah selesai.
+
+### 1. Membuat tugas text-to-video
+
+Kirim `POST /v1/videos` dengan model `seedance-2.0` dan prompt teks.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a calm 5 second video of a ceramic mug on a kitchen table in morning light"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a calm 5 second video of a ceramic mug on a kitchen table in morning light"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
+
+Salin nilai `task_...` yang dikembalikan. Simpan di database atau catatan Anda karena Anda membutuhkannya untuk memeriksa video.
+
+### 2. Poll tugas
+
+Gunakan endpoint ini dengan ID tugas yang telah disimpan:
+
+```http
+GET /v1/videos/{task_id}
+```
+
+Lakukan polling hingga `status` menjadi `completed`, lalu baca URL unduhan dari `metadata.url`. Jika status adalah `failed`, baca `error.message`, perbaiki permintaan, dan buat tugas baru.
+
+<CodeGroup>
+```bash Bash
+TASK_ID="task_3f9a00000000000000000000000000e2"
+
+curl -sS "https://router.flatkey.ai/v1/videos/$TASK_ID" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+
+# Run the command above again until status is completed.
+# Then copy metadata.url from the response and paste it below.
+VIDEO_URL="PASTE_METADATA_URL_HERE"
+curl -L "$VIDEO_URL" -o output.mp4
+```
+```powershell Windows PowerShell
+$taskId = "task_3f9a00000000000000000000000000e2"
+
+while ($true) {
+  $result = curl.exe -sS "https://router.flatkey.ai/v1/videos/$taskId" `
+    -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" | ConvertFrom-Json
+  Write-Host "status: $($result.status)"
+
+  if ($result.status -eq "completed") { break }
+  if ($result.status -eq "failed") {
+    $result | ConvertTo-Json -Depth 10
+    exit 1
+  }
+  Start-Sleep -Seconds 5
+}
+
+$videoUrl = $result.metadata.url
+curl.exe -L "$videoUrl" -o output.mp4
+```
+</CodeGroup>
+
+Setelah tugas selesai, `metadata.url` mengunduh file MP4 tanpa header otorisasi. Perlakukan URL ini sebagai privat dan jangan mempublikasikannya.
+
+## Menggunakan pustaka aset
+
+Gunakan pustaka aset ketika Anda ingin mendaftarkan sebuah referensi sekali, menunggu hingga siap, dan menggunakannya kembali dalam permintaan Seedance. Ada dua jenis aset:
+
+| Jenis aset | Kegunaannya |
+| --- | --- |
+| Aset virtual | Gambar produk, video latar belakang, audio, atau referensi non-orang lainnya. |
+| Aset orang-nyata | Wajah, suara, atau video seseorang tertentu. Kemampuan ini memiliki akses terbatas dan harus diaktifkan untuk akun Anda. |
+
+Gunakan URI `asset://ast_...` yang dikembalikan oleh Flatkey dalam permintaan Seedance Anda.
+
+### Aset virtual
+
+Aset virtual tidak memerlukan verifikasi orang-nyata. Buat dari URL publik atau unggah file lokal, lalu gunakan kembali URI aset Flatkey yang dikembalikan.
+
+#### 1. Membuat aset virtual dari URL HTTPS publik
+
+Kirim URL `https://` publik.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://cdn.example.com/reference/product.png",
+    "asset_type": "Image",
+    "moderation": {
+      "strategy": "Default"
+    }
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "url": "https://cdn.example.com/reference/product.png",
+    "asset_type": "Image",
+    "moderation": {
+      "strategy": "Default"
+    }
+  }'
+```
+</CodeGroup>
+
+Respons menyertakan `id`, misalnya `ast_1234567890abcdef1234567890abcdef`, dan status seperti `Processing`. Buat URI yang dapat digunakan kembali dengan menambahkan `asset://` sebelum ID:
+
+```text
+asset://ast_1234567890abcdef1234567890abcdef
+```
+
+Jangan mengirim `model` saat Anda membuat, mengunggah, atau melakukan kueri aset. Flatkey menentukan model Seedance yang relevan dari API key yang digunakan untuk permintaan tersebut.
+
+#### 2. Mengunggah aset virtual lokal
+
+Untuk file gambar, video, atau audio lokal, kirim `multipart/form-data` ke `POST /v1/assets/upload`. Gunakan satu bidang `file`. `asset_type` dapat berupa `Image`, `Video`, atau `Audio`.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets/upload \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -F "file=@./reference-a.png" \
+  -F "asset_type=Image"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets/upload `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -F "file=@./reference-a.png" `
+  -F "asset_type=Image"
+```
+</CodeGroup>
+
+Respons menggunakan bentuk aset yang sama dengan pembuatan dari URL. Simpan `id` atau `asset_url`-nya untuk polling dan permintaan video selanjutnya.
+
+#### 3. Poll hingga model yang dipilih tersedia
+
+Kueri setiap aset dengan API key yang sama yang akan membuat tugas video. Misalnya, periksa dua aset gambar secara terpisah:
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets/ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+curl -sS https://router.flatkey.ai/v1/assets/ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets/ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+curl.exe -sS https://router.flatkey.ai/v1/assets/ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+Setiap respons aset menyertakan `available_models`. `available_models` selalu berupa array dan mendaftar model yang dapat menggunakan aset ini sekarang. Aset yang siap sebagian dapat terlihat seperti ini:
+
+```json
+{
+  "id": "ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "object": "asset",
+  "asset_type": "Image",
+  "status": "Processing",
+  "available_models": ["seedance-2.0-fast"],
+  "asset_url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "created_at": 1785292000
+}
+```
+
+`status` adalah keadaan agregat di seluruh model Seedance yang relevan untuk API key ini:
+
+| Status | Arti |
+| --- | --- |
+| `Creating` | Unggahan sumber belum selesai. |
+| `Processing` | Setidaknya satu model yang relevan masih dipersiapkan. Periksa `available_models`; model lain mungkin sudah dapat digunakan. |
+| `Active` | Setiap model yang relevan untuk API key ini sudah siap. |
+| `Failed` | Sumber gagal, atau kesiapan tidak dapat ditentukan untuk setidaknya satu model yang relevan. |
+| `Expired` | Sumber tidak dapat digunakan lagi. Buat aset baru. |
+
+Anda tidak perlu menunggu agregat `Active` ketika model yang Anda pilih sudah terdaftar. Sebelum membuat tugas, pastikan model yang dipilih muncul di `available_models` setiap aset. Untuk fast gunakan `seedance-2.0-fast`; untuk pro gunakan `seedance-2.0`. Permintaan pembuatan tugas memeriksa kesiapan lagi, jadi ulangi polling jika routing berubah antara permintaan GET dan POST.
+
+URI `asset://` mengidentifikasi aset tetapi tidak membuktikan kesiapan itu sendiri. `Deleting` berarti penghapusan sedang berlangsung dan aset tidak dapat digunakan untuk tugas baru. Setelah penghapusan selesai, `GET /v1/assets/{asset_id}` mengembalikan `404 asset_not_found`; jangan menunggu status `Deleted` yang dapat di-poll.
+
+#### 4. Memanggil Seedance dengan dua aset virtual
+
+Masukkan setiap URI `asset://ast_...` ke bidang media yang sesuai dengan jenis aset: `image_url.url` untuk `Image`, `video_url.url` untuk `Video`, atau `audio_url.url` untuk `Audio`. Permintaan Seedance membutuhkan teks atau setidaknya satu gambar/video; audio saja tidak cukup. Contoh ini baru dimulai setelah kedua aset mendaftarkan `seedance-2.0-fast` di `available_models`.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0-fast",
+    "content": [
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "text",
+        "text": "Create a clean studio product video while keeping the product consistent"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "seedance-2.0-fast",
+    "content": [
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "text",
+        "text": "Create a clean studio product video while keeping the product consistent"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
+
+Salin `task_...` yang dikembalikan dan gunakan `GET /v1/videos/{task_id}` dari bagian pertama untuk mengunduh video yang telah selesai dari `metadata.url`.
+
+### Aset orang-nyata
+
+Aset orang-nyata digunakan untuk wajah, suara, atau video seseorang tertentu. Kemampuan ini memiliki akses terbatas. Gunakan hanya setelah Flatkey mengaktifkannya untuk akun Anda.
+
+Anda akan membuat profil, mengirim `verification_url` ke orang tersebut, menunggu hingga profil menjadi `active`, membuat aset, menunggu hingga `status` aset menjadi `Active`, lalu memanggil Seedance dengan `asset://ast_...`.
+
+| Endpoint | Kapan digunakan |
+| --- | --- |
+| `POST /v1/real-persons` | Membuat profil orang-nyata dan tautan verifikasi pertama. |
+| `GET /v1/real-persons` | Mendaftar profil orang-nyata Anda. |
+| `POST /v1/real-persons/{person_id}/verification-sessions` | Membuat tautan verifikasi baru jika diperlukan. |
+| `GET /v1/real-persons/{person_id}` | Poll status profil. |
+| `POST /v1/real-persons/{person_id}/assets` | Membuat aset dari URL publik atau file lokal. |
+| `GET /v1/real-persons/{person_id}/assets` | Mendaftar aset di bawah satu profil. |
+
+Batas ukuran file:
+
+| Jenis file | Batas |
+| --- | --- |
+| Gambar | &lt; 30 MiB |
+| Video | &lt;= 50 MiB |
+| Audio | &lt;= 15 MiB |
+
+Permintaan penulisan dalam bagian ini memerlukan `Idempotency-Key`. Ganti setiap placeholder `YOUR_UNIQUE_KEY_...` dengan UUID baru untuk setiap permintaan penulisan baru. Gunakan kembali kunci hanya saat mencoba ulang permintaan yang sama persis.
+
+#### 1. Membuat profil orang-nyata
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_PROFILE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My first real-person profile"
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_PROFILE" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "name": "My first real-person profile"
+  }'
+```
+</CodeGroup>
+
+Respons menyertakan `id` profil, sebuah `status`, dan `verification_url` sekali pakai. Kirim `verification_url` kepada orang yang sebenarnya dan minta mereka membukanya sendiri. Jangan mempublikasikan tautan ini.
+
+Jika tautan tersebut kedaluwarsa atau orang tersebut membutuhkan tautan lain, buat sesi verifikasi baru:
+
+<CodeGroup>
+```bash Bash
+curl -sS -X POST https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/verification-sessions \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_VERIFICATION_SESSION"
+```
+```powershell Windows PowerShell
+curl.exe -sS -X POST https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/verification-sessions `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_VERIFICATION_SESSION"
+```
+</CodeGroup>
+
+Setelah orang tersebut menyelesaikan halaman verifikasi, lanjutkan ke langkah berikutnya.
+
+#### 2. Poll hingga profil aktif
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+Tunggu hingga status profil menjadi `active` sebelum membuat aset. Jika berupa `pending_verification` atau `verifying`, tunggu dan poll kembali. Jika berupa `failed` atau `expired`, buat sesi verifikasi baru.
+
+#### 3. Membuat aset orang-nyata dari URL publik
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_URL_ASSET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://cdn.example.com/reference/person.png",
+    "asset_type": "Image",
+    "name": "Front-facing reference"
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_URL_ASSET" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "url": "https://cdn.example.com/reference/person.png",
+    "asset_type": "Image",
+    "name": "Front-facing reference"
+  }'
+```
+</CodeGroup>
+
+#### 4. Mengunggah file lokal
+
+Unggahan lokal menggunakan `multipart/form-data` dan hanya tersedia untuk aset orang-nyata. Gunakan satu bidang `file` dan biarkan curl mengatur batas multipart.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_FILE_ASSET" \
+  -F "asset_type=Image" \
+  -F "name=Front-facing reference" \
+  -F "file=@./person-reference.png"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_FILE_ASSET" `
+  -F "asset_type=Image" `
+  -F "name=Front-facing reference" `
+  -F "file=@./person-reference.png"
+```
+</CodeGroup>
+
+Respons pembuatan menyertakan ID aset atau `asset_uri`, misalnya `asset://ast_1234567890abcdef1234567890abcdef`.
+
+#### 5. Poll kesiapan dan panggil Seedance
+
+Respons aset orang-nyata tidak menyertakan `available_models`. Daftarkan aset di bawah profil hingga `status` aset menjadi `Active`:
+
+<CodeGroup>
+```bash Bash
+curl -sS "https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets?limit=20" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS "https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets?limit=20" `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+Jika aset yang terdaftar masih `Processing`, tunggu dan poll kembali. Jika berupa `Failed`, buat aset baru dari referensi yang lebih baik.
+
+Setelah aset menjadi `Active`, panggil Seedance dengan URI `asset://ast_...`.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a short greeting video with natural movement"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_1234567890abcdef1234567890abcdef"
+        },
+        "role": "reference_image"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a short greeting video with natural movement"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_1234567890abcdef1234567890abcdef"
+        },
+        "role": "reference_image"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
+
+Salin `task_...` yang dikembalikan dan gunakan `GET /v1/videos/{task_id}` dari bagian pertama untuk mengunduh video yang telah selesai dari `metadata.url`.
+
+#### 6. Menghapus aset saat Anda tidak lagi membutuhkannya
+
+<CodeGroup>
+```bash Bash
+curl -sS -X DELETE https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS -X DELETE https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+Permintaan penghapusan mengembalikan `204 No Content`. Setelah penghapusan selesai, `GET /v1/assets/{asset_id}` mengembalikan `404 asset_not_found`.

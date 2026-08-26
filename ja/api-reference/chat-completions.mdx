@@ -1,0 +1,178 @@
+---
+title: "Chat Completions — POST /v1/chat/completions"
+sidebarTitle: "Chat Completions"
+description: "メッセージ配列をサポート対象モデルに送信することで、Flatkey を通じてチャットおよびテキスト補完を生成します。生成されたテキストとトークン使用量を含む choices を返します。"
+---
+
+`/v1/chat/completions` エンドポイントは、メッセージのリストに基づいてテキスト補完を生成します。チャット、指示への応答、テキスト生成タスクの主要エンドポイントです。リクエスト形式は OpenAI Chat Completions API と同一であるため、OpenAI 互換の SDK はそのまま変更なしで動作します。
+
+## エンドポイント
+
+```
+POST https://router.flatkey.ai/v1/chat/completions
+```
+
+## リクエスト
+
+### ヘッダー
+
+| ヘッダー | 値 |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### ボディパラメーター
+
+<ParamField body="model" type="string" required>
+  使用するモデル ID。有効な値の一覧は [モデルディレクトリ](https://flatkey.ai/models) を参照してください。例: `"gpt-4o"`、`"claude-sonnet-4-5"`、`"gemini-2.5-flash"`。
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  会話を表すメッセージオブジェクトの配列。各オブジェクトには `role`（`"system"`、`"user"`、または `"assistant"`）と `content`（文字列）が必要です。
+</ParamField>
+
+<ParamField body="max_tokens" type="integer">
+  生成するトークンの最大数。デフォルト値はモデルによって異なります。
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  0 から 2 の範囲のサンプリング温度。値が高いほどランダム性の高い出力になります。デフォルト: 1。
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  `true` の場合、レスポンスはサーバー送信イベント（SSE）のストリームとして返されます。デフォルト: `false`。
+</ParamField>
+
+<ParamField body="top_p" type="number">
+  核サンプリング — 上位 `top_p` の確率質量に含まれるトークンのみが考慮されます。デフォルト: 1。
+</ParamField>
+
+<ParamField body="stop" type="string | array">
+  モデルが生成を停止するシーケンスを 1 つ以上指定します。文字列または文字列の配列を指定できます。
+</ParamField>
+
+<ParamField body="tools" type="array">
+  関数呼び出し用のツール定義のリスト。各ツールには `type: "function"` と、`name`、`description`、`parameters` を持つ `function` オブジェクトが必要です。
+</ParamField>
+
+<ParamField body="tool_choice" type="string | object">
+  ツールの選択を制御します: `"none"`、`"auto"`、`"required"`、または特定のツール `{"type": "function", "function": {"name": "..."}}`。
+</ParamField>
+
+## リクエスト例
+
+<CodeGroup>
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "What is the speed of light?"},
+    ],
+    max_tokens=256,
+    temperature=0.7,
+)
+
+print(response.choices[0].message.content)
+```
+```bash curl
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant."},
+      {"role": "user", "content": "What is the speed of light?"}
+    ],
+    "max_tokens": 256
+  }'
+```
+</CodeGroup>
+
+## レスポンス
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1710000000,
+  "model": "gpt-4o",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The speed of light in a vacuum is approximately 299,792,458 meters per second."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 28,
+    "completion_tokens": 22,
+    "total_tokens": 50
+  }
+}
+```
+
+### レスポンスフィールド
+
+<ResponseField name="id" type="string">
+  補完の一意識別子。
+</ResponseField>
+
+<ResponseField name="choices" type="array">
+  生成された補完候補の配列。
+  <Expandable title="choice のプロパティ">
+    <ResponseField name="message.content" type="string">
+      生成されたテキスト。
+    </ResponseField>
+    <ResponseField name="message.role" type="string">
+      生成されたメッセージでは常に `"assistant"`。
+    </ResponseField>
+    <ResponseField name="finish_reason" type="string">
+      生成が停止した理由: `"stop"`（自然終了）、`"length"`（max_tokens 到達）、`"tool_calls"`（ツール呼び出し）。
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  課金用のトークン数。
+  <Expandable title="usage のプロパティ">
+    <ResponseField name="prompt_tokens" type="integer">入力トークン数。</ResponseField>
+    <ResponseField name="completion_tokens" type="integer">出力トークン数。</ResponseField>
+    <ResponseField name="total_tokens" type="integer">プロンプトトークンと補完トークンの合計。</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## ストリーミング
+
+`stream: true` を設定すると、SSE チャンクのストリームを受信できます。各チャンクは同じ構造を持ちますが、完全なメッセージではなく部分的な `delta` コンテンツを含みます:
+
+```python python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+stream = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Tell me a story."}],
+    stream=True,
+)
+
+for chunk in stream:
+    print(chunk.choices[0].delta.content or "", end="", flush=True)
+```

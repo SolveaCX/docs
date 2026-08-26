@@ -1,0 +1,224 @@
+---
+title: "API Pembuatan dan Pengeditan Gambar"
+sidebarTitle: "Images API"
+description: "Buat atau edit gambar melalui endpoint /v1/images/generations dan /v1/images/edits yang kompatibel dengan OpenAI Images."
+---
+
+Gunakan `/v1/images/generations` untuk membuat gambar dari prompt teks dan `/v1/images/edits` untuk mengedit gambar yang sudah ada. Kedua endpoint menggunakan format permintaan yang kompatibel dengan OpenAI Images. Operasi yang tersedia bergantung pada model dan channel yang diekspos oleh layanan Flatkey Anda.
+
+<Warning>
+  Model gambar Gemini menggunakan endpoint `generateContent` native Gemini dan tidak dapat dipanggil melalui endpoint OpenAI Images ini. Lihat [panduan model gambar Gemini](/id/guides/image-generation#gunakan-model-gambar-gemini).
+</Warning>
+
+## Buat gambar
+
+### Endpoint
+
+```
+POST https://router.flatkey.ai/v1/images/generations
+```
+
+### Header
+
+| Header | Nilai |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### Parameter body JSON
+
+<ParamField body="model" type="string" required>
+  ID model gambar yang diekspos oleh layanan Flatkey Anda, seperti `"gpt-image-2"`.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Deskripsi teks dari gambar yang akan dibuat.
+</ParamField>
+
+<ParamField body="size" type="string">
+  Dimensi output, seperti `"1024x1024"`. Nilai yang didukung bergantung pada model.
+</ParamField>
+
+<ParamField body="quality" type="string">
+  Kualitas output: `"low"`, `"medium"`, atau `"high"`. Jika dihilangkan, default upstream yang digunakan. Kualitas lebih tinggi meningkatkan latensi dan penggunaan.
+</ParamField>
+
+<ParamField body="background" type="string">
+  Penanganan latar belakang, seperti `"transparent"` atau `"opaque"`, jika didukung oleh model.
+</ParamField>
+
+<ParamField body="output_format" type="string">
+  Format output, seperti `"png"`, `"jpeg"`, atau `"webp"`, jika didukung oleh model.
+</ParamField>
+
+<ParamField body="output_compression" type="integer">
+  Tingkat kompresi output, jika didukung oleh model.
+</ParamField>
+
+<ParamField body="moderation" type="string">
+  Tingkat moderasi konten, jika didukung oleh model.
+</ParamField>
+
+<ParamField body="response_format" type="string">
+  Hasil `gpt-image-2` dikembalikan dalam `data[].b64_json`. URL gambar yang dihosting tidak disediakan, dan `response_format: "url"` tidak didukung.
+</ParamField>
+
+<ParamField body="n" type="integer">
+  Jumlah gambar yang diminta. `gpt-image-2` saat ini mengembalikan satu gambar per permintaan karena alat gambar upstream-nya tidak menerima `n`. Kirim beberapa permintaan jika Anda membutuhkan beberapa gambar.
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  Atur ke `true` untuk menerima respons SSE. Hilangkan untuk respons sinkron.
+</ParamField>
+
+### Contoh permintaan
+
+<CodeGroup>
+```python python
+import base64
+import os
+from pathlib import Path
+
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.images.generate(
+    model="gpt-image-2",
+    prompt="A futuristic city skyline at dusk, cyberpunk style",
+    size="1024x1024",
+    quality="high",
+)
+
+Path("generated.png").write_bytes(
+    base64.b64decode(response.data[0].b64_json)
+)
+```
+```javascript node
+import { writeFileSync } from "node:fs";
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const response = await client.images.generate({
+  model: "gpt-image-2",
+  prompt: "A futuristic city skyline at dusk, cyberpunk style",
+  size: "1024x1024",
+  quality: "high",
+});
+
+writeFileSync(
+  "generated.png",
+  Buffer.from(response.data[0].b64_json, "base64"),
+);
+```
+```bash curl
+curl https://router.flatkey.ai/v1/images/generations \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-2",
+    "prompt": "A serene forest clearing with morning mist and sunbeams",
+    "size": "1024x1024",
+    "quality": "high"
+  }'
+```
+</CodeGroup>
+
+## Edit gambar
+
+`/v1/images/edits` menerima gambar input dan instruksi pengeditan sebagai `multipart/form-data`.
+
+### Endpoint
+
+```
+POST https://router.flatkey.ai/v1/images/edits
+```
+
+### Header
+
+| Header | Nilai |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `multipart/form-data`; curl menambahkan boundary secara otomatis saat Anda menggunakan `-F` |
+
+### Field form
+
+| Field | Tipe | Wajib | Deskripsi |
+|---|---|---|---|
+| `model` | string | Ya | ID model gambar yang diekspos oleh layanan Flatkey Anda, seperti `gpt-image-2`. |
+| `prompt` | string | Ya | Instruksi yang mendeskripsikan cara mengedit gambar. |
+| `image` | file | Ya | Gambar input dalam format PNG, JPEG, atau WebP. Untuk beberapa gambar, gunakan `image[]` atau field berindeks seperti `image[0]` dan `image[1]`. |
+| `mask` | file | Tidak | Mask untuk inpainting. Area transparan menentukan wilayah yang akan digambar ulang. |
+| `size` | string | Tidak | Dimensi output. Nilai yang didukung bergantung pada model. |
+| `quality` | string | Tidak | Kualitas output: `low`, `medium`, atau `high`. |
+| `stream` | boolean | Tidak | Atur ke `true` untuk menerima respons SSE. |
+
+### Contoh permintaan
+
+```bash
+curl https://router.flatkey.ai/v1/images/edits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -F "model=gpt-image-2" \
+  -F "prompt=add a small yellow star in the center" \
+  -F "image=@input.png" \
+  -F "mask=@mask.png"
+```
+
+Field `mask` bersifat opsional. Hilangkan untuk mengedit seluruh gambar berdasarkan prompt. Jangan atur header `Content-Type` secara manual; curl menurunkan boundary multipart yang benar dari field `-F`.
+
+<Warning>
+  Jika mask yang diberikan rusak, tidak dapat dibaca, atau melebihi batas layanan, permintaan akan gagal dan tidak akan kembali ke mode edit seluruh gambar.
+</Warning>
+
+## Respons
+
+Permintaan pembuatan dan pengeditan sinkron mengembalikan bentuk respons yang sama. Flatkey mengembalikan gambar sebagai data base64; layanan ini tidak menyediakan URL gambar yang dihosting untuk `gpt-image-2`.
+
+```json
+{
+  "created": 1710000000,
+  "data": [
+    {
+      "b64_json": "iVBORw0KGgoAAA...",
+      "revised_prompt": "Add a small yellow five-pointed star in the center...",
+      "url": ""
+    }
+  ]
+}
+```
+
+### Field respons
+
+<ResponseField name="created" type="integer">
+  Timestamp Unix saat permintaan selesai.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array objek gambar.
+  <Expandable title="objek gambar">
+    <ResponseField name="b64_json" type="string">Data gambar yang dikodekan dalam Base64.</ResponseField>
+    <ResponseField name="revised_prompt" type="string">Prompt yang sebenarnya digunakan oleh model setelah penulisan ulang.</ResponseField>
+    <ResponseField name="url" type="string">Kosong untuk `gpt-image-2`; URL yang dihosting tidak disediakan.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+Untuk pengeditan, gambar input juga dihitung dalam penggunaan model, sehingga pengeditan biasanya mengonsumsi lebih banyak penggunaan dibandingkan pembuatan gambar berbasis teks saja.
+
+## Streaming
+
+Atur `stream` ke `true` dalam body JSON pembuatan atau tambahkan `-F "stream=true"` pada permintaan pengeditan untuk menerima output `text/event-stream`. Event terakhir berisi hasil gambar, diikuti oleh `data: [DONE]`.
+
+| Event | Makna |
+|---|---|
+| `image_generation.completed` | Pembuatan gambar selesai. |
+| `image_edit.completed` | Pengeditan gambar selesai. |
+| `[DONE]` | Stream telah berakhir. |
+
+Dukungan streaming dapat bergantung pada model dan channel yang dipilih. Untuk permintaan berkualitas tinggi yang sinkron, konfigurasikan batas waktu klien minimal 150 detik.

@@ -1,0 +1,205 @@
+---
+title: "Tạo văn bản với Flatkey"
+sidebarTitle: "Tạo Văn Bản"
+description: "Gọi bất kỳ mô hình chat nào qua một endpoint duy nhất. Bao gồm lựa chọn mô hình, streaming, gọi tool, output có cấu trúc và đọc lượng token sử dụng."
+---
+
+Base URL: `https://router.flatkey.ai`
+
+Tạo văn bản chạy qua `POST /v1/chat/completions`, khớp hoàn toàn với OpenAI Chat Completions API. Mọi client tương thích OpenAI đều hoạt động sau khi bạn thay đổi base URL.
+
+<CardGroup cols={2}>
+  <Card title="Không cần viết lại" icon="plug">
+    Giữ nguyên code request hiện có và trỏ `base_url` vào `https://router.flatkey.ai/v1`.
+  </Card>
+  <Card title="Một key, mọi mô hình" icon="key">
+    Chuyển đổi mô hình bằng cách thay đổi trường `model`. Không có gì khác thay đổi.
+  </Card>
+</CardGroup>
+
+## Thực hiện lệnh gọi đầu tiên
+
+<CodeGroup>
+```python Python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.chat.completions.create(
+    model="claude-sonnet-5",
+    messages=[{"role": "user", "content": "Explain vector databases in two sentences."}],
+)
+
+print(response.choices[0].message.content)
+```
+
+```typescript TypeScript
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const response = await client.chat.completions.create({
+  model: "claude-sonnet-5",
+  messages: [{ role: "user", content: "Explain vector databases in two sentences." }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```bash cURL
+curl --fail-with-body -sS https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-5",
+    "messages": [
+      { "role": "user", "content": "Explain vector databases in two sentences." }
+    ]
+  }'
+```
+</CodeGroup>
+
+## Chọn mô hình
+
+Liệt kê tất cả những gì tài khoản của bạn có thể truy cập và giữ lại các mô hình văn bản:
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/models \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  | jq '.data[] | select(.type == "text") | .id'
+```
+
+Duyệt danh sách tương tự với giá cả, độ dài context và độ trễ trên [thư mục mô hình](https://flatkey.ai/models).
+
+Điểm khởi đầu thực tế:
+
+| Nhu cầu | Thử |
+| --- | --- |
+| Lập trình và suy luận hàng ngày | `claude-sonnet-5`, `gpt-5.6-sol` |
+| Tài liệu dài hoặc toàn bộ repository | `deepseek-v4-pro`, `kimi-k3` |
+| Khối lượng lớn với chi phí thấp | `deepseek-v4-flash`, `gemini-2.5-flash-lite` |
+| Lập trình tác nhân tự động | `glm-5.3`, `claude-opus-5` |
+
+## Stream phản hồi
+
+Đặt `stream: true` để nhận token ngay khi chúng được tạo ra:
+
+```python
+stream = client.chat.completions.create(
+    model="gemini-2.5-flash",
+    messages=[{"role": "user", "content": "Write a haiku about routing."}],
+    stream=True,
+)
+
+for chunk in stream:
+    print(chunk.choices[0].delta.content or "", end="", flush=True)
+```
+
+Mỗi chunk mang một `delta` một phần thay vì một tin nhắn hoàn chỉnh.
+
+## Gọi các hàm của bạn
+
+Truyền định nghĩa tool và mô hình sẽ quyết định khi nào gọi chúng:
+
+```python
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "get_weather",
+        "description": "Current weather for a city",
+        "parameters": {
+            "type": "object",
+            "properties": {"city": {"type": "string"}},
+            "required": ["city"],
+        },
+    },
+}]
+
+response = client.chat.completions.create(
+    model="claude-sonnet-5",
+    messages=[{"role": "user", "content": "What is the weather in Paris?"}],
+    tools=tools,
+)
+
+print(response.choices[0].message.tool_calls)
+```
+
+Để hoàn tất vòng lặp, thêm tin nhắn assistant, sau đó một tin nhắn cho mỗi kết quả tool được khóa bởi `tool_call_id`, và gửi toàn bộ thread trở lại.
+
+<Warning>
+  Khi một tool được kích hoạt, `finish_reason` là `tool_calls`, không phải `stop`. Code chỉ kiểm tra `stop` sẽ bỏ qua lệnh gọi một cách lặng lẽ.
+</Warning>
+
+Gọi tool là khả năng của mô hình, không phải của Flatkey. Các dòng GPT, Claude, Gemini, Qwen, DeepSeek và GLM đều hỗ trợ. Các mô hình hình ảnh, video và giọng nói bỏ qua mảng `tools`.
+
+## Ép buộc một dạng JSON
+
+Sử dụng `response_format` khi bạn cần phân tích cú pháp câu trả lời:
+
+```python
+response = client.chat.completions.create(
+    model="gpt-5.6-sol",
+    messages=[{"role": "user", "content": "Extract the city and country."}],
+    response_format={
+        "type": "json_schema",
+        "json_schema": {
+            "name": "location",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {"city": {"type": "string"}, "country": {"type": "string"}},
+                "required": ["city", "country"],
+                "additionalProperties": False,
+            },
+        },
+    },
+)
+```
+
+`{"type": "json_object"}` cũng hoạt động khi bạn chỉ cần JSON hợp lệ mà không có schema cố định.
+
+## Đọc lượng token sử dụng
+
+Mọi phản hồi đều mang theo số đếm mà bạn được tính phí:
+
+```json
+"usage": {
+  "prompt_tokens": 28,
+  "completion_tokens": 22,
+  "total_tokens": 50
+}
+```
+
+Các dòng mô hình khác nhau token hóa khác nhau, vì vậy cùng một văn bản sẽ tốn số token khác nhau trên các mô hình khác nhau. Sử dụng `usage` thay vì ước tính từ số ký tự. Chi phí mỗi request cũng xuất hiện trong [Nhật ký sử dụng](/vi/dashboard/usage).
+
+## Khắc phục sự cố
+
+**`No available channel for model ...`**
+
+Mô hình đó hiện không thể định tuyến. Chọn id khác từ `/v1/models`. Thử lại cùng một mô hình không giải quyết được vấn đề này.
+
+**Phản hồi dừng giữa chừng**
+
+`finish_reason` là `length`. Tăng `max_tokens`.
+
+**Các lệnh gọi tool không bao giờ kích hoạt**
+
+Xác nhận mô hình hỗ trợ tool, và kiểm tra `tool_choice` không được đặt thành `none`.
+
+## Bước tiếp theo
+
+<CardGroup cols={2}>
+  <Card title="Tài liệu tham khảo API" icon="code" href="/vi/api-reference/chat-completions">
+    Mọi tham số và trường phản hồi.
+  </Card>
+  <Card title="Hướng dẫn OpenAI SDK" icon="plug" href="/vi/guides/openai-sdk">
+    Tích hợp Flatkey vào dự án OpenAI hiện có.
+  </Card>
+</CardGroup>

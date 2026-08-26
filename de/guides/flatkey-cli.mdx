@@ -1,0 +1,131 @@
+---
+title: "Flatkey CLI mit einem KI-Agenten verwenden"
+sidebarTitle: "Flatkey CLI mit KI-Agent"
+description: "Bilder, Videos, Audio und Text vom Terminal aus generieren und dieselben Befehle aus einem Skript, einem CI-Job oder einem KI-Agenten mit JSON-Ausgabe steuern."
+---
+
+Die Flatkey CLI bringt Mediengenerierung in Ihr Terminal – über ein einziges Guthaben. Jeder Befehl akzeptiert `--json`, was sichere Aufrufe aus einem Skript, einem CI-Job oder einem KI-Agenten ermöglicht, der stdout verarbeitet.
+
+## Installieren und authentifizieren
+
+```bash
+npm install -g @flatkey-ai/cli
+flatkey login
+```
+
+Erfordert Node.js 18 oder neuer. Für CI setzen Sie statt des Einloggens eine Umgebungsvariable:
+
+```bash
+export FLATKEY_API_KEY="sk-fk-..."
+```
+
+Prüfen Sie, was die CLI verwendet:
+
+```bash
+flatkey auth status --json
+```
+
+## Erste Datei generieren
+
+<Warning>
+  Übergeben Sie immer `--model`. Das integrierte Standard-Bildmodell ist derzeit nicht routebar und gibt `No available channel` zurück.
+</Warning>
+
+```bash
+flatkey image generate \
+  --prompt "editorial cover, neon city at dawn" \
+  --model gpt-image-2 \
+  --output cover.png
+```
+
+```json
+{
+  "kind": "image",
+  "artifacts": [{ "path": "cover.png" }],
+  "response": { "data": [{ "url": "https://..." }] }
+}
+```
+
+## Befehle
+
+| Befehl | Zweck |
+| --- | --- |
+| `flatkey image generate --prompt <txt>` | Ein Bild generieren |
+| `flatkey image upload --file <path>` | Ein lokales Bild hochladen und eine temporäre URL erhalten |
+| `flatkey video generate --prompt <txt>` | Ein Video generieren |
+| `flatkey audio generate --prompt <txt>` | Sprache generieren |
+| `flatkey audio sfx --prompt <txt>` | Einen Soundeffekt generieren |
+| `flatkey audio music --prompt <txt>` | Musik generieren |
+| `flatkey audio voices` | Verfügbare Stimmen auflisten |
+| `flatkey text generate --prompt <txt>` | Einmalige Textgenerierung |
+| `flatkey models` | Modelle auflisten, filtern mit `--type image\|video\|audio\|text` |
+| `flatkey credits` | Verbleibendes Guthaben anzeigen |
+| `flatkey help --ai` | Agenten-Protokollleitfaden ausgeben |
+
+### Globale Optionen
+
+| Flag | Bedeutung |
+| --- | --- |
+| `--json` | Maschinenlesbarer Output, Animation deaktiviert |
+| `--output`, `-o <file>` | Das Artefakt in diesen Pfad schreiben |
+| `--model <id>` | Zu verwendendes Modell |
+| `--verbose` | Anfrage- und Antwort-Logs auf stderr |
+
+<Warning>
+  Platzieren Sie `-o` **vor** `--json`. Die Kurzform wird als unerwartetes Argument abgelehnt, wenn sie nach `--json` erscheint. `--output` funktioniert an jeder Position.
+</Warning>
+
+### Video-Optionen
+
+```bash
+flatkey video generate \
+  --prompt "cinematic product launch clip" \
+  --model seedance2 --ratio 16:9 --resolution 720p --output launch.mp4
+```
+
+`--ratio` akzeptiert `16:9`, `9:16`, `4:3`, `3:4`, `21:9` und `1:1`. `--resolution` akzeptiert `480p`, `720p` und `1080p`, aber jedes Modell unterstützt nur einen Teil dieses Bereichs – siehe [Videogenerierung](/de/guides/video-generation).
+
+### Audio-Optionen
+
+```bash
+flatkey audio generate --prompt "Welcome to Flatkey" --output welcome.mp3
+flatkey audio sfx --prompt "heavy door closing" --duration 4 --output door.mp3
+flatkey audio music --prompt "warm lo-fi loop, 80 bpm" --music-length-ms 30000 --output loop.mp3
+```
+
+Führen Sie `flatkey audio voices --json` aus und übergeben Sie eine aufgelistete `voice_id` an `--voice-id`.
+
+## Vom Agenten steuern
+
+Im `--json`-Modus enthält stdout genau ein JSON-Objekt und stderr einen JSON-Fehler. Führen Sie `flatkey help --ai` aus, um eine kompakte Protokollbeschreibung auszugeben, die ein Agent zur Laufzeit lesen kann.
+
+```python
+import json, subprocess
+
+def flatkey(*args):
+    p = subprocess.run(["flatkey", *args, "--json"], capture_output=True, text=True)
+    if p.returncode != 0:
+        raise RuntimeError(json.loads(p.stderr or "{}").get("error", {}).get("message"))
+    return json.loads(p.stdout)
+
+models = [m["id"] for m in flatkey("models", "--type", "image")["models"]]
+out = flatkey("image", "generate", "--prompt", "a paper boat on still water",
+              "--model", models[0], "--output", "boat.png")
+print(out["artifacts"][0]["path"])
+```
+
+Listen Sie zuerst die Modelle auf, dann generieren Sie. Eine fest kodierte Modell-ID ist die häufigste Ursache für einen fehlgeschlagenen Lauf.
+
+### Fehlerbehebung
+
+| Fehler | Behebung |
+| --- | --- |
+| Fehlender Schlüssel | Erstellen Sie einen unter [console.flatkey.ai](https://console.flatkey.ai), dann `flatkey onboard --api-key <key>` |
+| `No available channel` | Führen Sie `flatkey models --json` aus, wiederholen Sie mit einer aufgelisteten ID. Denselben Modell nicht erneut versuchen |
+| Unbekannte Stimme | `flatkey audio voices --json`, wiederholen Sie mit einer aufgelisteten ID |
+| Unzureichendes Guthaben | `flatkey credits --json`, dann aufladen |
+| `unsupported resolution` | Auf `720p` zurückfallen |
+
+<Warning>
+  Wiederholen Sie den Versuch nur nach einer Änderung der Anfrage. Diese Fehler sind deterministisch, sodass das Wiederholen identischer Argumente Zeit verschwendet, ohne das Ergebnis zu ändern.
+</Warning>

@@ -1,0 +1,277 @@
+---
+title: "Tạo và Chỉnh Sửa Hình Ảnh với Mô Hình GPT và Gemini qua Flatkey"
+sidebarTitle: "Tạo & Chỉnh Sửa Hình Ảnh"
+description: "Tạo và chỉnh sửa hình ảnh qua Flatkey với gpt-image-2 và các mô hình hình ảnh Gemini, sử dụng API tương thích OpenAI Images hoặc API Gemini gốc."
+---
+
+Flatkey cung cấp hai họ API hình ảnh. Sử dụng các endpoint tương thích OpenAI `/v1/images/generations` và `/v1/images/edits` cho `gpt-image-2`. Sử dụng endpoint `generateContent` của Gemini gốc cho các mô hình hình ảnh Gemini.
+
+<Warning>
+  Bạn không thể gọi các mô hình hình ảnh Gemini bằng OpenAI Images SDK, `/v1/images/generations`, hoặc `/v1/images/edits`. Hãy sử dụng các ví dụ API Gemini gốc trên trang này. Nếu không, yêu cầu có thể trả về `get_channel_failed`.
+</Warning>
+
+## Các mô hình hình ảnh được hỗ trợ
+
+| Mô hình | API | Giá chính thức | Giá sau ưu đãi |
+|---|---|---|---|
+| `gpt-image-2` | OpenAI Images API | $6.65 / 1M token | ~$3.99 / 1M token |
+| `gemini-3-pro-image` | Native Gemini API | $2.00 / 1M token | ~$1.20 / 1M token |
+| `gemini-2.5-flash-image` | Native Gemini API | $0.30 / 1M token | ~$0.18 / 1M token |
+| `gemini-3.1-flash-image` | Native Gemini API | Xem bảng điều khiển | Xem bảng điều khiển |
+| `gemini-3.1-flash-lite-image` | Native Gemini API | Xem bảng điều khiển | Xem bảng điều khiển |
+| `nano-banana-pro-preview` | Native Gemini API | Xem bảng điều khiển | Xem bảng điều khiển |
+
+Xem [Danh mục Mô hình](https://flatkey.ai/models) để có danh sách mô hình đầy đủ và giá hiện tại.
+
+## Sử dụng gpt-image-2
+
+### Sử dụng OpenAI SDK
+
+<CodeGroup>
+```python python
+import base64
+import os
+from pathlib import Path
+
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.images.generate(
+    model="gpt-image-2",
+    prompt="A serene mountain lake at sunset, photorealistic",
+    size="1024x1024",
+)
+
+Path("generated.png").write_bytes(
+    base64.b64decode(response.data[0].b64_json)
+)
+```
+```javascript node
+import { writeFileSync } from "node:fs";
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const response = await client.images.generate({
+  model: "gpt-image-2",
+  prompt: "A serene mountain lake at sunset, photorealistic",
+  size: "1024x1024",
+});
+
+writeFileSync(
+  "generated.png",
+  Buffer.from(response.data[0].b64_json, "base64"),
+);
+```
+</CodeGroup>
+
+### Tạo hình ảnh bằng curl
+
+```bash
+curl https://router.flatkey.ai/v1/images/generations \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-2",
+    "prompt": "A futuristic cityscape at night, neon lights, wide angle",
+    "size": "1024x1024"
+  }'
+```
+
+Endpoint này trả về hình ảnh đã tạo trong `data[0].b64_json`; `gpt-image-2` không cung cấp URL hình ảnh được lưu trữ. Xem [tài liệu tham khảo Images API](/vi/api-reference/image-generation#tạo-một-hình-ảnh) để biết tất cả các trường.
+
+### Chỉnh sửa hình ảnh bằng curl
+
+Sử dụng `/v1/images/edits` để tải lên hình ảnh đầu vào cùng với hướng dẫn chỉnh sửa. Endpoint này sử dụng `multipart/form-data`; `image` là bắt buộc và `mask` là tùy chọn.
+
+```bash
+curl https://router.flatkey.ai/v1/images/edits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -F "model=gpt-image-2" \
+  -F "prompt=add a small yellow star in the center" \
+  -F "image=@input.png" \
+  -F "mask=@mask.png"
+```
+
+`image` hỗ trợ PNG, JPEG và WebP. Bỏ qua `mask` để chỉnh sửa toàn bộ hình ảnh dựa trên prompt. Khi cung cấp mask, các vùng trong suốt của nó xác định các khu vực cần vẽ lại. Hình ảnh đã chỉnh sửa được trả về trong `data[0].b64_json`. Xem [tài liệu tham khảo API chỉnh sửa](/vi/api-reference/image-generation#chỉnh-sửa-một-hình-ảnh) để biết tất cả các trường.
+
+## Sử dụng các mô hình hình ảnh Gemini
+
+Các mô hình hình ảnh Gemini sử dụng endpoint sau. Thay thế `{model}` bằng ID mô hình:
+
+```text
+POST https://router.flatkey.ai/v1beta/models/{model}:generateContent
+```
+
+Yêu cầu phải bao gồm `"IMAGE"` trong `generationConfig.responseModalities`. Hình ảnh đã tạo được trả về trong `candidates[].content.parts[].inlineData`.
+
+### Sử dụng curl
+
+```bash
+curl https://router.flatkey.ai/v1beta/models/gemini-2.5-flash-image:generateContent \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contents": [{
+      "parts": [{
+        "text": "A product photo of a translucent purple glass bottle on a white background"
+      }]
+    }],
+    "generationConfig": {
+      "responseModalities": ["TEXT", "IMAGE"]
+    }
+  }'
+```
+
+### Sử dụng Python và lưu hình ảnh
+
+Cài đặt một HTTP client:
+
+```bash
+pip install requests
+```
+
+```python
+import base64
+import os
+from pathlib import Path
+
+import requests
+
+model = "gemini-2.5-flash-image"
+response = requests.post(
+    f"https://router.flatkey.ai/v1beta/models/{model}:generateContent",
+    headers={
+        "Authorization": f"Bearer {os.environ['FLATKEY_API_KEY']}",
+        "Content-Type": "application/json",
+    },
+    json={
+        "contents": [{
+            "parts": [{
+                "text": "A product photo of a translucent purple glass bottle on a white background"
+            }]
+        }],
+        "generationConfig": {
+            "responseModalities": ["TEXT", "IMAGE"]
+        },
+    },
+    timeout=180,
+)
+response.raise_for_status()
+
+parts = response.json()["candidates"][0]["content"]["parts"]
+image = next(part["inlineData"] for part in parts if "inlineData" in part)
+suffix = ".jpg" if image["mimeType"] == "image/jpeg" else ".png"
+output = Path(f"generated{suffix}")
+output.write_bytes(base64.b64decode(image["data"]))
+print(output)
+```
+
+### Sử dụng Node.js và lưu hình ảnh
+
+```javascript
+import { writeFileSync } from "node:fs";
+
+const model = "gemini-2.5-flash-image";
+const response = await fetch(
+  `https://router.flatkey.ai/v1beta/models/${model}:generateContent`,
+  {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.FLATKEY_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      contents: [{
+        parts: [{
+          text: "A product photo of a translucent purple glass bottle on a white background",
+        }],
+      }],
+      generationConfig: {
+        responseModalities: ["TEXT", "IMAGE"],
+      },
+    }),
+  },
+);
+
+if (!response.ok) {
+  throw new Error(`${response.status}: ${await response.text()}`);
+}
+
+const result = await response.json();
+const image = result.candidates[0].content.parts.find(
+  (part) => part.inlineData,
+).inlineData;
+const suffix = image.mimeType === "image/jpeg" ? "jpg" : "png";
+writeFileSync(`generated.${suffix}`, Buffer.from(image.data, "base64"));
+```
+
+## Các trường yêu cầu Gemini
+
+<ParamField body="contents" type="array" required>
+  Nội dung hội thoại. Để tạo hình ảnh từ văn bản, đặt mô tả hình ảnh vào `parts[].text`.
+</ParamField>
+
+<ParamField body="generationConfig.responseModalities" type="array" required>
+  Các phương thức phản hồi. Sử dụng `["TEXT", "IMAGE"]` cho văn bản và hình ảnh, hoặc `["IMAGE"]` để chỉ yêu cầu hình ảnh.
+</ParamField>
+
+<ParamField body="model" type="string" required>
+  ID mô hình xuất hiện trong đường dẫn URL, không phải trong phần thân yêu cầu. Ví dụ: `gemini-3-pro-image`.
+</ParamField>
+
+## Định dạng phản hồi Gemini
+
+```json
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "Here is the generated image."
+          },
+          {
+            "inlineData": {
+              "mimeType": "image/png",
+              "data": "iVBORw0KGgoAAA..."
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+<Note>
+  `inlineData.data` chứa hình ảnh được mã hóa base64. Một phản hồi có thể chứa văn bản và nhiều phần hình ảnh. Hãy lặp qua `parts` thay vì giả định rằng hình ảnh luôn là mục đầu tiên.
+</Note>
+
+## Xử lý sự cố
+
+### API trả về get_channel_failed
+
+Đảm bảo endpoint khớp với mô hình:
+
+- Sử dụng `/v1/images/generations` để tạo với `gpt-image-2`.
+- Sử dụng `/v1/images/edits` để chỉnh sửa với `gpt-image-2`.
+- Sử dụng `/v1beta/models/{model}:generateContent` cho các mô hình hình ảnh Gemini.
+
+### Phản hồi Gemini không chứa hình ảnh
+
+Đảm bảo `generationConfig.responseModalities` chứa `"IMAGE"`. Ngoài ra, hãy kiểm tra phản hồi để tìm lỗi hoặc khối chặn an toàn.
+
+## Viết prompt hiệu quả
+
+- Chỉ định phong cách: *thực tế như ảnh chụp, tranh sơn dầu, màu nước, mô hình 3D*
+- Bao gồm chi tiết ánh sáng: *giờ vàng, ánh sáng studio, bóng đổ kịch tính*
+- Chỉ định bố cục: *cận cảnh, góc rộng, góc nhìn từ trên cao, hướng dọc*
+- Thêm bộ điều chỉnh chất lượng: *chi tiết cao, 4K, nhiếp ảnh chuyên nghiệp*

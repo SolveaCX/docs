@@ -1,0 +1,532 @@
+---
+title: "Tạo video Seedance với Flatkey"
+sidebarTitle: "Seedance"
+description: "Tạo tác vụ video Seedance, kiểm tra kết quả liên tục, tải xuống file MP4 cuối cùng, và tái sử dụng các tài sản ảo hoặc người thật thông qua Flatkey."
+---
+
+Base URL: `https://router.flatkey.ai`
+
+Hướng dẫn này cung cấp cho bạn một lộ trình sao chép sẵn để sử dụng Seedance thông qua Flatkey. Bắt đầu với một tác vụ chuyển văn bản thành video, kiểm tra tác vụ liên tục cho đến khi hoàn tất, sau đó tải xuống file MP4 được tạo ra. Nếu bạn cần các tham chiếu sản phẩm, hình nền, âm thanh hoặc người thật có thể tái sử dụng, hãy tiếp tục đến các phần thư viện tài sản.
+
+<CardGroup cols={2}>
+  <Card title="Các ví dụ sao chép sẵn" icon="copy">
+    Sử dụng biểu tượng sao chép trên bất kỳ khối lệnh nào, sau đó thay thế `YOUR_FLATKEY_API_KEY`, `task_...`, `ast_...`, và `rph_...` bằng các giá trị của riêng bạn.
+  </Card>
+  <Card title="Một luồng công việc bất đồng bộ" icon="video">
+    Tạo tác vụ với `POST /v1/videos`, kiểm tra liên tục với `GET /v1/videos/{task_id}`, và tải xuống MP4 từ `metadata.url`.
+  </Card>
+</CardGroup>
+
+Sử dụng header xác thực này cho mọi yêu cầu API trong hướng dẫn này. URL tải video được trả về trong `metadata.url` là ngoại lệ duy nhất.
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+Giữ khóa API của bạn ở chế độ riêng tư. Không dán nó vào các bản ghi công khai, trang web hoặc phiếu hỗ trợ.
+
+## Gọi Seedance
+
+Bắt đầu tại đây nếu bạn chỉ muốn tạo một tác vụ chuyển văn bản thành video và tải xuống video đã hoàn thành.
+
+### 1. Tạo một tác vụ chuyển văn bản thành video
+
+Gửi `POST /v1/videos` với mô hình `seedance-2.0` và một prompt văn bản.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a calm 5 second video of a ceramic mug on a kitchen table in morning light"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a calm 5 second video of a ceramic mug on a kitchen table in morning light"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
+
+Sao chép giá trị `task_...` được trả về. Lưu trữ nó trong cơ sở dữ liệu hoặc ghi chú của bạn vì bạn cần nó để kiểm tra video.
+
+### 2. Kiểm tra tác vụ liên tục
+
+Sử dụng endpoint này với ID tác vụ đã lưu:
+
+```http
+GET /v1/videos/{task_id}
+```
+
+Kiểm tra liên tục cho đến khi `status` là `completed`, sau đó đọc URL tải xuống từ `metadata.url`. Nếu trạng thái là `failed`, đọc `error.message`, sửa yêu cầu, và tạo một tác vụ mới.
+
+<CodeGroup>
+```bash Bash
+TASK_ID="task_3f9a00000000000000000000000000e2"
+
+curl -sS "https://router.flatkey.ai/v1/videos/$TASK_ID" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+
+# Run the command above again until status is completed.
+# Then copy metadata.url from the response and paste it below.
+VIDEO_URL="PASTE_METADATA_URL_HERE"
+curl -L "$VIDEO_URL" -o output.mp4
+```
+```powershell Windows PowerShell
+$taskId = "task_3f9a00000000000000000000000000e2"
+
+while ($true) {
+  $result = curl.exe -sS "https://router.flatkey.ai/v1/videos/$taskId" `
+    -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" | ConvertFrom-Json
+  Write-Host "status: $($result.status)"
+
+  if ($result.status -eq "completed") { break }
+  if ($result.status -eq "failed") {
+    $result | ConvertTo-Json -Depth 10
+    exit 1
+  }
+  Start-Sleep -Seconds 5
+}
+
+$videoUrl = $result.metadata.url
+curl.exe -L "$videoUrl" -o output.mp4
+```
+</CodeGroup>
+
+Sau khi tác vụ hoàn tất, `metadata.url` tải xuống file MP4 mà không cần header xác thực. Coi URL này là riêng tư và không công khai nó.
+
+## Sử dụng thư viện tài sản
+
+Sử dụng thư viện tài sản khi bạn muốn đăng ký một tham chiếu một lần, chờ cho đến khi nó sẵn sàng, và tái sử dụng nó trong các yêu cầu Seedance. Có hai loại tài sản:
+
+| Loại tài sản | Dùng để làm gì |
+| --- | --- |
+| Tài sản ảo | Hình ảnh sản phẩm, video hình nền, âm thanh, hoặc các tham chiếu không phải người khác. |
+| Tài sản người thật | Khuôn mặt, giọng nói, hoặc video của một người cụ thể. Khả năng này có quyền truy cập hạn chế và phải được bật cho tài khoản của bạn. |
+
+Sử dụng URI `asset://ast_...` được Flatkey trả về trong các yêu cầu Seedance của bạn.
+
+### Tài sản ảo
+
+Tài sản ảo không yêu cầu xác minh người thật. Tạo chúng từ một URL công khai hoặc tải lên một file cục bộ, sau đó tái sử dụng URI tài sản Flatkey được trả về.
+
+#### 1. Tạo một tài sản ảo từ một URL HTTPS công khai
+
+Gửi một URL `https://` công khai.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://cdn.example.com/reference/product.png",
+    "asset_type": "Image",
+    "moderation": {
+      "strategy": "Default"
+    }
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "url": "https://cdn.example.com/reference/product.png",
+    "asset_type": "Image",
+    "moderation": {
+      "strategy": "Default"
+    }
+  }'
+```
+</CodeGroup>
+
+Phản hồi bao gồm một `id`, ví dụ `ast_1234567890abcdef1234567890abcdef`, và một trạng thái như `Processing`. Xây dựng URI có thể tái sử dụng bằng cách thêm `asset://` trước ID:
+
+```text
+asset://ast_1234567890abcdef1234567890abcdef
+```
+
+Không gửi `model` khi bạn tạo, tải lên, hoặc truy vấn một tài sản. Flatkey suy ra các mô hình Seedance liên quan từ khóa API được sử dụng cho yêu cầu.
+
+#### 2. Tải lên một tài sản ảo cục bộ
+
+Đối với một file hình ảnh, video, hoặc âm thanh cục bộ, gửi `multipart/form-data` đến `POST /v1/assets/upload`. Sử dụng một trường `file`. `asset_type` có thể là `Image`, `Video`, hoặc `Audio`.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets/upload \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -F "file=@./reference-a.png" \
+  -F "asset_type=Image"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets/upload `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -F "file=@./reference-a.png" `
+  -F "asset_type=Image"
+```
+</CodeGroup>
+
+Phản hồi sử dụng cùng cấu trúc tài sản như tạo bằng URL. Lưu `id` hoặc `asset_url` của nó để kiểm tra liên tục và các yêu cầu video sau này.
+
+#### 3. Kiểm tra liên tục cho đến khi mô hình đã chọn sẵn sàng
+
+Truy vấn từng tài sản với cùng khóa API sẽ tạo tác vụ video. Ví dụ, kiểm tra hai tài sản hình ảnh riêng biệt:
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets/ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+curl -sS https://router.flatkey.ai/v1/assets/ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets/ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+curl.exe -sS https://router.flatkey.ai/v1/assets/ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+Mọi phản hồi tài sản đều bao gồm `available_models`. `available_models` luôn là một mảng và liệt kê các mô hình có thể sử dụng tài sản này ngay bây giờ. Một tài sản chỉ sẵn sàng phần nào có thể trông như thế này:
+
+```json
+{
+  "id": "ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "object": "asset",
+  "asset_type": "Image",
+  "status": "Processing",
+  "available_models": ["seedance-2.0-fast"],
+  "asset_url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "created_at": 1785292000
+}
+```
+
+`status` là trạng thái tổng hợp trên các mô hình Seedance liên quan cho khóa API này:
+
+| Trạng thái | Ý nghĩa |
+| --- | --- |
+| `Creating` | Tải lên nguồn chưa hoàn tất. |
+| `Processing` | Ít nhất một mô hình liên quan vẫn đang được chuẩn bị. Kiểm tra `available_models`; một mô hình khác có thể đã sử dụng được. |
+| `Active` | Mọi mô hình liên quan cho khóa API này đều đã sẵn sàng. |
+| `Failed` | Nguồn thất bại, hoặc không thể xác định trạng thái sẵn sàng cho ít nhất một mô hình liên quan. |
+| `Expired` | Nguồn không thể sử dụng được nữa. Tạo một tài sản mới. |
+
+Bạn không cần phải chờ trạng thái tổng hợp `Active` khi mô hình bạn chọn đã được liệt kê. Trước khi tạo tác vụ, đảm bảo rằng mô hình đã chọn xuất hiện trong `available_models` của mọi tài sản. Đối với fast sử dụng `seedance-2.0-fast`; đối với pro sử dụng `seedance-2.0`. Yêu cầu tạo tác vụ kiểm tra lại trạng thái sẵn sàng, vì vậy hãy thử lại việc kiểm tra liên tục nếu định tuyến thay đổi giữa các yêu cầu GET và POST.
+
+URI `asset://` xác định tài sản nhưng không tự chứng minh trạng thái sẵn sàng. `Deleting` nghĩa là quá trình xóa đang diễn ra và tài sản không thể được sử dụng cho một tác vụ mới. Sau khi xóa hoàn tất, `GET /v1/assets/{asset_id}` trả về `404 asset_not_found`; không chờ một trạng thái `Deleted` có thể kiểm tra được.
+
+#### 4. Gọi Seedance với hai tài sản ảo
+
+Đặt mỗi URI `asset://ast_...` vào trường phương tiện phù hợp với loại tài sản: `image_url.url` cho `Image`, `video_url.url` cho `Video`, hoặc `audio_url.url` cho `Audio`. Một yêu cầu Seedance cần văn bản hoặc ít nhất một hình ảnh/video; âm thanh riêng lẻ là không đủ. Ví dụ này chỉ bắt đầu sau khi cả hai tài sản đều liệt kê `seedance-2.0-fast` trong `available_models`.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0-fast",
+    "content": [
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "text",
+        "text": "Create a clean studio product video while keeping the product consistent"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "seedance-2.0-fast",
+    "content": [
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "text",
+        "text": "Create a clean studio product video while keeping the product consistent"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
+
+Sao chép `task_...` được trả về và sử dụng `GET /v1/videos/{task_id}` từ phần đầu tiên để tải xuống video đã hoàn thành từ `metadata.url`.
+
+### Tài sản người thật
+
+Tài sản người thật dành cho khuôn mặt, giọng nói, hoặc video của một người cụ thể. Khả năng này có quyền truy cập hạn chế. Chỉ sử dụng nó sau khi Flatkey bật nó cho tài khoản của bạn.
+
+Bạn sẽ tạo một hồ sơ, gửi `verification_url` cho người đó, chờ cho đến khi hồ sơ ở trạng thái `active`, tạo một tài sản, chờ cho đến khi `status` của tài sản là `Active`, sau đó gọi Seedance với `asset://ast_...`.
+
+| Endpoint | Khi nào sử dụng |
+| --- | --- |
+| `POST /v1/real-persons` | Tạo một hồ sơ người thật và liên kết xác minh đầu tiên. |
+| `GET /v1/real-persons` | Liệt kê các hồ sơ người thật của bạn. |
+| `POST /v1/real-persons/{person_id}/verification-sessions` | Tạo một liên kết xác minh mới nếu cần. |
+| `GET /v1/real-persons/{person_id}` | Kiểm tra liên tục trạng thái hồ sơ. |
+| `POST /v1/real-persons/{person_id}/assets` | Tạo một tài sản từ một URL công khai hoặc một file cục bộ. |
+| `GET /v1/real-persons/{person_id}/assets` | Liệt kê các tài sản dưới một hồ sơ. |
+
+Giới hạn kích thước file:
+
+| Loại file | Giới hạn |
+| --- | --- |
+| Hình ảnh | &lt; 30 MiB |
+| Video | &lt;= 50 MiB |
+| Âm thanh | &lt;= 15 MiB |
+
+Các yêu cầu ghi trong phần này yêu cầu `Idempotency-Key`. Thay thế mỗi placeholder `YOUR_UNIQUE_KEY_...` bằng một UUID mới cho mỗi yêu cầu ghi mới. Chỉ tái sử dụng một khóa khi thử lại chính xác yêu cầu tương tự.
+
+#### 1. Tạo một hồ sơ người thật
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_PROFILE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My first real-person profile"
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_PROFILE" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "name": "My first real-person profile"
+  }'
+```
+</CodeGroup>
+
+Phản hồi bao gồm một `id` hồ sơ, một `status`, và một `verification_url` sử dụng một lần. Gửi `verification_url` cho người thật đó và yêu cầu họ tự mở nó. Không công khai liên kết này.
+
+Nếu liên kết hết hạn hoặc người đó cần một liên kết khác, tạo một phiên xác minh mới:
+
+<CodeGroup>
+```bash Bash
+curl -sS -X POST https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/verification-sessions \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_VERIFICATION_SESSION"
+```
+```powershell Windows PowerShell
+curl.exe -sS -X POST https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/verification-sessions `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_VERIFICATION_SESSION"
+```
+</CodeGroup>
+
+Sau khi người đó hoàn thành trang xác minh, tiếp tục với bước tiếp theo.
+
+#### 2. Kiểm tra liên tục cho đến khi hồ sơ hoạt động
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+Chờ cho đến khi trạng thái hồ sơ là `active` trước khi tạo tài sản. Nếu là `pending_verification` hoặc `verifying`, hãy chờ và kiểm tra lại. Nếu là `failed` hoặc `expired`, tạo một phiên xác minh mới.
+
+#### 3. Tạo một tài sản người thật từ một URL công khai
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_URL_ASSET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://cdn.example.com/reference/person.png",
+    "asset_type": "Image",
+    "name": "Front-facing reference"
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_URL_ASSET" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "url": "https://cdn.example.com/reference/person.png",
+    "asset_type": "Image",
+    "name": "Front-facing reference"
+  }'
+```
+</CodeGroup>
+
+#### 4. Tải lên một file cục bộ
+
+Tải lên cục bộ sử dụng `multipart/form-data` và chỉ có sẵn cho tài sản người thật. Sử dụng một trường `file` và để curl đặt ranh giới multipart.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_FILE_ASSET" \
+  -F "asset_type=Image" \
+  -F "name=Front-facing reference" \
+  -F "file=@./person-reference.png"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_FILE_ASSET" `
+  -F "asset_type=Image" `
+  -F "name=Front-facing reference" `
+  -F "file=@./person-reference.png"
+```
+</CodeGroup>
+
+Phản hồi tạo bao gồm một ID tài sản hoặc `asset_uri`, ví dụ `asset://ast_1234567890abcdef1234567890abcdef`.
+
+#### 5. Kiểm tra liên tục trạng thái sẵn sàng và gọi Seedance
+
+Phản hồi tài sản người thật không bao gồm `available_models`. Liệt kê các tài sản dưới hồ sơ cho đến khi `status` của tài sản là `Active`:
+
+<CodeGroup>
+```bash Bash
+curl -sS "https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets?limit=20" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS "https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets?limit=20" `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+Nếu tài sản được liệt kê vẫn ở trạng thái `Processing`, hãy chờ và kiểm tra lại. Nếu là `Failed`, tạo một tài sản mới từ một tham chiếu tốt hơn.
+
+Sau khi tài sản là `Active`, gọi Seedance với URI `asset://ast_...`.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a short greeting video with natural movement"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_1234567890abcdef1234567890abcdef"
+        },
+        "role": "reference_image"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a short greeting video with natural movement"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_1234567890abcdef1234567890abcdef"
+        },
+        "role": "reference_image"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
+
+Sao chép `task_...` được trả về và sử dụng `GET /v1/videos/{task_id}` từ phần đầu tiên để tải xuống video đã hoàn thành từ `metadata.url`.
+
+#### 6. Xóa một tài sản khi bạn không còn cần nó
+
+<CodeGroup>
+```bash Bash
+curl -sS -X DELETE https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS -X DELETE https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+Yêu cầu xóa trả về `204 No Content`. Sau khi xóa hoàn tất, `GET /v1/assets/{asset_id}` trả về `404 asset_not_found`.

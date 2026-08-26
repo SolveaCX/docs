@@ -1,0 +1,68 @@
+---
+title: "Autenticação da API Flatkey: Bearer Tokens e Chaves de API"
+sidebarTitle: "Autenticação"
+description: "Autentique requisições da API Flatkey passando sua chave de API como Bearer token no cabeçalho Authorization. Conheça os formatos de chave, erros e boas práticas."
+---
+
+Toda requisição à API Flatkey deve incluir uma chave de API válida no cabeçalho `Authorization` como Bearer token. Você cria e gerencia chaves no [console do Flatkey](https://console.flatkey.ai/keys).
+
+## Formato do cabeçalho
+
+```http
+Authorization: Bearer sk-fk-your-api-key
+```
+
+As chaves de API do Flatkey começam com `sk-fk-`. As chaves são sensíveis a maiúsculas e minúsculas e devem ser passadas exatamente como geradas.
+
+## Exemplo de requisição
+
+```bash
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+## Criando uma chave de API
+
+1. Faça login em [console.flatkey.ai](https://console.flatkey.ai)
+2. Clique em **Keys** na barra lateral esquerda
+3. Clique em **Create Key** e insira um nome
+4. Copie a chave — ela é exibida **apenas uma vez**
+
+Se você perder uma chave, precisará criar uma nova. As chaves antigas permanecem ativas até serem explicitamente revogadas.
+
+## Erros de autenticação
+
+| Status HTTP | Condição | Resolução |
+|---|---|---|
+| `401 Unauthorized` | Chave ausente na requisição | Adicione o cabeçalho `Authorization: Bearer sk-fk-...` |
+| `401 Unauthorized` | Chave inválida ou revogada | Gere uma nova chave no console |
+| `401 Unauthorized` | Saldo é $0.00 | Recarregue em [console.flatkey.ai](https://console.flatkey.ai) |
+| `403 Forbidden` | Chave sem acesso ao modelo | Verifique as permissões da chave no console |
+
+### Formato da resposta de erro
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided.",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## Boas práticas de segurança
+
+- Armazene as chaves em variáveis de ambiente, não no código-fonte
+- Use uma chave por ambiente de implantação
+- Revogue as chaves imediatamente se forem comprometidas
+- Faça a rotação das chaves periodicamente para cargas de trabalho em produção
+
+<Warning>
+  Nunca inclua chaves de API em JavaScript do lado do cliente, pacotes de aplicativos móveis ou repositórios públicos. As chaves podem ser usadas indevidamente para esgotar seu saldo.
+</Warning>

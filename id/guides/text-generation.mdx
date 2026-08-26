@@ -1,0 +1,205 @@
+---
+title: "Hasilkan teks dengan Flatkey"
+sidebarTitle: "Pembuatan Teks"
+description: "Panggil model obrolan apa pun melalui satu endpoint. Mencakup pilihan model, streaming, pemanggilan alat, output terstruktur, dan pembacaan penggunaan token."
+---
+
+Base URL: `https://router.flatkey.ai`
+
+Pembuatan teks berjalan melalui `POST /v1/chat/completions`, yang sesuai persis dengan OpenAI Chat Completions API. Klien apa pun yang kompatibel dengan OpenAI dapat digunakan setelah Anda mengubah base URL.
+
+<CardGroup cols={2}>
+  <Card title="Tidak perlu penulisan ulang" icon="plug">
+    Pertahankan kode permintaan Anda yang ada dan arahkan `base_url` ke `https://router.flatkey.ai/v1`.
+  </Card>
+  <Card title="Satu kunci, semua model" icon="key">
+    Ganti model dengan mengubah kolom `model`. Tidak ada yang berubah selain itu.
+  </Card>
+</CardGroup>
+
+## Lakukan panggilan pertama Anda
+
+<CodeGroup>
+```python Python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.chat.completions.create(
+    model="claude-sonnet-5",
+    messages=[{"role": "user", "content": "Explain vector databases in two sentences."}],
+)
+
+print(response.choices[0].message.content)
+```
+
+```typescript TypeScript
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const response = await client.chat.completions.create({
+  model: "claude-sonnet-5",
+  messages: [{ role: "user", content: "Explain vector databases in two sentences." }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```bash cURL
+curl --fail-with-body -sS https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-5",
+    "messages": [
+      { "role": "user", "content": "Explain vector databases in two sentences." }
+    ]
+  }'
+```
+</CodeGroup>
+
+## Pilih model
+
+Daftarkan semua yang dapat dijangkau akun Anda dan simpan model teks:
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/models \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  | jq '.data[] | select(.type == "text") | .id'
+```
+
+Jelajahi daftar yang sama dengan harga, panjang konteks, dan latensi di [direktori model](https://flatkey.ai/models).
+
+Titik awal yang praktis:
+
+| Kebutuhan | Coba |
+| --- | --- |
+| Pengkodean dan penalaran sehari-hari | `claude-sonnet-5`, `gpt-5.6-sol` |
+| Dokumen panjang atau seluruh repositori | `deepseek-v4-pro`, `kimi-k3` |
+| Volume tinggi dengan biaya rendah | `deepseek-v4-flash`, `gemini-2.5-flash-lite` |
+| Pengkodean agentik | `glm-5.3`, `claude-opus-5` |
+
+## Streaming respons
+
+Atur `stream: true` untuk menerima token saat diproduksi:
+
+```python
+stream = client.chat.completions.create(
+    model="gemini-2.5-flash",
+    messages=[{"role": "user", "content": "Write a haiku about routing."}],
+    stream=True,
+)
+
+for chunk in stream:
+    print(chunk.choices[0].delta.content or "", end="", flush=True)
+```
+
+Setiap potongan membawa `delta` parsial, bukan pesan lengkap.
+
+## Panggil fungsi Anda sendiri
+
+Berikan definisi alat dan model memutuskan kapan akan memanggilnya:
+
+```python
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "get_weather",
+        "description": "Current weather for a city",
+        "parameters": {
+            "type": "object",
+            "properties": {"city": {"type": "string"}},
+            "required": ["city"],
+        },
+    },
+}]
+
+response = client.chat.completions.create(
+    model="claude-sonnet-5",
+    messages=[{"role": "user", "content": "What is the weather in Paris?"}],
+    tools=tools,
+)
+
+print(response.choices[0].message.tool_calls)
+```
+
+Untuk menyelesaikan loop, tambahkan pesan asisten, lalu satu pesan per hasil alat yang dikunci oleh `tool_call_id`, dan kirim seluruh thread kembali.
+
+<Warning>
+  Ketika sebuah alat dijalankan, `finish_reason` adalah `tool_calls`, bukan `stop`. Kode yang hanya memeriksa `stop` akan melewatkan panggilan tersebut secara diam-diam.
+</Warning>
+
+Pemanggilan alat adalah kemampuan model, bukan kemampuan Flatkey. Keluarga GPT, Claude, Gemini, Qwen, DeepSeek, dan GLM mendukungnya. Model gambar, video, dan ucapan mengabaikan array `tools`.
+
+## Paksa bentuk JSON
+
+Gunakan `response_format` saat Anda perlu mengurai jawabannya:
+
+```python
+response = client.chat.completions.create(
+    model="gpt-5.6-sol",
+    messages=[{"role": "user", "content": "Extract the city and country."}],
+    response_format={
+        "type": "json_schema",
+        "json_schema": {
+            "name": "location",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {"city": {"type": "string"}, "country": {"type": "string"}},
+                "required": ["city", "country"],
+                "additionalProperties": False,
+            },
+        },
+    },
+)
+```
+
+`{"type": "json_object"}` juga berfungsi ketika Anda hanya membutuhkan JSON yang valid tanpa skema tetap.
+
+## Baca penggunaan token
+
+Setiap respons membawa jumlah yang menjadi dasar tagihan Anda:
+
+```json
+"usage": {
+  "prompt_tokens": 28,
+  "completion_tokens": 22,
+  "total_tokens": 50
+}
+```
+
+Keluarga model yang berbeda melakukan tokenisasi secara berbeda, sehingga teks yang sama membutuhkan jumlah token yang berbeda pada model yang berbeda. Gunakan `usage` daripada memperkirakan dari jumlah karakter. Biaya per permintaan juga muncul di [Log penggunaan](/id/dashboard/usage).
+
+## Pemecahan masalah
+
+**`No available channel for model ...`**
+
+Model tersebut tidak dapat dirutekan saat ini. Pilih id lain dari `/v1/models`. Mencoba ulang model yang sama tidak akan menyelesaikan masalah ini.
+
+**Respons berhenti di tengah kalimat**
+
+`finish_reason` adalah `length`. Naikkan nilai `max_tokens`.
+
+**Pemanggilan alat tidak pernah terjadi**
+
+Konfirmasi bahwa model mendukung alat, dan pastikan `tool_choice` tidak diatur ke `none`.
+
+## Langkah berikutnya
+
+<CardGroup cols={2}>
+  <Card title="Referensi API" icon="code" href="/id/api-reference/chat-completions">
+    Setiap parameter dan kolom respons.
+  </Card>
+  <Card title="Panduan OpenAI SDK" icon="plug" href="/id/guides/openai-sdk">
+    Integrasikan Flatkey ke dalam proyek OpenAI yang sudah ada.
+  </Card>
+</CardGroup>

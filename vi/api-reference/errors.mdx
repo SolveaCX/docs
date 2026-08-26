@@ -1,0 +1,194 @@
+---
+title: "Lỗi API Flatkey: Mã trạng thái HTTP và hướng dẫn khắc phục"
+sidebarTitle: "Lỗi"
+description: "Tài liệu tham khảo về tất cả mã lỗi HTTP của API Flatkey, định dạng phản hồi lỗi, và các cách khắc phục được đề xuất cho các phản hồi 400, 401, 403, 429, 500 và 503."
+---
+
+Flatkey trả về các mã trạng thái HTTP tiêu chuẩn kèm theo một phần thân lỗi JSON mô tả những gì đã xảy ra. Các phản hồi lỗi tuân theo cùng định dạng với API OpenAI, do đó mã xử lý lỗi hiện có sẽ hoạt động mà không cần chỉnh sửa.
+
+## Định dạng phản hồi lỗi
+
+Tất cả lỗi đều trả về một đối tượng JSON với trường `error`:
+
+```json
+{
+  "error": {
+    "message": "A human-readable description of the error.",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## Mã trạng thái HTTP
+
+### 400 Bad Request
+
+Phần thân yêu cầu bị định dạng sai hoặc thiếu trường bắt buộc.
+
+```json
+{
+  "error": {
+    "message": "Missing required field: model",
+    "type": "invalid_request_error",
+    "code": "missing_required_field"
+  }
+}
+```
+
+**Nguyên nhân thường gặp:**
+- Thiếu trường `model` hoặc `messages` trong chat completions
+- JSON không hợp lệ trong phần thân yêu cầu
+- Mảng `messages` trống
+
+---
+
+### 401 Unauthorized
+
+Xác thực thất bại. Khóa không hợp lệ, bị thiếu, hoặc số dư tài khoản bằng không.
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided.",
+    "type": "authentication_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+**Nguyên nhân và cách khắc phục thường gặp:**
+
+| Giá trị `code` | Nguyên nhân | Cách khắc phục |
+|---|---|---|
+| `invalid_api_key` | Khóa bị thiếu, định dạng sai hoặc đã bị thu hồi | Kiểm tra và tạo lại khóa của bạn |
+| `insufficient_balance` | Số dư tài khoản là $0.00 | Nạp tiền tại [console.flatkey.ai](https://console.flatkey.ai) |
+
+---
+
+### 403 Forbidden
+
+Khóa API không có quyền truy cập vào mô hình được yêu cầu.
+
+```json
+{
+  "error": {
+    "message": "This key does not have access to model claude-opus-4-5.",
+    "type": "permission_error",
+    "code": "model_not_allowed"
+  }
+}
+```
+
+**Cách khắc phục:** Kiểm tra cài đặt quyền truy cập mô hình cho khóa này trong [bảng điều khiển](https://console.flatkey.ai/keys).
+
+---
+
+### 404 Not Found
+
+ID mô hình không được Flatkey nhận dạng.
+
+```json
+{
+  "error": {
+    "message": "Model 'gpt-unknown' not found.",
+    "type": "invalid_request_error",
+    "code": "model_not_found"
+  }
+}
+```
+
+**Cách khắc phục:** Xác minh ID mô hình trong [Danh mục mô hình](https://flatkey.ai/models). ID có phân biệt chữ hoa chữ thường.
+
+---
+
+### 429 Too Many Requests
+
+Khóa của bạn đã vượt quá giới hạn tốc độ.
+
+```json
+{
+  "error": {
+    "message": "Rate limit exceeded. Please retry after 1 second.",
+    "type": "rate_limit_error",
+    "code": "rate_limit_exceeded"
+  }
+}
+```
+
+**Cách khắc phục:** Triển khai thuật toán thử lại với độ trễ tăng dần theo hàm mũ. Liên hệ [support@flatkey.ai](mailto:support@flatkey.ai) nếu bạn cần giới hạn tốc độ cao hơn.
+
+---
+
+### 500 Internal Server Error
+
+Đã xảy ra lỗi không mong muốn trong khi xử lý yêu cầu của bạn.
+
+```json
+{
+  "error": {
+    "message": "The model encountered an error processing your request.",
+    "type": "api_error",
+    "code": "internal_error"
+  }
+}
+```
+
+**Cách khắc phục:** Thử lại yêu cầu. Nếu lỗi vẫn tiếp diễn, hãy liên hệ [support@flatkey.ai](mailto:support@flatkey.ai).
+
+---
+
+### 503 Service Unavailable
+
+Nhà cung cấp mô hình tạm thời không khả dụng.
+
+```json
+{
+  "error": {
+    "message": "Upstream provider temporarily unavailable. Please retry.",
+    "type": "service_error",
+    "code": "upstream_unavailable"
+  }
+}
+```
+
+**Cách khắc phục:** Thử lại với độ trễ tăng dần theo hàm mũ. Sự cố thường được giải quyết trong vài giây. Nếu vẫn tiếp diễn, hãy liên hệ [support@flatkey.ai](mailto:support@flatkey.ai).
+
+---
+
+## Chiến lược thử lại
+
+Đối với các lỗi `429`, `500` và `503`, hãy triển khai thuật toán thử lại với độ trễ tăng dần theo hàm mũ:
+
+```python python
+import time
+import random
+from openai import OpenAI, RateLimitError, APIStatusError
+
+client = OpenAI(
+    api_key="sk-fk-your-key",
+    base_url="https://router.flatkey.ai/v1",
+)
+
+def call_with_retry(model, messages, max_retries=5):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model=model,
+                messages=messages,
+            )
+        except RateLimitError:
+            wait = (2 ** attempt) + random.uniform(0, 1)
+            time.sleep(wait)
+        except APIStatusError as e:
+            if e.status_code in (500, 503):
+                wait = (2 ** attempt) + random.uniform(0, 1)
+                time.sleep(wait)
+            else:
+                raise
+    raise RuntimeError("Max retries exceeded")
+```
+
+<Note>
+  SDK OpenAI có sẵn logic thử lại thông qua tham số `max_retries`. Đặt `max_retries=3` trong hàm khởi tạo client OpenAI để tự động thử lại khi gặp lỗi tạm thời.
+</Note>

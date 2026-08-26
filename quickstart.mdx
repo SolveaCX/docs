@@ -10,12 +10,31 @@ Make your first Flatkey request in about five minutes. You need one API key and 
   Already using the OpenAI SDK? Keep your request code and change the base URL to `https://router.flatkey.ai/v1`.
 </Tip>
 
+## Pick your path
+
+Everyone starts with a key and one request. After that, jump to what you are building.
+
+<CardGroup cols={2}>
+  <Card title="Write code" icon="code" href="/guides/openai-sdk">
+    Use the OpenAI or Anthropic SDK, or call the REST API directly.
+  </Card>
+  <Card title="Generate images and video" icon="image" href="/guides/image-generation">
+    Create images with `gpt-image-2`, or [generate video](/guides/video-generation) with Seedance and `MiniMax-H3`.
+  </Card>
+  <Card title="Plug into an AI tool" icon="terminal" href="/guides/claude-code">
+    Point Claude Code, Codex CLI, or Codex Desktop at Flatkey.
+  </Card>
+  <Card title="Call your own functions" icon="wrench" href="/guides/text-generation#call-your-own-functions">
+    Add tool calling and structured outputs to a request.
+  </Card>
+</CardGroup>
+
 ## Before you begin
 
 You need:
 
 - A [Flatkey account](https://console.flatkey.ai/sign-up)
-- cURL, Python 3.8+, Node.js 16+, or PowerShell
+- cURL, Python 3.10+, Node.js 22+, or PowerShell
 - Prepaid credit for the model request
 
 <Steps>
@@ -163,6 +182,8 @@ See the [Chat Completions reference](/api-reference/chat-completions) for the co
 
 Set `stream` to `true` when you want tokens as they are generated.
 
+The Python and TypeScript examples reuse the `client` you created in **Send your first request**.
+
 <CodeGroup>
 ```bash cURL
 curl --no-buffer https://router.flatkey.ai/v1/chat/completions \
@@ -211,19 +232,23 @@ for await (const chunk of stream) {
 |---|---|---|
 | `401` | The API key is missing, invalid, or revoked | Check the `Authorization: Bearer` header and create a new key if needed |
 | `401 insufficient_balance` | The prepaid balance is empty | Add credit from **Wallet** |
-| `404 model_not_found` | The model ID is misspelled or unavailable | Check the [Model Directory](/reference/model-list) for the exact ID |
+| `503 model_not_found` | The model ID is misspelled or unavailable | Check the [Model Directory](https://flatkey.ai/models) for the exact ID. Retrying does not help |
 | `429` | The request exceeded a rate limit | Retry with exponential backoff and jitter |
-| `500` or `503` | The provider or route is temporarily unavailable | Retry with backoff and check [Model Health](/reference/model-health) |
+| `500` or `503` | The provider or route is temporarily unavailable | Read `error.code` in the response body first. Retry with backoff and check [Model Health](https://flatkey.ai/status) |
+
+<Note>
+  A `503` can mean either a temporary outage or an unknown model ID. Read `error.code` in the response body before you retry.
+</Note>
 
 See [API errors](/api-reference/errors) for response formats and troubleshooting details.
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Authentication" icon="key" href="/authentication">
+  <Card title="Authentication" icon="key" href="/api-reference/authentication">
     Learn how Flatkey API keys and authorization headers work.
   </Card>
-  <Card title="Model Directory" icon="list" href="/reference/model-list">
+  <Card title="Model Directory" icon="list" href="https://flatkey.ai/models">
     Find supported model IDs and current pricing.
   </Card>
   <Card title="OpenAI SDK" icon="code" href="/guides/openai-sdk">
@@ -232,7 +257,7 @@ See [API errors](/api-reference/errors) for response formats and troubleshooting
   <Card title="Usage Logs" icon="chart-bar" href="/dashboard/usage">
     Monitor requests, token usage, latency, and cost.
   </Card>
-  <Card title="Billing" icon="wallet" href="/concepts/billing">
+  <Card title="Billing" icon="wallet" href="https://flatkey.ai/pricing">
     Understand prepaid credit and usage charges.
   </Card>
 </CardGroup>

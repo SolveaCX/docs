@@ -1,0 +1,256 @@
+---
+title: "MiniMax H3-Videos mit Flatkey generieren"
+sidebarTitle: "MiniMax H3"
+description: "MiniMax H3-Videoaufgaben aus Text oder Referenzmedien erstellen, deren Status abfragen und das fertige MP4 über Flatkey herunterladen."
+---
+
+Basis-URL: `https://router.flatkey.ai`
+
+Verwende `MiniMax-H3`, wenn du Text-zu-Video, Steuerung des ersten und letzten Frames oder Bild-, Video- und Audioreferenzen benötigst. Jede Anfrage folgt demselben asynchronen Ablauf: Aufgabe erstellen, Status abfragen, fertiges MP4 herunterladen.
+
+<CardGroup cols={2}>
+  <Card title="Flexible Eingaben" icon="images">
+    Generiere aus Text, Frame-Bildern oder Referenzbildern, -videos und -audio.
+  </Card>
+  <Card title="Ein asynchroner Ablauf" icon="video">
+    Erstellen mit `POST /v1/videos`, abfragen mit `GET /v1/videos/{task_id}`, herunterladen von `metadata.url`.
+  </Card>
+</CardGroup>
+
+Verwende diesen Header für Aufgabenerstellung und Statusabfragen:
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+Halte deinen API-Schlüssel privat. Füge ihn nicht in öffentliche Logs, Seiten oder Support-Tickets ein.
+
+## Dein erstes H3-Video erstellen
+
+### 1. Text-zu-Video-Aufgabe übermitteln
+
+Sende `POST /v1/videos` mit dem Modell `MiniMax-H3` und einem Text-Prompt. Reine Textanfragen erfordern ein explizites Seitenverhältnis, das sich von `adaptive` unterscheidet.
+
+<CodeGroup>
+```bash Bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "MiniMax-H3",
+    "content": [
+      {
+        "type": "text",
+        "text": "A paper boat crosses a rain puddle in a cinematic macro shot"
+      }
+    ],
+    "resolution": "768P",
+    "duration": 6,
+    "ratio": "16:9",
+    "aigc_watermark": false
+  }'
+```
+```powershell Windows PowerShell
+curl.exe --fail-with-body -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "MiniMax-H3",
+    "content": [
+      {
+        "type": "text",
+        "text": "A paper boat crosses a rain puddle in a cinematic macro shot"
+      }
+    ],
+    "resolution": "768P",
+    "duration": 6,
+    "ratio": "16:9",
+    "aigc_watermark": false
+  }'
+```
+</CodeGroup>
+
+Die Antwort enthält die öffentliche Aufgaben-ID sowohl in `id` als auch in `task_id`:
+
+```json
+{
+  "id": "task_3f9a00000000000000000000000000e2",
+  "task_id": "task_3f9a00000000000000000000000000e2",
+  "object": "video",
+  "model": "MiniMax-H3",
+  "status": "queued",
+  "progress": 0
+}
+```
+
+Speichere den zurückgegebenen `task_...`-Wert. Du benötigst ihn, um die Aufgabe später abzufragen.
+
+### 2. Ergebnis abfragen und herunterladen
+
+Frage `GET /v1/videos/{task_id}` ab, bis `status` den Wert `completed` oder `failed` annimmt. Bei `completed` lese die temporäre Download-URL aus `metadata.url`.
+
+<CodeGroup>
+```bash Bash
+TASK_ID="task_3f9a00000000000000000000000000e2"
+
+curl --fail-with-body -sS \
+  "https://router.flatkey.ai/v1/videos/$TASK_ID" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+
+# Run the status request again until status is completed.
+# Then copy metadata.url from the response and paste it below.
+VIDEO_URL="PASTE_METADATA_URL_HERE"
+curl --fail --location "$VIDEO_URL" --output minimax-h3.mp4
+```
+```powershell Windows PowerShell
+$taskId = "task_3f9a00000000000000000000000000e2"
+
+while ($true) {
+  $result = curl.exe --fail-with-body -sS `
+    "https://router.flatkey.ai/v1/videos/$taskId" `
+    -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" | ConvertFrom-Json
+  Write-Host "status: $($result.status)"
+
+  if ($result.status -eq "completed") { break }
+  if ($result.status -eq "failed") {
+    $result | ConvertTo-Json -Depth 10
+    exit 1
+  }
+  Start-Sleep -Seconds 5
+}
+
+curl.exe --fail --location $result.metadata.url --output minimax-h3.mp4
+```
+</CodeGroup>
+
+`metadata.url` ist eine temporäre Download-URL. Sie funktioniert ohne einen Flatkey-Autorisierungsheader, sodass jeder, der sie kennt, auf das generierte Video zugreifen kann, bis sie abläuft. Behandle sie als vertraulich und logge, veröffentliche oder teile sie nicht. Lade das Video umgehend herunter und speichere es in deinem eigenen Speicher. Eine erneute Aufgabenabfrage aktualisiert keine abgelaufene URL.
+
+## Eingaben auswählen
+
+Jede Anfrage muss ein nicht leeres Textelement enthalten. Du kannst Frame-Bilder oder Referenzmedien hinzufügen, um das Ergebnis zu steuern.
+
+| Eingabe | `type` | Erforderliche `role` | Limit |
+| --- | --- | --- | --- |
+| Prompt | `text` | Keine Rolle setzen | 7.000 Unicode-Zeichen über alle Textelemente hinweg |
+| Erster Frame | `image_url` | `first_frame`, oder Rolle weglassen | 1 Bild |
+| Letzter Frame | `image_url` | `last_frame` | 1 Bild |
+| Referenzbild | `image_url` | `reference_image` | 9 Bilder |
+| Referenzvideo | `video_url` | `reference_video` | 3 Videos |
+| Referenzaudio | `audio_url` | `reference_audio` | 3 Audiodateien; zusätzlich ein Referenzbild oder -video einschließen |
+
+<Warning>
+  Mische keine First- oder Last-Frame-Eingaben mit Referenzeingaben in derselben Anfrage. Jedes `content`-Element muss genau einen Payload enthalten, der seinem `type` entspricht.
+</Warning>
+
+### Ersten und letzten Frame steuern
+
+Verwende `first_frame` und `last_frame`, wenn das Video zwischen zwei Bildern interpolieren soll.
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "MiniMax-H3",
+    "content": [
+      {
+        "type": "text",
+        "text": "The camera slowly pulls back as morning fog crosses the valley"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/first.jpg" },
+        "role": "first_frame"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/last.jpg" },
+        "role": "last_frame"
+      }
+    ],
+    "resolution": "2K",
+    "duration": 8,
+    "ratio": "adaptive"
+  }'
+```
+
+### Mit Referenzmedien generieren
+
+Referenzeingaben helfen dabei, ein Motiv, einen Bewegungsstil oder einen Klang beizubehalten. Referenzaudio kann nicht die einzige Medieneingabe sein.
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "MiniMax-H3",
+    "content": [
+      {
+        "type": "text",
+        "text": "Keep the character and movement style consistent while crossing a snowy street"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/character.jpg" },
+        "role": "reference_image"
+      },
+      {
+        "type": "video_url",
+        "video_url": { "url": "https://example.com/motion.mp4" },
+        "role": "reference_video"
+      },
+      {
+        "type": "audio_url",
+        "audio_url": { "url": "https://example.com/ambience.mp3" },
+        "role": "reference_audio"
+      }
+    ],
+    "resolution": "768P",
+    "duration": 10,
+    "ratio": "adaptive"
+  }'
+```
+
+## Anfrageeinstellungen
+
+| Feld | Erforderlich | Unterstützte Werte |
+| --- | --- | --- |
+| `model` | Ja | `MiniMax-H3` |
+| `content` | Ja | Text plus optionale Frame- oder Referenzmedien |
+| `resolution` | Ja | `768P` oder `2K`; Werte sind Groß-/Kleinschreibung-sensitiv |
+| `duration` | Ja | Eine ganze Zahl von `4` bis `15` Sekunden |
+| `ratio` | Für reine Textanfragen | `21:9`, `16:9`, `4:3`, `1:1`, `3:4`, `9:16` oder `adaptive` bei Medien |
+| `aigc_watermark` | Nein | `true` oder `false` |
+
+Wenn eine Anfrage Medien enthält und `ratio` weglässt, verwendet Flatkey `adaptive`. Eine reine Textanfrage muss explizit ein Seitenverhältnis verwenden, das nicht `adaptive` ist.
+
+## Aufgabenergebnisse verstehen
+
+| `status` | Bedeutung |
+| --- | --- |
+| `queued` | Die Aufgabe wartet auf Ausführung. |
+| `in_progress` | Das Video wird gerade generiert. Lies `progress` für einen Wert von 0 bis 100. |
+| `completed` | Das Video ist bereit unter `metadata.url`. |
+| `failed` | Die Generierung ist fehlgeschlagen. Lies `error.code` und `error.message`. |
+
+Bei H3-Videoantworten repräsentieren die gemeinsamen Usage-Feldnamen Sekunden:
+
+- `usage.completion_tokens` ist die Dauer der generierten Ausgabe.
+- `usage.total_tokens` ist die gesamte abrechenbare Dauer einschließlich der Referenzvideo-Eingabezeit.
+
+Diese Werte sind Sekunden, keine Sprachmodell-Tokens. Überprüfe die **Nutzungslogs** in der [Flatkey Console](https://console.flatkey.ai/usage-logs/common) für die endgültige Abrechnung.
+
+## Aktuelle Einschränkungen
+
+- `callback_url` wird nicht unterstützt. Frage stattdessen den Aufgabenstatus ab.
+- Aufgabenauflistung, -abbruch, -löschung, -neugenerierung und -remix werden nicht unterstützt.
+- `MiniMax-H3-Context-IR` wird nicht unterstützt.
+- Remote-Medien-URLs müssen erreichbar bleiben, während die Aufgabe verarbeitet wird.
+
+| Fehlercode | Was zu prüfen ist |
+| --- | --- |
+| `invalid_duration` | Setze `duration` von `4` bis `15`. |
+| `invalid_resolution` | Verwende genau `768P` oder `2K`. |
+| `invalid_ratio` | Verwende ein unterstütztes Seitenverhältnis. Reine Textanfragen dürfen es nicht weglassen oder `adaptive` verwenden. |
+| `invalid_content` | Überprüfe Prompt, Rollen, Medienlimits und inkompatible Eingabekombinationen. |
+| `unsupported_callback_url` | Entferne `callback_url` und frage die Aufgabe ab. |

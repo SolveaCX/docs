@@ -1,0 +1,170 @@
+---
+title: "Utiliser Flatkey avec Codex Desktop"
+sidebarTitle: "Codex Desktop"
+description: "Configurez l'application de bureau Codex pour utiliser Flatkey manuellement ou avec CC Switch tout en conservant votre connexion officielle ChatGPT."
+---
+
+Codex Desktop lit la même configuration Codex au niveau utilisateur que Codex CLI. Vous pouvez ajouter Flatkey comme fournisseur de modèle personnalisé sans remplacer votre connexion officielle ChatGPT ou Codex.
+
+## Prérequis
+
+- Codex Desktop installé
+- Une connexion officielle ChatGPT ou Codex effectuée dans l'application de bureau
+- Une clé API Flatkey — [créez-en une dans la Console Flatkey](https://console.flatkey.ai/keys)
+- Un identifiant de modèle pris en charge issu du [Répertoire de modèles Flatkey](https://flatkey.ai/models)
+- CC Switch, si vous utilisez la configuration CC Switch
+
+## Configuration manuelle
+
+### 1. Définir la clé API
+
+Stockez la clé dans une variable d'environnement utilisateur au lieu de l'écrire dans un fichier de configuration.
+
+<CodeGroup>
+```powershell Windows PowerShell
+[Environment]::SetEnvironmentVariable(
+  "FLATKEY_API_KEY",
+  "sk-fk-...",
+  "User"
+)
+```
+```bash macOS
+launchctl setenv FLATKEY_API_KEY "sk-fk-..."
+```
+```bash Linux
+export FLATKEY_API_KEY="sk-fk-..."
+```
+</CodeGroup>
+
+Après avoir modifié la variable, fermez complètement Codex Desktop avant de le rouvrir.
+
+### 2. Mettre à jour `config.toml`
+
+Ouvrez le fichier de configuration Codex au niveau utilisateur :
+
+| Plateforme | Chemin de configuration |
+|---|---|
+| Windows | `%USERPROFILE%\.codex\config.toml` |
+| macOS et Linux | `~/.codex/config.toml` |
+
+Avant de remplacer les paramètres `model` et `model_provider` au niveau supérieur, notez leurs valeurs actuelles afin de pouvoir les restaurer ultérieurement. Mettez ensuite à jour les deux paramètres. Si l'une des clés existe déjà, remplacez sa valeur au lieu d'ajouter une clé en double. Conservez tous les paramètres non liés. Ajoutez le tableau de fournisseur ci-dessous ; si `[model_providers.flatkey]` existe déjà, mettez à jour ce tableau plutôt que d'en créer un doublon :
+
+```toml
+model = "gpt-5.4"
+model_provider = "flatkey"
+
+[model_providers.flatkey]
+name = "Flatkey"
+base_url = "https://router.flatkey.ai/v1"
+env_key = "FLATKEY_API_KEY"
+wire_api = "responses"
+```
+
+`gpt-5.4` est disponible dans le Répertoire de modèles Flatkey au moment de la rédaction. Vérifiez le répertoire avant de passer à un autre identifiant de modèle.
+
+<Warning>
+  Les identifiants officiels peuvent être stockés dans `auth.json` ou dans le magasin d'identifiants de votre système d'exploitation. Ne modifiez, ne remplacez, n'écrasez, n'exportez et ne partagez jamais l'un ou l'autre de ces magasins d'identifiants pour la configuration Flatkey. N'y collez jamais une clé API Flatkey. `config.toml` contrôle le routage du modèle et du fournisseur.
+</Warning>
+
+### 3. Redémarrer et vérifier
+
+Fermez complètement Codex Desktop, rouvrez-le, puis envoyez une courte invite. Ouvrez les [journaux d'utilisation Flatkey](https://console.flatkey.ai/usage-logs/common) et vérifiez le modèle, le nombre de tokens, la latence et le coût.
+
+## Configurer avec CC Switch
+
+[CC Switch](https://ccswitch.io) est un gestionnaire de configuration tiers, et non un produit Flatkey. Vous pouvez également le télécharger depuis le [dépôt GitHub de CC Switch](https://github.com/farion1231/cc-switch). Les étapes ci-dessous suivent l'interface actuelle de CC Switch.
+
+La configuration manuelle et CC Switch sont des méthodes de configuration alternatives. Utilisez une seule méthode pour le fournisseur actif. Codex Desktop et Codex CLI partagent `~/.codex/config.toml` sur macOS et Linux, ou `%USERPROFILE%\.codex\config.toml` sur Windows. CC Switch contrôle les paramètres de modèle et de fournisseur dans ce fichier partagé. Conservez les paramètres et fournisseurs non liés.
+
+### 1. Effectuer une connexion officielle
+
+Ouvrez Codex Desktop et effectuez une connexion officielle ChatGPT ou Codex avant de changer de fournisseur. Faites-le au moins une fois afin que l'application de bureau dispose d'une session officielle valide pour l'accès au compte et son catalogue de modèles.
+
+Les identifiants officiels sont stockés dans `auth.json` ou dans le magasin d'identifiants de votre système d'exploitation. Traitez les deux comme sensibles.
+
+### 2. Préserver la connexion officielle pour les changements directs
+
+Dans CC Switch, ouvrez **Settings** > **General** > **Codex App Enhancements**, puis activez **Keep official login for direct switches**. Ce paramètre empêche un changement direct de fournisseur d'écarter la connexion officielle dont Codex Desktop a toujours besoin.
+
+![Activer le paramètre actuel de préservation de la connexion officielle pour Codex](/images/guides/cc-switch/en/codex-login-preservation.png)
+
+<Warning>
+  N'ouvrez jamais `auth.json` pour le copier, ne le remplacez ni ne l'écrasez, n'y collez pas de clé API Flatkey et ne le partagez pas. N'exposez jamais votre clé API Flatkey dans des captures d'écran ou des exports de fournisseurs CC Switch. Si l'un ou l'autre identifiant est exposé, faites-le pivoter ou révoquez-le immédiatement.
+</Warning>
+
+### 3. Ajouter Flatkey comme fournisseur personnalisé
+
+Ouvrez le panneau **Codex** dans CC Switch et ajoutez un **Custom Provider**. Utilisez les valeurs suivantes. Ce tutoriel ne repose pas sur un fournisseur Flatkey intégré.
+
+![Ouvrir le panneau du fournisseur Codex et sélectionner le bouton d'ajout de fournisseur dans CC Switch](/images/guides/cc-switch/en/codex-provider-list.png)
+
+| Champ du fournisseur | Valeur |
+|---|---|
+| Provider Name | `flatkey` |
+| API Key | `sk-fk-...` |
+| API Request URL | `https://router.flatkey.ai/v1` |
+| Default Model | `gpt-5.6-sol` dans la capture d'écran — vérifiez un identifiant exact et actuel dans le [Répertoire de modèles Flatkey](https://flatkey.ai/models) |
+| Upstream Format | **Responses (native)** |
+
+![Saisir les champs actuels du fournisseur Flatkey dans CC Switch](/images/guides/cc-switch/en/codex-provider-form.png)
+
+### 4. Configurer le modèle
+
+Définissez le **Default Model** du fournisseur sur l'identifiant exact du modèle Flatkey que vous souhaitez utiliser. La capture d'écran montre `gpt-5.6-sol` à titre d'exemple. Vérifiez le [Répertoire de modèles Flatkey](https://flatkey.ai/models) avant de choisir un identifiant.
+
+Cliquez sur **Fetch Models** pour charger les identifiants actuels. Ajoutez le modèle au **Model Mapping** du fournisseur si vous souhaitez qu'il apparaisse dans le menu `/model` de Codex. Vous pouvez également définir un identifiant exact comme **Default Model** du fournisseur ou le transmettre depuis Codex CLI avec `codex --model <id>`. Pour Codex Desktop, considérez le fournisseur actif et le modèle par défaut comme la route prévue même si le sélecteur ne liste pas le modèle personnalisé. Confirmez la route réelle avec les journaux d'utilisation Flatkey après avoir envoyé une requête.
+
+![Choisir Responses native et configurer le mapping de modèle Codex](/images/guides/cc-switch/en/codex-model-mapping.png)
+
+Flatkey prend en charge nativement l'API Responses. Laissez **Local Routing** désactivé ; ce n'est pas nécessaire pour cette configuration.
+
+### 5. Enregistrer, activer et redémarrer
+
+Enregistrez le fournisseur personnalisé et activez-le pour Codex. Ne supprimez pas les paramètres ou fournisseurs non liés du fichier `config.toml` partagé.
+
+![Confirmer que le fournisseur Flatkey Codex est utilisé](/images/guides/cc-switch/en/codex-provider-active.png)
+
+Fermez complètement Codex Desktop. Assurez-vous qu'aucun ancien processus Codex Desktop ne subsiste, puis rouvrez l'application afin qu'elle lise les nouveaux paramètres de fournisseur.
+
+### 6. Vérifier la route réelle
+
+Démarrez une nouvelle conversation avec un contexte réduit et envoyez une invite minimale. Ouvrez ensuite les [journaux d'utilisation Flatkey](https://console.flatkey.ai/usage-logs/common) et vérifiez le modèle, le nombre de tokens, la latence et le coût de cette requête.
+
+![Vérifier la route Flatkey avec une réponse minimale de Codex Desktop](/images/guides/cc-switch/en/codex-desktop-verify.png)
+
+Conserver la connexion officielle ne signifie pas que la requête utilise la facturation OpenAI. Les paramètres actuels de fournisseur et de modèle dans le fichier `config.toml` partagé contrôlent la route. Les journaux d'utilisation Flatkey sont la confirmation faisant autorité que la requête a bien atteint Flatkey.
+
+Les invites système, les outils, l'historique de conversation, les fichiers joints et la sortie des commandes peuvent augmenter le nombre de tokens d'entrée au-delà du texte visible dans votre invite. Un nombre de tokens d'entrée plus élevé peut augmenter le coût facturé.
+
+### Si le modèle n'est pas visible
+
+Codex Desktop peut afficher le catalogue de modèles officiel et omettre un modèle personnalisé de son sélecteur. L'absence d'un modèle personnalisé dans l'interface ne prouve pas que le routage a échoué.
+
+1. Vérifiez que la connexion officielle ChatGPT ou Codex est toujours active.
+2. Vérifiez que **Settings** > **General** > **Codex App Enhancements** > **Keep official login for direct switches** est activé.
+3. Vérifiez que le fournisseur Flatkey est actif et que son **Default Model** contient l'identifiant de modèle exact.
+4. Vérifiez le mapping de modèle du fournisseur. Utilisez **Fetch Models** si vous souhaitez que le modèle apparaisse dans le menu `/model`.
+5. Vérifiez que le fichier `config.toml` partagé contient le fournisseur et le modèle actifs prévus sans avoir modifié les paramètres non liés.
+6. Fermez complètement tous les processus Codex Desktop et rouvrez l'application.
+7. Envoyez une invite minimale et vérifiez les [journaux d'utilisation Flatkey](https://console.flatkey.ai/usage-logs/common) pour connaître la route réelle.
+
+### Revenir au fournisseur officiel
+
+Si vous avez utilisé CC Switch, activez le fournisseur Codex officiel. Fermez complètement Codex Desktop, assurez-vous qu'aucun ancien processus ne subsiste, puis rouvrez-le. Il n'est pas nécessaire de supprimer le fournisseur personnalisé Flatkey.
+
+Si vous avez utilisé la configuration manuelle, restaurez les valeurs précédentes de `model` et `model_provider` au niveau supérieur dans `config.toml`. Conservez les paramètres et tableaux de fournisseurs non liés. Laissez les identifiants officiels dans `auth.json` ou dans le magasin d'identifiants du système d'exploitation inchangés. Fermez complètement Codex Desktop, assurez-vous qu'aucun ancien processus ne subsiste, puis rouvrez-le.
+
+### Dépannage de CC Switch
+
+| Problème | Ce qu'il faut vérifier |
+|---|---|
+| La connexion officielle est manquante ou expirée | Reconnectez-vous via Codex Desktop, puis activez **Keep official login for direct switches** avant d'activer Flatkey |
+| L'authentification échoue ou la clé Flatkey est rejetée | Vérifiez que la clé API est active et qu'elle a été saisie dans le champ de clé API du fournisseur personnalisé ; faites-la pivoter ou révoquez-la si elle a été exposée |
+| Erreurs d'endpoint ou de Responses | Définissez **API Request URL** sur `https://router.flatkey.ai/v1`, sélectionnez **Responses (native)** et laissez **Local Routing** désactivé |
+| `Model not found`, modèle personnalisé masqué, ou mapping `/model` manquant | Copiez un identifiant exact depuis le [Répertoire de modèles](https://flatkey.ai/models), définissez-le comme **Default Model**, et utilisez **Fetch Models** ou le mapping de modèle |
+| Les journaux d'utilisation indiquent le mauvais fournisseur ou modèle | Activez le fournisseur personnalisé Flatkey et vérifiez son modèle par défaut ainsi que les valeurs actives dans le fichier `config.toml` partagé |
+| Les modifications ne prennent pas effet | Fermez complètement Codex Desktop, terminez tout processus Codex Desktop obsolète, puis rouvrez l'application |
+| Le solde Flatkey est insuffisant | Ajoutez du solde ou utilisez une clé Flatkey disposant de crédit disponible, puis réessayez avec une invite minimale |
+| Local Routing est activé par erreur | Désactivez **Local Routing** car Flatkey accepte les requêtes Responses natives |
+| Une requête est absente des journaux d'utilisation | Démarrez une nouvelle conversation à contexte réduit, envoyez une invite minimale, puis revérifiez le fournisseur actif, l'endpoint API et les [journaux d'utilisation](https://console.flatkey.ai/usage-logs/common) |
+| La connexion officielle a disparu après un changement | Reconnectez-vous via Codex Desktop et activez le paramètre de préservation de connexion ; ne remplacez ni n'écrasez jamais `auth.json` |

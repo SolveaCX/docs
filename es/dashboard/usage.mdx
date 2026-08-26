@@ -1,0 +1,69 @@
+---
+title: "Supervisa el uso y los costes de tu API de Flatkey en el panel de control"
+sidebarTitle: "Uso"
+description: "Registra cada solicitud a la API de Flatkey con recuentos de tokens, nombres de modelos y costes por solicitud. Filtra, busca y exporta registros de uso para la conciliación de facturación."
+---
+
+El panel de control **Uso** de Flatkey te ofrece visibilidad completa de cada solicitud a la API realizada con tu cuenta. Cada entrada del registro muestra el modelo utilizado, los recuentos de tokens de entrada y salida, el coste deducido de tu saldo y la marca de tiempo. Usa esta vista para entender tus patrones de gasto, depurar errores y conciliar costes.
+
+## Acceder a los registros de uso
+
+<Steps>
+  <Step title="Abrir la consola">
+    Inicia sesión en [console.flatkey.ai](https://console.flatkey.ai) y haz clic en **Uso** en la barra lateral izquierda.
+  </Step>
+  <Step title="Establecer un intervalo de fechas">
+    Usa el selector de fechas en la parte superior para filtrar los registros por día, semana, mes o un intervalo personalizado. La vista predeterminada muestra los últimos 7 días.
+  </Step>
+  <Step title="Filtrar por modelo o clave">
+    Usa los menús desplegables **Modelo** y **Clave de API** para centrarte en un modelo o clave específicos. Esto es útil para comparar costes entre modelos o auditar una integración concreta.
+  </Step>
+</Steps>
+
+## Qué muestra cada entrada del registro
+
+| Campo | Descripción |
+|---|---|
+| **Marca de tiempo** | Cuándo recibió Flatkey la solicitud |
+| **Modelo** | El ID de modelo utilizado (p. ej., `gpt-4o-mini`, `claude-sonnet-4-5`) |
+| **Tokens de entrada** | Número de tokens en el prompt |
+| **Tokens de salida** | Número de tokens en la respuesta |
+| **Coste** | Importe deducido de tu saldo por esta solicitud |
+| **Clave de API** | Qué clave se utilizó (mostrada como nombre + prefijo enmascarado) |
+| **Estado** | Si la solicitud se completó correctamente o falló |
+
+## Entender los costes
+
+Cada solicitud muestra el coste real cobrado, que refleja:
+- El precio de entrada y salida del modelo (con la tarifa con descuento de Flatkey)
+- Tu bonificación de recarga actual aplicada automáticamente
+
+La suma de todos los costes de las solicitudes equivale al saldo total consumido en ese período.
+
+## Supervisar tu saldo
+
+Tu saldo actual se muestra en la parte superior de la página Uso y en la sección **Saldo**. Cuando el saldo caiga por debajo de un umbral que tú configures, recibirás una alerta por correo electrónico. Para configurar las alertas, ve a **Configuración → Notificaciones**.
+
+<Note>
+  El saldo se deduce en tiempo real a medida que se completan las solicitudes. Si una solicitud falla en el lado del proveedor, el coste puede deducirse parcialmente dependiendo de cuántos tokens se procesaron antes del fallo.
+</Note>
+
+## Exportar registros
+
+Para exportar datos de uso:
+1. Establece el intervalo de fechas y los filtros que desees.
+2. Haz clic en **Exportar** en la esquina superior derecha.
+3. Elige el formato CSV o JSON.
+4. El archivo se descargará en tu navegador.
+
+Los registros exportados contienen todos los campos que se muestran en el panel de control y son adecuados para subir a hojas de cálculo o herramientas de finanzas.
+
+## Alertas de uso elevado
+
+Para evitar un gasto descontrolado:
+- Establece un **límite de gasto mensual** en **Configuración → Facturación**: las solicitudes se bloquean una vez alcanzado el límite.
+- Usa **Grupos** para establecer cuotas por clave o por aplicación.
+
+<Tip>
+  Durante el desarrollo, usa una clave separada con una cuota de gasto establecida en un importe pequeño (p. ej., 5 $). Esto evita que solicitudes accidentales de alto coste agoten tu saldo de producción.
+</Tip>

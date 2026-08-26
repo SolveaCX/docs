@@ -1,0 +1,93 @@
+---
+title: "FlatKeyとClaude Codeで割引AI コーディングを利用する"
+sidebarTitle: "Claude Code"
+description: "2つの環境変数を変更するだけで、Claude Code CLIのトラフィックをFlatkey経由でルーティングし、Anthropic公式価格より最大50%オフでClaudeモデルを利用できます。"
+---
+
+Anthropicの Claude Code は、ターミナルで動作するエージェント型AIコーディングアシスタントです。`ANTHROPIC_BASE_URL` 環境変数を設定することで、すべての Claude Code リクエストをFlatkey経由でルーティングし、Claudeモデルの利用にFlatKeyの割引料金を適用できます。
+
+## 前提条件
+
+- Claude Code のインストール: `npm install -g @anthropic-ai/claude-code`
+- FlatKeyアカウントとAPIキー — [こちらから取得](https://console.flatkey.ai/sign-up)
+
+## 設定方法
+
+以下の2つの環境変数を設定します:
+
+```bash
+export ANTHROPIC_BASE_URL="https://router.flatkey.ai"
+export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
+```
+
+設定を永続化するには、シェルプロファイルに追加してください:
+
+```bash ~/.zshrc
+export ANTHROPIC_BASE_URL="https://router.flatkey.ai"
+export ANTHROPIC_API_KEY="sk-fk-your-flatkey-key"
+```
+
+<Warning>
+  `ANTHROPIC_BASE_URL` には `https://router.flatkey.ai` を設定してください — 末尾に `/v1` は不要です。Claude Code CLIが正しいパスを自動で付加します。
+</Warning>
+
+## CC Switch を使って設定する
+
+[CC Switch](https://ccswitch.io) は、コーディングアシスタント向けのサードパーティ製デスクトップ設定マネージャーです。[公式GitHubリポジトリ](https://github.com/farion1231/cc-switch)からもダウンロードできます。
+
+1. CC Switch を開き、**Claude Code** を選択します。
+2. `Flatkey` という名前の**カスタムプロバイダー**を追加します。
+3. ベースURLに `https://router.flatkey.ai` を設定します（末尾の `/v1` は不要です）。
+4. FlatKeyのAPIキー（`sk-fk-...`）を入力し、プロバイダーを有効化します。
+5. Claude Code を完全に終了して再起動し、プロバイダー設定を再読み込みします。
+6. 小さなリクエストを送信したあと、[Flatkey Console](https://console.flatkey.ai/usage-logs/common) の**使用ログ**で確認します。
+
+<Note>
+  お使いのCC SwitchのバージョンにFlatKeyのプリセットが含まれていない場合は、**カスタムプロバイダー**を使用してください。CC SwitchはFlatKeyの製品ではありません。
+</Note>
+
+## Claude Code の実行
+
+Claude Code はこれまでどおりに使用できます:
+
+```bash
+claude "Fix the bug in this file"
+```
+
+またはインタラクティブモードで:
+
+```bash
+claude
+```
+
+すべてのリクエストはFlatkey経由でルーティングされ、割引料金でプリペイド残高から請求されます。
+
+## セットアップの確認
+
+簡単なリクエストを実行したあと、[Flatkey Console](https://console.flatkey.ai/usage-logs/common) の**使用ログ**を確認してください。Claudeのリクエストがモデルのマジックコード、トークン数、コストとともに記録されているはずです。
+
+## 節約額の目安
+
+Claude Sonnet（Claude Codeで人気の選択肢）をFlatkey経由で利用した場合:
+
+| | 公式価格 | Flatkey（$200ボーナス適用後） |
+|---|---|---|
+| `claude-sonnet-4-5` 入力 | $3 / 100万トークン | 約$1.6 / 100万トークン |
+| `claude-haiku-4-5-20251001` 入力 | $1 / 100万トークン | 約$0.53 / 100万トークン |
+
+Sonnetを使用した典型的なClaude Codeセッション（入力トークン5万件）の場合:
+- 公式: セッションあたり約$0.15
+- Flatkey: セッションあたり約$0.08
+
+<Tip>
+  Claude Code のヘビーユーザーは$200チャージティアから最も恩恵を受けられます — ボーナスクレジットはモデル割引に加えて、実質的に1ヶ月分の追加利用分を提供します。
+</Tip>
+
+## トラブルシューティング
+
+| 問題 | 対処法 |
+|---|---|
+| `Authentication failed` | `ANTHROPIC_API_KEY` がFlatKeyのキー（`sk-fk-...`）であることを確認してください |
+| `Could not connect` | `ANTHROPIC_BASE_URL` が `https://router.flatkey.ai` に設定されていることを確認してください |
+| `Insufficient balance` | [console.flatkey.ai](https://console.flatkey.ai) でクレジットを追加してください |
+| リクエストがダッシュボードに表示されない | 環境変数が現在のシェルでエクスポートされているか確認してください |

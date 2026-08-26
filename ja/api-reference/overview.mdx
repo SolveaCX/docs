@@ -1,0 +1,83 @@
+---
+title: "Flatkey REST API: エンドポイント、認証、リクエスト形式"
+sidebarTitle: "概要"
+description: "Flatkey は https://router.flatkey.ai/v1 で OpenAI 互換の REST API を公開しています。API リクエストは Bearer 認証を使用しますが、完了済みの動画コンテンツ URL については匿名アクセスのみが可能です。"
+---
+
+Flatkey API は OpenAI API 仕様と完全に互換性のある REST API です。API リクエストは `https://router.flatkey.ai/v1` に送信されます。これはすべてのエンドポイント、プロバイダー、モデルに共通のベース URL です。認証は `Authorization` ヘッダーの Bearer トークンを使用しますが、完了済みの動画コンテンツ URL は例外です。
+
+## ベース URL
+
+```
+https://router.flatkey.ai/v1
+```
+
+## 認証
+
+API リクエストには、Bearer トークンとして Flatkey API キーを含める必要があります。
+
+```
+Authorization: Bearer sk-fk-your-api-key
+```
+
+API キーは[コンソール](https://console.flatkey.ai/keys)で生成してください。詳細は[認証](/ja/api-reference/authentication)を参照してください。
+
+匿名の `GET /v1/videos/{task_id}/content` URL は例外です。タスク URL を所持しているだけで完了済み動画にアクセスできるため、機密情報として扱ってください。
+
+## リクエスト形式
+
+- すべてのリクエストは **HTTPS** を使用します
+- リクエストボディは **JSON** 形式である必要があります（`Content-Type: application/json`）
+- レスポンスは JSON、ストリーミングの場合は SSE、完了済み動画コンテンツの場合は `video/mp4` です
+
+## 利用可能なエンドポイント
+
+| エンドポイント | メソッド | 説明 |
+|---|---|---|
+| `/v1/chat/completions` | POST | チャットおよびテキスト生成（OpenAI 互換） |
+| `/v1/responses` | POST | OpenAI Responses API（ステートフルなマルチターン） |
+| `/v1/embeddings` | POST | テキスト埋め込み |
+| `/v1/images/generations` | POST | 画像生成 |
+| `/v1/videos` | POST | Seedance 動画生成タスクの作成 |
+| `/v1/videos/{task_id}` | GET | Seedance タスクのステータスと結果の取得 |
+| `/v1/videos/{task_id}/content` | GET | Bearer 認証なしで完了済み動画をダウンロード |
+| `/v1/models` | GET | 利用可能なモデルの一覧取得 |
+
+## OpenAI SDK との互換性
+
+API は OpenAI 互換であるため、公式の OpenAI Python または Node.js SDK をリクエストコードに変更を加えることなく使用できます。`base_url` を設定するだけです。
+
+<CodeGroup>
+```python python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-fk-your-api-key",
+    base_url="https://router.flatkey.ai/v1",
+)
+```
+```javascript node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: "sk-fk-your-api-key",
+  baseURL: "https://router.flatkey.ai/v1",
+});
+```
+</CodeGroup>
+
+## バージョニング
+
+Flatkey は OpenAI API と同じバージョニングスキームを採用しています。`/v1` パスプレフィックスは安定しています。新しい OpenAI API バージョンがリリースされた際、Flatkey はサポートを追加しながら `/v1` との後方互換性を維持します。
+
+## レート制限
+
+レート制限は API キーごとに適用されます。制限を超えると `429 Too Many Requests` レスポンスが返されます。本番環境でより高いレート制限が必要な場合は、[support@flatkey.ai](mailto:support@flatkey.ai) までお問い合わせください。
+
+## サポートされているコンテンツタイプ
+
+| コンテンツタイプ | 用途 |
+|---|---|
+| `application/json` | JSON リクエストボディおよび API レスポンス |
+| `text/event-stream` | ストリーミングレスポンス（`stream: true` の場合） |
+| `video/mp4` | 完了済み動画コンテンツ |

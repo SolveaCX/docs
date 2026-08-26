@@ -1,0 +1,205 @@
+---
+title: "使用 Flatkey 生成文本"
+sidebarTitle: "文本生成"
+description: "通过一个接口调用任意对话模型。涵盖模型选择、流式输出、工具调用、结构化输出和用量读取。"
+---
+
+Base URL: `https://router.flatkey.ai`
+
+文本生成走 `POST /v1/chat/completions`，格式和 OpenAI Chat Completions API 完全一致。任何 OpenAI 兼容的客户端，改一下 base URL 就能用。
+
+<CardGroup cols={2}>
+  <Card title="不用改代码" icon="plug">
+    保留你现有的请求代码，把 `base_url` 指向 `https://router.flatkey.ai/v1`。
+  </Card>
+  <Card title="一个密钥，所有模型" icon="key">
+    换模型只改 `model` 字段，其他都不动。
+  </Card>
+</CardGroup>
+
+## 发出第一个请求
+
+<CodeGroup>
+```python Python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+
+response = client.chat.completions.create(
+    model="claude-sonnet-5",
+    messages=[{"role": "user", "content": "用两句话解释向量数据库。"}],
+)
+
+print(response.choices[0].message.content)
+```
+
+```typescript TypeScript
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.FLATKEY_API_KEY,
+  baseURL: "https://router.flatkey.ai/v1",
+});
+
+const response = await client.chat.completions.create({
+  model: "claude-sonnet-5",
+  messages: [{ role: "user", content: "用两句话解释向量数据库。" }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```bash cURL
+curl --fail-with-body -sS https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-5",
+    "messages": [
+      { "role": "user", "content": "用两句话解释向量数据库。" }
+    ]
+  }'
+```
+</CodeGroup>
+
+## 选择模型
+
+列出你的账号能调用的全部模型，保留文本类：
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/models \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  | jq '.data[] | select(.type == "text") | .id'
+```
+
+同一份列表在[模型目录](https://flatkey.ai/models)里还能看到价格、上下文长度和延迟。
+
+可以这样起步：
+
+| 场景 | 推荐 |
+| --- | --- |
+| 日常编码和推理 | `claude-sonnet-5`、`gpt-5.6-sol` |
+| 长文档或整个代码库 | `deepseek-v4-pro`、`kimi-k3` |
+| 大量调用、控制成本 | `deepseek-v4-flash`、`gemini-2.5-flash-lite` |
+| Agent 编码 | `glm-5.3`、`claude-opus-5` |
+
+## 流式输出
+
+设置 `stream: true`，边生成边接收：
+
+```python
+stream = client.chat.completions.create(
+    model="gemini-2.5-flash",
+    messages=[{"role": "user", "content": "写一首关于路由的俳句。"}],
+    stream=True,
+)
+
+for chunk in stream:
+    print(chunk.choices[0].delta.content or "", end="", flush=True)
+```
+
+每个分片带的是增量 `delta`，不是完整消息。
+
+## 调用你自己的函数
+
+传入工具定义，模型自行决定何时调用：
+
+```python
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "get_weather",
+        "description": "查询城市当前天气",
+        "parameters": {
+            "type": "object",
+            "properties": {"city": {"type": "string"}},
+            "required": ["city"],
+        },
+    },
+}]
+
+response = client.chat.completions.create(
+    model="claude-sonnet-5",
+    messages=[{"role": "user", "content": "巴黎现在天气怎么样？"}],
+    tools=tools,
+)
+
+print(response.choices[0].message.tool_calls)
+```
+
+补完这一轮：把助手消息追加回去，再为每个工具结果加一条消息（用 `tool_call_id` 关联），然后把整个对话发回去。
+
+<Warning>
+  触发工具调用时，`finish_reason` 是 `tool_calls` 而不是 `stop`。只判断 `stop` 的代码会静默丢掉这次调用。
+</Warning>
+
+工具调用是模型本身的能力，不是 Flatkey 提供的。GPT、Claude、Gemini、Qwen、DeepSeek、GLM 系列都支持。图像、视频和语音模型会忽略 `tools` 数组。
+
+## 约束输出为 JSON
+
+需要程序解析结果时，用 `response_format`：
+
+```python
+response = client.chat.completions.create(
+    model="gpt-5.6-sol",
+    messages=[{"role": "user", "content": "提取城市和国家。"}],
+    response_format={
+        "type": "json_schema",
+        "json_schema": {
+            "name": "location",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {"city": {"type": "string"}, "country": {"type": "string"}},
+                "required": ["city", "country"],
+                "additionalProperties": False,
+            },
+        },
+    },
+)
+```
+
+只需要合法 JSON、不需要固定结构时，用 `{"type": "json_object"}`。
+
+## 读取用量
+
+每个响应都带着计费依据：
+
+```json
+"usage": {
+  "prompt_tokens": 28,
+  "completion_tokens": 22,
+  "total_tokens": 50
+}
+```
+
+不同模型系列的分词方式不同，同一段文字在不同模型上的 token 数不一样。以 `usage` 为准，不要用字符数估算。每次请求的费用也能在[用量日志](/zh/dashboard/usage)里看到。
+
+## 故障排查
+
+**`No available channel for model ...`**
+
+该模型当前不可路由。从 `/v1/models` 换一个 id。重试同一个模型不会恢复。
+
+**回复中途截断**
+
+`finish_reason` 是 `length`，把 `max_tokens` 调大。
+
+**工具始终不触发**
+
+确认模型支持工具调用，并检查 `tool_choice` 是否被设成了 `none`。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="API 参考" icon="code" href="/zh/api-reference/chat-completions">
+    全部参数和响应字段。
+  </Card>
+  <Card title="OpenAI SDK 指南" icon="plug" href="/zh/guides/openai-sdk">
+    把 Flatkey 接入已有的 OpenAI 项目。
+  </Card>
+</CardGroup>

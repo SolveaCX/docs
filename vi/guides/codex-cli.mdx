@@ -1,0 +1,166 @@
+---
+title: "Sử dụng Flatkey với Codex CLI Terminal Agent của OpenAI"
+sidebarTitle: "Codex CLI"
+description: "Định tuyến lưu lượng OpenAI Codex CLI qua Flatkey để truy cập các mô hình GPT, Claude, Gemini và các mô hình văn bản tương thích khác khi có sẵn."
+---
+
+Codex CLI của OpenAI là một trợ lý mã hóa AI chạy trong terminal của bạn. Bằng cách thiết lập hai biến môi trường, bạn có thể định tuyến các yêu cầu Codex CLI qua Flatkey để sử dụng các mô hình GPT, Claude, Gemini và các mô hình văn bản tương thích khác khi chúng có sẵn thông qua Flatkey.
+
+## Yêu cầu tiên quyết
+
+- Đã cài đặt Codex CLI: `npm install -g @openai/codex`
+- Một tài khoản Flatkey với API key — [lấy tại đây](https://console.flatkey.ai/sign-up)
+
+## Cấu hình
+
+Thiết lập các biến môi trường sau trước khi chạy Codex CLI:
+
+```bash
+export OPENAI_BASE_URL="https://router.flatkey.ai/v1"
+export OPENAI_API_KEY="sk-fk-..."
+```
+
+Hoặc thêm chúng vào shell profile của bạn (`~/.bashrc`, `~/.zshrc`) để thiết lập cố định vĩnh viễn:
+
+```bash ~/.zshrc
+export OPENAI_BASE_URL="https://router.flatkey.ai/v1"
+export OPENAI_API_KEY="sk-fk-..."
+```
+
+## Cấu hình với CC Switch
+
+[CC Switch](https://ccswitch.io) là một trình quản lý cấu hình desktop của bên thứ ba dành cho các trợ lý mã hóa. Đây không phải là sản phẩm của Flatkey, và Flatkey không phải là một preset tích hợp sẵn. Các bước dưới đây tuân theo giao diện CC Switch hiện tại.
+
+Phương pháp thủ công `OPENAI_BASE_URL` và `OPENAI_API_KEY` ở trên và CC Switch là các cách thay thế để cấu hình Codex. Để có một bài kiểm tra CC Switch rõ ràng, chỉ hủy thiết lập các giá trị `OPENAI_BASE_URL` hoặc `OPENAI_API_KEY` cũ trỏ đến một nhà cung cấp hoặc key khác. Các giá trị được kế thừa từ shell của bạn có thể ghi đè hoặc xung đột với nhà cung cấp mà bạn kích hoạt trong CC Switch.
+
+### 1. Cài đặt CC Switch
+
+Tải CC Switch từ [ccswitch.io](https://ccswitch.io) hoặc [repository GitHub chính thức](https://github.com/farion1231/cc-switch) của nó. Cài đặt cho hệ điều hành của bạn, sau đó mở ứng dụng.
+
+### 2. Mở bảng nhà cung cấp Codex
+
+Chọn **Codex** trong CC Switch. Điều này sẽ mở bảng nhà cung cấp kiểm soát cấu hình được sử dụng bởi các phiên Codex mới.
+
+![Mở bảng nhà cung cấp Codex và chọn nút thêm nhà cung cấp trong CC Switch](/images/guides/cc-switch/en/codex-provider-list.png)
+
+### 3. Thêm Flatkey làm nhà cung cấp tùy chỉnh
+
+Chọn **Custom Provider** và thêm một nhà cung cấp với các giá trị sau:
+
+| Trường | Giá trị |
+|---|---|
+| Provider Name | `flatkey` |
+| API Key | Key Flatkey của bạn, chẳng hạn `sk-fk-...` |
+| API Request URL | `https://router.flatkey.ai/v1` |
+| Default Model | `gpt-5.6-sol` trong ảnh chụp màn hình. Xác nhận và sao chép một ID chính xác hiện tại từ [Model Directory](https://flatkey.ai/models) của Flatkey trước khi sử dụng. |
+| Upstream Format | `Responses (native)` |
+
+![Nhập các trường nhà cung cấp Flatkey hiện tại trong CC Switch](/images/guides/cc-switch/en/codex-provider-form.png)
+
+<Warning>
+  Hãy coi API key của bạn là thông tin nhạy cảm. Không đưa nó vào ảnh chụp màn hình hoặc các cấu hình nhà cung cấp đã xuất hoặc chia sẻ. Nếu nó bị lộ, hãy hủy hoặc xoay key trong Flatkey, sau đó thay thế nó trong CC Switch.
+</Warning>
+
+Flatkey hỗ trợ Responses API một cách gốc. **Local Routing** của CC Switch không cần thiết cho thiết lập này, vì vậy hãy để nó tắt.
+
+### 4. Cấu hình mô hình
+
+Tìm **Flatkey** trong bảng nhà cung cấp Codex trong CC Switch, sau đó nhấp **Edit**. Để thay đổi mô hình được sử dụng bởi các phiên Codex mới, đặt **Default Model** thành một ID mô hình chính xác từ [Model Directory](https://flatkey.ai/models) của Flatkey. Không sử dụng tên hiển thị hoặc đoán một ID.
+
+Ví dụ, bạn có thể nhập bất kỳ mô hình tạo văn bản nào trong số các mô hình sau vào trường **Default Model** của CC Switch:
+
+```text
+gpt-5.4
+claude-sonnet-4-6
+gemini-2.5-flash
+```
+
+Để thêm hoặc chỉnh sửa các mô hình khác trong CC Switch và hiển thị chúng trong menu `/model` của Codex CLI, sử dụng **Model Mapping**:
+
+1. Nhấp **Fetch Models** để tải các mô hình có sẵn từ Flatkey. Nếu mô hình bạn cần bị thiếu, nhấp **Add Model**.
+2. Chỉnh sửa **Menu Display Name** của mapping. Đây là nhãn được hiển thị trong menu `/model`.
+3. Đặt **Actual Request Model** thành ID chính xác từ danh mục mô hình, chẳng hạn `claude-sonnet-4-6` hoặc `gemini-2.5-flash`. Codex gửi ID này trong các yêu cầu, không phải nhãn menu.
+
+Model Mapping kiểm soát mục nhập menu `/model` và ID yêu cầu tương ứng của nó. Nó không làm cho một mô hình không tương thích hoạt động được với Codex. Sau khi thay đổi một mapping, thực hiện theo các bước dưới đây để lưu nhà cung cấp và khởi động lại Codex trước khi danh sách mô hình đã cập nhật có hiệu lực.
+
+Sau khi bạn lưu và kích hoạt Flatkey, các phiên Codex mới sẽ sử dụng **Default Model** được đặt trong CC Switch. Để ghi đè nó cho chỉ một lệnh, hãy truyền cùng ID chính xác:
+
+```bash
+codex --model gpt-5.4 "Review this change"
+codex --model claude-sonnet-4-6 "Review this change"
+codex --model gemini-2.5-flash "Review this change"
+```
+
+Chọn một mô hình tạo văn bản có sẵn thông qua Flatkey và tương thích với định dạng yêu cầu Codex. Không sử dụng các mô hình hình ảnh, âm thanh hoặc embedding với Codex CLI. Sau khi gửi một yêu cầu, hãy coi [Usage Logs](https://console.flatkey.ai/usage-logs/common) của Flatkey là nguồn xác thực cho mô hình thực tế được phục vụ.
+
+![Fetch hoặc thêm các mô hình khác và cấu hình mapping mô hình Codex CLI của chúng](/images/guides/cc-switch/en/codex-model-mapping.png)
+
+### 5. Lưu và kích hoạt Flatkey
+
+Lưu nhà cung cấp, sau đó kích hoạt **Flatkey** trong bảng nhà cung cấp Codex. Xác nhận rằng Flatkey là nhà cung cấp đang hoạt động trước khi bạn khởi động Codex.
+
+![Xác nhận rằng nhà cung cấp Flatkey Codex đang được sử dụng](/images/guides/cc-switch/en/codex-provider-active.png)
+
+### 6. Khởi động lại và xác minh
+
+Thoát phiên Codex hiện có và kết thúc tiến trình của nó. Đóng cụ thể cửa sổ hoặc tab terminal đã chạy Codex, không phải các terminal không liên quan. Mở một terminal mới không kế thừa các giá trị `OPENAI_BASE_URL` hoặc `OPENAI_API_KEY` cũ liên quan. Di chuyển đến một thư mục nhỏ hoặc trống và bắt đầu một phiên Codex mới. Nhập `/model`, xác nhận rằng mô hình bạn đã thêm hoặc chỉnh sửa xuất hiện, và chọn mô hình bạn muốn sử dụng. Sau đó gửi một yêu cầu tối giản.
+
+![Xác minh một phiên Codex CLI mới với một phản hồi OK tối giản](/images/guides/cc-switch/en/codex-cli-verify.png)
+
+Sau đó mở [Usage Logs](https://console.flatkey.ai/usage-logs/common) của Flatkey và xác nhận yêu cầu thực tế. Kiểm tra mô hình, token đầu vào và đầu ra, độ trễ và chi phí của nó.
+
+<Note>
+  Một yêu cầu agent có thể bao gồm các system prompt, định nghĩa công cụ, lịch sử trò chuyện, tệp và kết quả lệnh. Sử dụng một context nhỏ cho các kiểm tra kết nối để số lượng token và chi phí dễ kiểm tra.
+</Note>
+
+### Chuyển lại nhà cung cấp khác
+
+Mở bảng nhà cung cấp Codex trong CC Switch, chọn nhà cung cấp bạn muốn, và kích hoạt nó. Kết thúc các phiên và tiến trình Codex hiện có, sau đó mở một terminal mới không kế thừa các giá trị `OPENAI_BASE_URL` hoặc `OPENAI_API_KEY` cũ liên quan. Bắt đầu một phiên mới.
+
+### Khắc phục sự cố CC Switch
+
+| Vấn đề | Cách khắc phục |
+|---|---|
+| Lỗi xác thực hoặc key không hợp lệ | Nhập lại key Flatkey của bạn và xác nhận rằng nó bắt đầu bằng `sk-fk-`. Chỉ hủy thiết lập các giá trị `OPENAI_API_KEY` cũ trước khi kiểm tra lại. |
+| Lỗi endpoint hoặc kết nối | Đặt **API Request URL** chính xác thành `https://router.flatkey.ai/v1`. Kiểm tra một `OPENAI_BASE_URL` cũ trong shell mới. |
+| Không tìm thấy mô hình hoặc thiếu trong `/model` | Sao chép ID chính xác từ [Model Directory](https://flatkey.ai/models). Trong **Model Mapping**, nhấp **Fetch Models** hoặc **Add Model**, đặt **Menu Display Name**, và nhập ID chính xác làm **Actual Request Model**. Lưu nhà cung cấp, khởi động lại hoàn toàn Codex, và nhập `/model` lại. Bạn cũng có thể đặt ID chính xác làm **Default Model** của nhà cung cấp hoặc truyền nó tạm thời với `codex --model <id>`. |
+| Các yêu cầu sử dụng nhà cung cấp sai | Trở lại bảng nhà cung cấp Codex và kích hoạt **Flatkey**. Kiểm tra xem các giá trị `OPENAI_*` thủ công có trỏ đến nơi khác không. |
+| Các thay đổi không ảnh hưởng đến phiên hiện tại | Thoát phiên Codex hiện có và kết thúc tiến trình của nó. Đóng cụ thể cửa sổ hoặc tab terminal đã chạy Codex, không phải các terminal không liên quan. Mở một terminal mới không kế thừa các giá trị `OPENAI_BASE_URL` hoặc `OPENAI_API_KEY` cũ liên quan, sau đó bắt đầu một phiên mới. |
+| Số dư không đủ | Nạp thêm số dư Flatkey của bạn, sau đó thử lại yêu cầu tối giản. |
+| **Local Routing** đang được bật | Tắt **Local Routing**. Flatkey chấp nhận định dạng Responses một cách gốc. |
+| Không có yêu cầu nào xuất hiện trong Usage Logs | Gửi một yêu cầu tối giản mới, xác nhận rằng **Flatkey** đang hoạt động, và kiểm tra endpoint, key, số dư, và các bước phiên mới ở trên. |
+
+## Chạy Codex CLI
+
+Sau khi các biến môi trường được thiết lập, sử dụng Codex như bình thường:
+
+```bash
+codex "Refactor this function to use async/await"
+```
+
+hoặc ở chế độ tương tác:
+
+```bash
+codex
+```
+
+Tất cả các yêu cầu được định tuyến qua Flatkey và được tính phí vào số dư trả trước của bạn theo mức giá ưu đãi của Flatkey.
+
+## Xác minh thiết lập biến môi trường thủ công
+
+Phần này chỉ áp dụng cho phương pháp thủ công `OPENAI_BASE_URL` và `OPENAI_API_KEY`. Nếu bạn đã cấu hình Codex với CC Switch, hãy thực hiện theo [Khởi động lại và xác minh](#6-khởi-động-lại-và-xác-minh) ở trên thay thế. Đối với phương pháp thủ công, chạy một lệnh Codex và kiểm tra [Usage Logs](https://console.flatkey.ai/usage-logs/common). Bạn sẽ thấy yêu cầu được ghi nhận cùng với mô hình và số lượng token. Nếu không có yêu cầu nào xuất hiện, hãy xác nhận cả hai biến được thiết lập đúng trong phiên shell hiện tại.
+
+<Tip>
+  Sử dụng mức nạp tiền $200 để có tỷ giá hiệu quả tốt nhất cho việc sử dụng Codex liên tục — phần thưởng cộng gộp đưa chi phí xuống thấp đến 50% giá GPT chính thức.
+</Tip>
+
+## Khắc phục sự cố thiết lập biến môi trường thủ công
+
+Bảng dưới đây chỉ áp dụng cho phương pháp thủ công `OPENAI_BASE_URL` và `OPENAI_API_KEY`. Nếu bạn đã cấu hình Codex với CC Switch, hãy sử dụng [Khắc phục sự cố CC Switch](#khắc-phục-sự-cố-cc-switch) ở trên.
+
+| Vấn đề | Cách khắc phục |
+|---|---|
+| `Authentication error` | Xác minh `OPENAI_API_KEY` được đặt thành key Flatkey của bạn (bắt đầu bằng `sk-fk-`) |
+| `Model not found` | Kiểm tra ID mô hình trong [Model Directory](https://flatkey.ai/models) |
+| `Insufficient balance` | Nạp thêm số dư của bạn tại [console.flatkey.ai](https://console.flatkey.ai) |
+| Các yêu cầu không xuất hiện trong dashboard | Xác nhận `OPENAI_BASE_URL` được đặt trong shell đang hoạt động |

@@ -1,0 +1,417 @@
+---
+title: "Seedance Videogenerierung — POST /v1/videos"
+sidebarTitle: "Seedance Videogenerierung"
+description: "Erstelle Seedance-Videoaufgaben mit Text- und multimodalen Eingaben, rufe ihren Status ab und lade fertige Videos über Flatkey herunter."
+---
+
+Verwende `POST /v1/videos`, um eine asynchrone Seedance-Videogenerierungsaufgabe zu erstellen. Rufe den Status der Aufgabe ab, bis sie abgeschlossen ist, und lade dann das Video von der zurückgegebenen Flatkey-URL herunter.
+
+Unterstützte Modelle sind `seedance-2.0` und `seedance-2.0-fast`. Die Verfügbarkeit hängt von deinem Konto ab; verwende [`GET /v1/models`](/de/api-reference/models), um die aktuelle Modellliste abzurufen.
+
+## Endpunkt
+
+```http
+POST https://router.flatkey.ai/v1/videos
+```
+
+<Note>
+  Flatkey akzeptiert auch `POST /v1/video/generations` und `GET /v1/video/generations/{task_id}`. Verwende `/v1/videos` für die standardisierte Antwortstruktur und native `usage`-Daten.
+</Note>
+
+## Anfrage
+
+### Header
+
+| Header | Wert |
+|---|---|
+| `Authorization` | `Bearer $FLATKEY_API_KEY` |
+| `Content-Type` | `application/json` |
+
+### Body-Parameter
+
+<ParamField body="model" type="string" required>
+  Seedance-Modell-ID. Verwende `"seedance-2.0"` oder `"seedance-2.0-fast"`.
+</ParamField>
+
+<ParamField body="content" type="array" required>
+  Multimodale Eingabeelemente. Füge mindestens ein nicht leeres Textelement, eine Bild-URL oder eine Video-URL ein.
+</ParamField>
+
+<ParamField body="resolution" type="string">
+  Ausgabeauflösung: `"480p"`, `"720p"` oder `"1080p"`.
+</ParamField>
+
+<ParamField body="ratio" type="string">
+  Ausgabe-Seitenverhältnis: `"16:9"`, `"4:3"`, `"1:1"`, `"3:4"`, `"9:16"`, `"21:9"` oder `"adaptive"`.
+</ParamField>
+
+<ParamField body="duration" type="integer">
+  Videodauer von 4 bis 15 Sekunden. Verwende `-1`, damit das Modell die Dauer selbst wählt.
+</ParamField>
+
+<ParamField body="seed" type="integer">
+  Zufalls-Seed. Weglassen, um einen zufälligen Seed zu verwenden.
+</ParamField>
+
+<ParamField body="watermark" type="boolean">
+  Ob ein Wasserzeichen hinzugefügt werden soll. Standard: `false`.
+</ParamField>
+
+<ParamField body="generate_audio" type="boolean">
+  Ob synchronisiertes Audio generiert werden soll.
+</ParamField>
+
+### `content`-Elemente
+
+| `type` | Wertfeld | Unterstützte `role` | Zweck |
+|---|---|---|---|
+| `text` | `text` | — | Textprompt. Mehrere Textelemente werden der Reihe nach zusammengefügt. |
+| `image_url` | `image_url.url` | `first_frame`, `last_frame`, `reference_image` | Eingabe- oder Referenzbild. Bis zu 9 Bilder. |
+| `video_url` | `video_url.url` | `reference_video` | Referenzvideo. Bis zu 3 Videos. |
+| `audio_url` | `audio_url.url` | `reference_audio` | Referenzaudio. Bis zu 3 Clips. |
+
+Wenn ein Bild die Rolle `first_frame` oder `last_frame` verwendet, nutzt die API den Erstes-/Letztes-Frame-Modus. Andere Bilder werden als Referenzen behandelt.
+
+### Erweiterte Parameter
+
+<ParamField body="input_type" type="string">
+  Expliziter Eingabemodus: `"reference"` oder `"first_last_frame"`. Weglassen, um den Modus aus `content` abzuleiten.
+</ParamField>
+
+<ParamField body="web_search" type="boolean">
+  Websuche-Erweiterung für die Aufgabe aktivieren.
+</ParamField>
+
+<ParamField body="super_resolution_config" type="object">
+  Das generierte Video hochskalieren und dabei dieselbe öffentliche Aufgaben-ID beibehalten.
+
+  <Expandable title="Felder von super_resolution_config">
+    <ParamField body="resolution" type="string">
+      Zielauflösung: `"720p"`, `"1080p"`, `"2k"` oder `"4k"`. Muss die ursprüngliche Auflösung überschreiten und kann nicht zusammen mit `resolution_limit` verwendet werden.
+    </ParamField>
+    <ParamField body="resolution_limit" type="integer">
+      Benutzerdefiniertes Pixel-Limit für die kurze Seite von 64 bis 2160. Kann nicht zusammen mit `resolution` verwendet werden.
+    </ParamField>
+    <ParamField body="scene" type="string">
+      Hochskalierungsszene: `"aigc"`, `"short_series"`, `"ugc"` oder `"old_film"`.
+    </ParamField>
+    <ParamField body="tool_version" type="string">
+      Hochskalierungsmodus: `"standard"` (Standard) oder `"professional"`.
+    </ParamField>
+    <ParamField body="fps" type="integer">
+      Ausgabe-Framerate von 1 bis 120. Werte über der Quell-Framerate aktivieren die Frame-Interpolation.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<Warning>
+  `camera_fixed`, `frames`, `callback_url` und `return_last_frame` werden aus Kompatibilitätsgründen akzeptiert, haben aber derzeit keine Wirkung.
+</Warning>
+
+## Beispielanfragen
+
+<CodeGroup>
+```python python
+import os
+import requests
+
+response = requests.post(
+    "https://router.flatkey.ai/v1/videos",
+    headers={
+        "Authorization": f"Bearer {os.environ['FLATKEY_API_KEY']}",
+        "Content-Type": "application/json",
+    },
+    json={
+        "model": "seedance-2.0",
+        "content": [
+            {
+                "type": "text",
+                "text": "An astronaut walking on the moon, cinematic lighting, slow camera push-in",
+            }
+        ],
+        "resolution": "1080p",
+        "ratio": "16:9",
+        "duration": 5,
+    },
+)
+response.raise_for_status()
+print(response.json())
+```
+```javascript node
+const response = await fetch("https://router.flatkey.ai/v1/videos", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${process.env.FLATKEY_API_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    model: "seedance-2.0",
+    content: [
+      {
+        type: "text",
+        text: "An astronaut walking on the moon, cinematic lighting, slow camera push-in",
+      },
+    ],
+    resolution: "1080p",
+    ratio: "16:9",
+    duration: 5,
+  }),
+});
+
+if (!response.ok) throw new Error(await response.text());
+console.log(await response.json());
+```
+```bash curl
+curl https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "An astronaut walking on the moon, cinematic lighting, slow camera push-in"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
+
+### Eingabe mit erstem und letztem Frame
+
+```json
+{
+  "model": "seedance-2.0",
+  "content": [
+    { "type": "text", "text": "The camera slowly moves forward" },
+    {
+      "type": "image_url",
+      "image_url": { "url": "https://example.com/first.jpg" },
+      "role": "first_frame"
+    },
+    {
+      "type": "image_url",
+      "image_url": { "url": "https://example.com/last.jpg" },
+      "role": "last_frame"
+    }
+  ],
+  "resolution": "720p",
+  "ratio": "16:9",
+  "duration": 5
+}
+```
+
+### Multimodale Referenz mit Hochskalierung
+
+```json
+{
+  "model": "seedance-2.0",
+  "content": [
+    { "type": "text", "text": "A woman smiles at the camera during a beach sunset" },
+    {
+      "type": "image_url",
+      "image_url": { "url": "https://example.com/reference.jpg" },
+      "role": "reference_image"
+    }
+  ],
+  "resolution": "1080p",
+  "ratio": "16:9",
+  "duration": 5,
+  "watermark": false,
+  "super_resolution_config": {
+    "resolution": "4k",
+    "scene": "aigc",
+    "tool_version": "professional",
+    "fps": 60
+  }
+}
+```
+
+## Antwort
+
+```json
+{
+  "id": "task_3f9a00000000000000000000000000e2",
+  "task_id": "task_3f9a00000000000000000000000000e2",
+  "object": "video",
+  "model": "seedance-2.0",
+  "status": "queued",
+  "progress": 0,
+  "created_at": 1780306574
+}
+```
+
+### Antwortfelder
+
+<ResponseField name="id" type="string">
+  Öffentliche Aufgaben-ID, die zum Abrufen des Status und zum Herunterladen des fertigen Videos verwendet wird. `task_id` enthält denselben Wert.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Aufgabenstatus: `queued`, `in_progress`, `completed` oder `failed`.
+</ResponseField>
+
+<ResponseField name="progress" type="integer">
+  Generierungsfortschritt von 0 bis 100.
+</ResponseField>
+
+<ResponseField name="created_at" type="integer">
+  Unix-Zeitstempel für die Aufgabenerstellung.
+</ResponseField>
+
+## Aufgabenstatus abrufen
+
+```http
+GET https://router.flatkey.ai/v1/videos/{task_id}
+```
+
+```bash
+curl https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2 \
+  -H "Authorization: Bearer $FLATKEY_API_KEY"
+```
+
+Während die Generierung läuft, enthält die Antwort den aktuellen Fortschritt:
+
+```json
+{
+  "id": "task_3f9a00000000000000000000000000e2",
+  "object": "video",
+  "status": "in_progress",
+  "progress": 50,
+  "model": "seedance-2.0",
+  "created_at": 1780306574
+}
+```
+
+Wenn die Aufgabe abgeschlossen ist, enthält die Antwort die Video-URL und die Token-Nutzung:
+
+```json
+{
+  "id": "task_3f9a00000000000000000000000000e2",
+  "object": "video",
+  "status": "completed",
+  "progress": 100,
+  "model": "seedance-2.0",
+  "usage": {
+    "completion_tokens": 120,
+    "total_tokens": 120
+  },
+  "metadata": {
+    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content"
+  },
+  "created_at": 1780306574,
+  "completed_at": 1780306750
+}
+```
+
+Fehlgeschlagene Aufgaben geben die Fehlerdetails zusammen mit der Aufgabenantwort zurück:
+
+```json
+{
+  "id": "task_3f9a00000000000000000000000000e2",
+  "object": "video",
+  "status": "failed",
+  "error": {
+    "message": "The video generation task failed.",
+    "code": "video_generation_failed"
+  }
+}
+```
+
+Jedes vorab verbrauchte Guthaben wird automatisch erstattet.
+
+### Statuswerte
+
+| Status | Bedeutung |
+|---|---|
+| `queued` | Die Aufgabe wartet auf den Start. |
+| `in_progress` | Das Video wird gerade generiert. `progress` reicht von 0 bis 100. |
+| `completed` | Das Video ist unter `metadata.url` verfügbar, und die Token-Nutzung ist in `usage` einsehbar. |
+| `failed` | Die Generierung ist fehlgeschlagen. Details sind in `error.message` verfügbar, und jedes vorab verbrauchte Guthaben wird erstattet. |
+
+## Video herunterladen
+
+```http
+GET https://router.flatkey.ai/v1/videos/{task_id}/content
+```
+
+```bash
+curl -L "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content" \
+  -o output.mp4
+```
+
+Der Content-Endpunkt streamt `video/mp4`-Daten. Er erfordert kein Bearer-Token und kann direkt als `<video>`-Quelle verwendet werden.
+
+<Warning>
+  Der Content-Endpunkt funktioniert nur nach Abschluss der Aufgabe und ist nach Client-IP ratenbegrenzt. Behandle die URL als vertraulich, da jeder mit Zugriff darauf das Video herunterladen kann.
+</Warning>
+
+## Fehler
+
+Fehler zur Anfragezeit verwenden den Standard-Fehlerrahmen von Flatkey:
+
+```json
+{
+  "error": {
+    "message": "...",
+    "type": "...",
+    "code": "..."
+  }
+}
+```
+
+| Szenario | Verhalten |
+|---|---|
+| Leerer `content` | Die Anfrage wird abgelehnt. Füge nicht leeren Text, ein Bild oder ein Video ein. |
+| Nicht verfügbares Modell | Das angeforderte `model` ist für die Route nicht aktiviert. |
+| Unzureichendes Guthaben | Die Aufgabe wird nicht erstellt. |
+| Vorübergehender Dienstausfall | Wiederhole den Versuch später gemäß deiner normalen Backoff-Strategie. |
+
+## End-to-End-Beispiel
+
+Dieses Beispiel erstellt eine Aufgabe, ruft ihren Status alle fünf Sekunden ab und lädt das fertige Video herunter. Es erfordert [`jq`](https://jqlang.github.io/jq/).
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+BASE="https://router.flatkey.ai"
+: "${FLATKEY_API_KEY:?Set FLATKEY_API_KEY before running this script}"
+
+RESPONSE=$(curl -sS "$BASE/v1/videos" \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      { "type": "text", "text": "An astronaut walking on the moon, cinematic lighting" }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }')
+
+TASK_ID=$(echo "$RESPONSE" | jq -r '.id')
+echo "task: $TASK_ID"
+
+while true; do
+  RESULT=$(curl -sS "$BASE/v1/videos/$TASK_ID" \
+    -H "Authorization: Bearer $FLATKEY_API_KEY")
+  STATUS=$(echo "$RESULT" | jq -r '.status')
+  echo "status: $STATUS"
+
+  [ "$STATUS" = "completed" ] && break
+  if [ "$STATUS" = "failed" ]; then
+    echo "failed: $(echo "$RESULT" | jq -r '.error.message')" >&2
+    exit 1
+  fi
+  sleep 5
+done
+
+VIDEO_URL=$(echo "$RESULT" | jq -r '.metadata.url')
+curl -L "$VIDEO_URL" -o output.mp4
+echo "saved -> output.mp4"
+```

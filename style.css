@@ -610,6 +610,69 @@ api-parameter code {
   color: #C4B5FD;
 }
 
+/* Bottom pagination: minimal text links, not cards */
+a.pagination-prev,
+a.pagination-next {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+a.pagination-prev:hover,
+a.pagination-next:hover {
+  border-color: transparent;
+  background: transparent;
+}
+
+/* Collapse the stacked title / label rows onto one line. */
+a.pagination-prev > div,
+a.pagination-next > div {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+}
+
+a.pagination-prev > div > div,
+a.pagination-next > div > div {
+  margin: 0;
+}
+
+/* Arrow leads on the previous link, trails on the next link. */
+a.pagination-prev > div > div:first-child {
+  order: 2;
+}
+
+a.pagination-prev > div > div:first-child,
+a.pagination-next > div > div:first-child {
+  color: var(--fk-ink-3);
+  font-size: 14px;
+  font-weight: 550;
+}
+
+a.pagination-prev > div > div:last-child,
+a.pagination-next > div > div:last-child {
+  color: var(--fk-ink-3);
+  gap: 0;
+}
+
+/* The "Previous" / "Next" words go; the chevron stays. */
+a.pagination-prev > div > div:last-child span,
+a.pagination-next > div > div:last-child span {
+  display: none;
+}
+
+a.pagination-prev:hover > div > div,
+a.pagination-next:hover > div > div {
+  color: var(--fk-violet);
+}
+
+.dark a.pagination-prev:hover > div > div,
+.dark a.pagination-next:hover > div > div {
+  color: #C4B5FD;
+}
+
 @media (min-width: 1024px) {
   #sidebar-content {
     flex-basis: 260px;

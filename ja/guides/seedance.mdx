@@ -1,0 +1,532 @@
+---
+title: "Flatkeyでシーダンス動画を生成する"
+sidebarTitle: "Seedance"
+description: "Seedanceの動画タスクを作成し、結果をポーリングして、最終的なMP4をダウンロードし、Flatkeyを通じてバーチャルまたは実在人物のアセットを再利用します。"
+---
+
+Base URL: `https://router.flatkey.ai`
+
+このガイドでは、FlatkeyでSeedanceを利用する際にそのままコピーして使える手順を紹介します。まずテキストから動画を生成するタスクを開始し、タスクが完了するまでポーリングを行い、生成されたMP4をダウンロードします。再利用可能な製品、背景、音声、または実在人物の参照が必要な場合は、アセットライブラリのセクションに進んでください。
+
+<CardGroup cols={2}>
+  <Card title="コピー可能な例" icon="copy">
+    任意のコマンドブロックのコピーアイコンを使用し、`YOUR_FLATKEY_API_KEY`、`task_...`、`ast_...`、`rph_...` をご自身の値に置き換えてください。
+  </Card>
+  <Card title="1つの非同期ワークフロー" icon="video">
+    `POST /v1/videos` でタスクを作成し、`GET /v1/videos/{task_id}` でポーリングし、`metadata.url` からMP4をダウンロードします。
+  </Card>
+</CardGroup>
+
+このガイド内のすべてのAPIリクエストで、以下の認証ヘッダーを使用してください。`metadata.url` で返される動画ダウンロードURLのみが例外です。
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+APIキーは非公開に保ってください。公開ログ、ページ、サポートチケットには貼り付けないでください。
+
+## Seedanceを呼び出す
+
+テキストから動画を生成するタスクを作成し、完成した動画をダウンロードするだけの場合は、ここから始めてください。
+
+### 1. テキストから動画を生成するタスクを作成する
+
+`seedance-2.0` モデルとテキストプロンプトを指定して `POST /v1/videos` を送信します。
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a calm 5 second video of a ceramic mug on a kitchen table in morning light"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a calm 5 second video of a ceramic mug on a kitchen table in morning light"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
+
+返された `task_...` の値をコピーしてください。動画を確認するために必要になるため、データベースやメモに保存しておきます。
+
+### 2. タスクをポーリングする
+
+保存したタスクIDを使用して、次のエンドポイントを呼び出します。
+
+```http
+GET /v1/videos/{task_id}
+```
+
+`status` が `completed` になるまでポーリングし、その後 `metadata.url` からダウンロードURLを取得してください。ステータスが `failed` の場合は、`error.message` を確認し、リクエストを修正して新しいタスクを作成してください。
+
+<CodeGroup>
+```bash Bash
+TASK_ID="task_3f9a00000000000000000000000000e2"
+
+curl -sS "https://router.flatkey.ai/v1/videos/$TASK_ID" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+
+# Run the command above again until status is completed.
+# Then copy metadata.url from the response and paste it below.
+VIDEO_URL="PASTE_METADATA_URL_HERE"
+curl -L "$VIDEO_URL" -o output.mp4
+```
+```powershell Windows PowerShell
+$taskId = "task_3f9a00000000000000000000000000e2"
+
+while ($true) {
+  $result = curl.exe -sS "https://router.flatkey.ai/v1/videos/$taskId" `
+    -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" | ConvertFrom-Json
+  Write-Host "status: $($result.status)"
+
+  if ($result.status -eq "completed") { break }
+  if ($result.status -eq "failed") {
+    $result | ConvertTo-Json -Depth 10
+    exit 1
+  }
+  Start-Sleep -Seconds 5
+}
+
+$videoUrl = $result.metadata.url
+curl.exe -L "$videoUrl" -o output.mp4
+```
+</CodeGroup>
+
+タスクが完了すると、`metadata.url` は認証ヘッダーなしでMP4ファイルをダウンロードできます。このURLは非公開として扱い、公開しないでください。
+
+## アセットライブラリを使用する
+
+参照を一度登録し、準備が完了するまで待ってから、Seedanceのリクエストで再利用したい場合は、アセットライブラリを使用します。アセットタイプには2種類あります。
+
+| アセットタイプ | 用途 |
+| --- | --- |
+| バーチャルアセット | 製品画像、背景動画、音声、その他の人物以外の参照。 |
+| 実在人物アセット | 特定の人物の顔、声、または動画。この機能は制限付きアクセスであり、お客様のアカウントで有効化する必要があります。 |
+
+Seedanceのリクエストでは、Flatkeyが返す `asset://ast_...` URIを使用してください。
+
+### バーチャルアセット
+
+バーチャルアセットには実在人物の確認は必要ありません。公開URLから作成するか、ローカルファイルをアップロードし、返されたFlatkeyアセットURIを再利用してください。
+
+#### 1. 公開HTTPS URLからバーチャルアセットを作成する
+
+公開の `https://` URLを送信します。
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://cdn.example.com/reference/product.png",
+    "asset_type": "Image",
+    "moderation": {
+      "strategy": "Default"
+    }
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "url": "https://cdn.example.com/reference/product.png",
+    "asset_type": "Image",
+    "moderation": {
+      "strategy": "Default"
+    }
+  }'
+```
+</CodeGroup>
+
+レスポンスには `id`(例: `ast_1234567890abcdef1234567890abcdef`)と、`Processing` などのステータスが含まれます。IDの前に `asset://` を追加して再利用可能なURIを構築します。
+
+```text
+asset://ast_1234567890abcdef1234567890abcdef
+```
+
+アセットを作成、アップロード、または照会する際には `model` を送信しないでください。Flatkeyは、リクエストで使用されたAPIキーから関連するSeedanceモデルを自動的に判定します。
+
+#### 2. ローカルのバーチャルアセットをアップロードする
+
+ローカルの画像、動画、または音声ファイルについては、`POST /v1/assets/upload` に `multipart/form-data` を送信してください。`file` フィールドを1つ使用します。`asset_type` は `Image`、`Video`、または `Audio` を指定できます。
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets/upload \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -F "file=@./reference-a.png" \
+  -F "asset_type=Image"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets/upload `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -F "file=@./reference-a.png" `
+  -F "asset_type=Image"
+```
+</CodeGroup>
+
+レスポンスはURL作成時と同じアセット形式です。ポーリングや後続の動画リクエストのために `id` または `asset_url` を保存してください。
+
+#### 3. 選択したモデルが利用可能になるまでポーリングする
+
+動画タスクを作成する際と同じAPIキーで、すべてのアセットを照会してください。例として、2つの画像アセットを個別に確認します。
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/assets/ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+curl -sS https://router.flatkey.ai/v1/assets/ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/assets/ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+curl.exe -sS https://router.flatkey.ai/v1/assets/ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+すべてのアセットレスポンスには `available_models` が含まれます。`available_models` は常に配列であり、現在このアセットを使用できるモデルの一覧です。一部準備が完了したアセットは次のようになります。
+
+```json
+{
+  "id": "ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "object": "asset",
+  "asset_type": "Image",
+  "status": "Processing",
+  "available_models": ["seedance-2.0-fast"],
+  "asset_url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "created_at": 1785292000
+}
+```
+
+`status` は、このAPIキーに関連するSeedanceモデル全体を通した集約状態です。
+
+| ステータス | 意味 |
+| --- | --- |
+| `Creating` | ソースのアップロードが完了していません。 |
+| `Processing` | 少なくとも1つの関連モデルがまだ準備中です。`available_models` を確認してください。別のモデルが既に利用可能な場合があります。 |
+| `Active` | このAPIキーに関連するすべてのモデルが準備完了です。 |
+| `Failed` | ソースが失敗した、または少なくとも1つの関連モデルの準備状態を確定できませんでした。 |
+| `Expired` | このソースはもう使用できません。新しいアセットを作成してください。 |
+
+選択したモデルが既に一覧にある場合、集約状態の `Active` を待つ必要はありません。タスクを作成する前に、選択したモデルがすべてのアセットの `available_models` に表示されていることを確認してください。高速用には `seedance-2.0-fast`、プロ用には `seedance-2.0` を使用してください。タスク作成リクエストで再度準備状態が確認されるため、GETとPOSTリクエストの間でルーティングが変わった場合はポーリングを再試行してください。
+
+`asset://` URIはアセットを識別しますが、それ自体が準備完了を証明するものではありません。`Deleting` は削除処理が進行中であり、そのアセットを新しいタスクに使用できないことを意味します。削除が完了すると、`GET /v1/assets/{asset_id}` は `404 asset_not_found` を返します。ポーリング可能な `Deleted` ステータスを待つ必要はありません。
+
+#### 4. 2つのバーチャルアセットでSeedanceを呼び出す
+
+各 `asset://ast_...` URIを、アセットタイプに対応するメディアフィールドに設定してください:`Image` の場合は `image_url.url`、`Video` の場合は `video_url.url`、`Audio` の場合は `audio_url.url` です。Seedanceのリクエストには、テキストまたは少なくとも1つの画像/動画が必要です。音声のみでは不十分です。この例は、両方のアセットの `available_models` に `seedance-2.0-fast` が表示されてから開始します。
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0-fast",
+    "content": [
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "text",
+        "text": "Create a clean studio product video while keeping the product consistent"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "seedance-2.0-fast",
+    "content": [
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "text",
+        "text": "Create a clean studio product video while keeping the product consistent"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
+
+返された `task_...` をコピーし、最初のセクションの `GET /v1/videos/{task_id}` を使用して、完成した動画を `metadata.url` からダウンロードしてください。
+
+### 実在人物アセット
+
+実在人物アセットは、特定の人物の顔、声、または動画を対象とします。この機能は制限付きアクセスです。Flatkeyがお客様のアカウントで有効化した後にのみ使用してください。
+
+プロフィールを作成し、`verification_url` を本人に送信し、プロフィールが `active` になるまで待機し、アセットを作成し、アセットの `status` が `Active` になるまで待機してから、`asset://ast_...` でSeedanceを呼び出す、という流れになります。
+
+| エンドポイント | 使用するタイミング |
+| --- | --- |
+| `POST /v1/real-persons` | 実在人物のプロフィールと最初の確認リンクを作成します。 |
+| `GET /v1/real-persons` | 実在人物のプロフィール一覧を取得します。 |
+| `POST /v1/real-persons/{person_id}/verification-sessions` | 必要に応じて新しい確認リンクを作成します。 |
+| `GET /v1/real-persons/{person_id}` | プロフィールのステータスをポーリングします。 |
+| `POST /v1/real-persons/{person_id}/assets` | 公開URLまたはローカルファイルからアセットを作成します。 |
+| `GET /v1/real-persons/{person_id}/assets` | 1つのプロフィール下のアセットを一覧表示します。 |
+
+ファイルサイズの上限:
+
+| ファイルタイプ | 上限 |
+| --- | --- |
+| 画像 | 30 MiB未満 |
+| 動画 | 50 MiB以下 |
+| 音声 | 15 MiB以下 |
+
+このセクションの書き込みリクエストには `Idempotency-Key` が必要です。新しい書き込みリクエストごとに、`YOUR_UNIQUE_KEY_...` のプレースホルダーを新しいUUIDに置き換えてください。同じリクエストを再試行する場合のみ、同じキーを再利用してください。
+
+#### 1. 実在人物のプロフィールを作成する
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_PROFILE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My first real-person profile"
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_PROFILE" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "name": "My first real-person profile"
+  }'
+```
+</CodeGroup>
+
+レスポンスには、プロフィールの `id`、`status`、および使い捨ての `verification_url` が含まれます。`verification_url` を本人に送信し、自分自身で開くよう依頼してください。このリンクを公開しないでください。
+
+リンクが期限切れになった場合や、本人が別のリンクを必要とする場合は、新しい確認セッションを作成してください。
+
+<CodeGroup>
+```bash Bash
+curl -sS -X POST https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/verification-sessions \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_VERIFICATION_SESSION"
+```
+```powershell Windows PowerShell
+curl.exe -sS -X POST https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/verification-sessions `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_VERIFICATION_SESSION"
+```
+</CodeGroup>
+
+本人が確認ページを完了した後、次のステップに進んでください。
+
+#### 2. プロフィールがアクティブになるまでポーリングする
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+アセットを作成する前に、プロフィールのステータスが `active` になるまで待ってください。`pending_verification` または `verifying` の場合は、待機してから再度ポーリングしてください。`failed` または `expired` の場合は、新しい確認セッションを作成してください。
+
+#### 3. 公開URLから実在人物アセットを作成する
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_URL_ASSET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://cdn.example.com/reference/person.png",
+    "asset_type": "Image",
+    "name": "Front-facing reference"
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_URL_ASSET" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "url": "https://cdn.example.com/reference/person.png",
+    "asset_type": "Image",
+    "name": "Front-facing reference"
+  }'
+```
+</CodeGroup>
+
+#### 4. ローカルファイルをアップロードする
+
+ローカルアップロードは `multipart/form-data` を使用し、実在人物アセットでのみ利用可能です。`file` フィールドを1つ使用し、マルチパートの境界はcurlに設定させてください。
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_FILE_ASSET" \
+  -F "asset_type=Image" \
+  -F "name=Front-facing reference" \
+  -F "file=@./person-reference.png"
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Idempotency-Key: YOUR_UNIQUE_KEY_FOR_THIS_FILE_ASSET" `
+  -F "asset_type=Image" `
+  -F "name=Front-facing reference" `
+  -F "file=@./person-reference.png"
+```
+</CodeGroup>
+
+作成レスポンスには、アセットIDまたは `asset_uri`(例: `asset://ast_1234567890abcdef1234567890abcdef`)が含まれます。
+
+#### 5. 準備完了をポーリングしてSeedanceを呼び出す
+
+実在人物アセットのレスポンスには `available_models` は含まれません。アセットの `status` が `Active` になるまで、プロフィール下のアセットを一覧表示してください。
+
+<CodeGroup>
+```bash Bash
+curl -sS "https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets?limit=20" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS "https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/assets?limit=20" `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+一覧表示されたアセットがまだ `Processing` の場合は、待機してから再度ポーリングしてください。`Failed` の場合は、より適切な参照から新しいアセットを作成してください。
+
+アセットが `Active` になったら、`asset://ast_...` URIを指定してSeedanceを呼び出してください。
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a short greeting video with natural movement"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_1234567890abcdef1234567890abcdef"
+        },
+        "role": "reference_image"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+```powershell Windows PowerShell
+curl.exe -sS https://router.flatkey.ai/v1/videos `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "Create a short greeting video with natural movement"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "asset://ast_1234567890abcdef1234567890abcdef"
+        },
+        "role": "reference_image"
+      }
+    ],
+    "resolution": "1080p",
+    "ratio": "16:9",
+    "duration": 5
+  }'
+```
+</CodeGroup>
+
+返された `task_...` をコピーし、最初のセクションの `GET /v1/videos/{task_id}` を使用して、完成した動画を `metadata.url` からダウンロードしてください。
+
+#### 6. 不要になったアセットを削除する
+
+<CodeGroup>
+```bash Bash
+curl -sS -X DELETE https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS -X DELETE https://router.flatkey.ai/v1/assets/ast_1234567890abcdef1234567890abcdef `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+削除リクエストは `204 No Content` を返します。削除が完了すると、`GET /v1/assets/{asset_id}` は `404 asset_not_found` を返します。

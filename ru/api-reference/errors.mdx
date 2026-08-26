@@ -1,0 +1,194 @@
+---
+title: "Ошибки API Flatkey: HTTP-коды состояния и устранение неполадок"
+sidebarTitle: "Ошибки"
+description: "Справочник по всем HTTP-кодам ошибок API Flatkey, форматам ответов об ошибках и рекомендуемым способам устранения ошибок 400, 401, 403, 429, 500 и 503."
+---
+
+Flatkey возвращает стандартные HTTP-коды состояния вместе с телом ошибки в формате JSON, описывающим суть проблемы. Ответы об ошибках следуют тому же формату, что и в OpenAI API, поэтому существующий код обработки ошибок работает без изменений.
+
+## Формат ответа об ошибке
+
+Все ошибки возвращают объект JSON с полем `error`:
+
+```json
+{
+  "error": {
+    "message": "A human-readable description of the error.",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## HTTP-коды состояния
+
+### 400 Bad Request
+
+Тело запроса сформировано неверно или отсутствует обязательное поле.
+
+```json
+{
+  "error": {
+    "message": "Missing required field: model",
+    "type": "invalid_request_error",
+    "code": "missing_required_field"
+  }
+}
+```
+
+**Распространённые причины:**
+- Отсутствует поле `model` или `messages` в запросах к чату
+- Недопустимый JSON в теле запроса
+- Массив `messages` пуст
+
+---
+
+### 401 Unauthorized
+
+Ошибка аутентификации. Ключ недействителен, отсутствует или баланс аккаунта равен нулю.
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided.",
+    "type": "authentication_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+**Распространённые причины и способы устранения:**
+
+| Значение `code` | Причина | Способ устранения |
+|---|---|---|
+| `invalid_api_key` | Ключ отсутствует, имеет неверный формат или был отозван | Проверьте и пересоздайте ключ |
+| `insufficient_balance` | Баланс аккаунта равен $0.00 | Пополните баланс на [console.flatkey.ai](https://console.flatkey.ai) |
+
+---
+
+### 403 Forbidden
+
+У API-ключа нет прав доступа к запрошенной модели.
+
+```json
+{
+  "error": {
+    "message": "This key does not have access to model claude-opus-4-5.",
+    "type": "permission_error",
+    "code": "model_not_allowed"
+  }
+}
+```
+
+**Способ устранения:** Проверьте настройки доступа к модели для этого ключа в [консоли](https://console.flatkey.ai/keys).
+
+---
+
+### 404 Not Found
+
+Идентификатор модели не распознан Flatkey.
+
+```json
+{
+  "error": {
+    "message": "Model 'gpt-unknown' not found.",
+    "type": "invalid_request_error",
+    "code": "model_not_found"
+  }
+}
+```
+
+**Способ устранения:** Проверьте идентификатор модели в [каталоге моделей](https://flatkey.ai/models). Идентификаторы чувствительны к регистру.
+
+---
+
+### 429 Too Many Requests
+
+Ключ превысил ограничение частоты запросов.
+
+```json
+{
+  "error": {
+    "message": "Rate limit exceeded. Please retry after 1 second.",
+    "type": "rate_limit_error",
+    "code": "rate_limit_exceeded"
+  }
+}
+```
+
+**Способ устранения:** Реализуйте экспоненциальную выдержку и повторную отправку запроса. Свяжитесь с [support@flatkey.ai](mailto:support@flatkey.ai), если вам требуются более высокие лимиты.
+
+---
+
+### 500 Internal Server Error
+
+При обработке запроса возникла непредвиденная ошибка.
+
+```json
+{
+  "error": {
+    "message": "The model encountered an error processing your request.",
+    "type": "api_error",
+    "code": "internal_error"
+  }
+}
+```
+
+**Способ устранения:** Повторите запрос. Если ошибка не исчезает, обратитесь в [support@flatkey.ai](mailto:support@flatkey.ai).
+
+---
+
+### 503 Service Unavailable
+
+Провайдер модели временно недоступен.
+
+```json
+{
+  "error": {
+    "message": "Upstream provider temporarily unavailable. Please retry.",
+    "type": "service_error",
+    "code": "upstream_unavailable"
+  }
+}
+```
+
+**Способ устранения:** Повторите запрос с экспоненциальной выдержкой. Как правило, проблема устраняется в течение нескольких секунд. Если она сохраняется, обратитесь в [support@flatkey.ai](mailto:support@flatkey.ai).
+
+---
+
+## Стратегия повторных запросов
+
+Для ошибок `429`, `500` и `503` реализуйте экспоненциальную выдержку:
+
+```python python
+import time
+import random
+from openai import OpenAI, RateLimitError, APIStatusError
+
+client = OpenAI(
+    api_key="sk-fk-your-key",
+    base_url="https://router.flatkey.ai/v1",
+)
+
+def call_with_retry(model, messages, max_retries=5):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model=model,
+                messages=messages,
+            )
+        except RateLimitError:
+            wait = (2 ** attempt) + random.uniform(0, 1)
+            time.sleep(wait)
+        except APIStatusError as e:
+            if e.status_code in (500, 503):
+                wait = (2 ** attempt) + random.uniform(0, 1)
+                time.sleep(wait)
+            else:
+                raise
+    raise RuntimeError("Max retries exceeded")
+```
+
+<Note>
+  SDK OpenAI имеет встроенную логику повторных запросов через параметр `max_retries`. Установите `max_retries=3` в конструкторе клиента OpenAI, чтобы автоматически повторять запросы при временных ошибках.
+</Note>

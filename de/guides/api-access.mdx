@@ -1,0 +1,92 @@
+---
+title: "Flatkey API direkt aufrufen"
+sidebarTitle: "API-Zugang"
+description: "Verwende die REST API mit einfachem HTTP, kein SDK erforderlich. Behandelt die Basis-URL, Authentifizierung, verfügbare Endpunkte und Fehlerbehandlung."
+---
+
+Basis-URL: `https://router.flatkey.ai`
+
+Flatkey stellt eine OpenAI-kompatible REST API bereit. Wenn du bereits einen HTTP-Client hast, benötigst du kein SDK. Diese Seite ist der kürzeste Weg von einem Schlüssel zu einer funktionierenden Anfrage.
+
+## Authentifizieren
+
+Jede Anfrage trägt deinen Schlüssel als Bearer-Token:
+
+```http
+Authorization: Bearer YOUR_FLATKEY_API_KEY
+```
+
+Erstelle einen Schlüssel in der [Konsole](https://console.flatkey.ai). Schlüssel beginnen mit `sk-fk-`. Speichere ihn in einer Umgebungsvariable und halte ihn aus dem Quellcode und Browser-Code heraus.
+
+```bash
+export FLATKEY_API_KEY="sk-fk-..."
+```
+
+## Eine Anfrage senden
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/chat/completions \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-5",
+    "messages": [{ "role": "user", "content": "Hello!" }]
+  }'
+```
+
+Ein erfolgreicher Aufruf gibt das Standard-Chat-Completion-Objekt mit `choices` und `usage` zurück.
+
+## Verfügbare Endpunkte
+
+| Endpunkt | Zweck |
+| --- | --- |
+| `POST /v1/chat/completions` | [Text- und Chat-Generierung](/de/api-reference/chat-completions) |
+| `POST /v1/responses` | [Responses API](/de/api-reference/responses), für OpenAI-Modelle |
+| `POST /v1/images/generations` | [Bildgenerierung und -bearbeitung](/de/api-reference/image-generation) |
+| `POST /v1/videos` | [Videogenerierung](/de/api-reference/seedance-video-generation), asynchron |
+| `GET /v1/videos/{task_id}` | Einen Video-Task abfragen |
+| `GET /v1/models` | [Verfügbare Modelle auflisten](/de/api-reference/models) |
+| `GET /v1/credits` | Verbleibendes Guthaben |
+
+<Warning>
+  `POST /v1/responses` funktioniert derzeit mit OpenAI-Modellen. Andere Modellfamilien geben bei diesem Endpunkt einen Fehler zurück — verwende für diese `POST /v1/chat/completions`.
+</Warning>
+
+## Guthaben prüfen
+
+```bash
+curl --fail-with-body -sS https://router.flatkey.ai/v1/credits \
+  -H "Authorization: Bearer $FLATKEY_API_KEY"
+```
+
+```json
+{ "remaining": 34.18, "used": 185.13 }
+```
+
+## Fehler behandeln
+
+Fehler geben einen JSON-Body mit einer aussagekräftigen Meldung zurück:
+
+```json
+{ "error": { "message": "No available channel for model ..." } }
+```
+
+| Status | Bedeutung | Was zu tun ist |
+| --- | --- | --- |
+| `400` | Fehlerhafte Anfrage | Lies die Meldung; sie nennt das fehlerhafte Feld |
+| `401` | Ungültiger Schlüssel | Prüfe den `Authorization`-Header und den Schlüsselwert |
+| `429` | Zu viele Anfragen | Warte und versuche es erneut |
+| `500`, `503` | Modell oder Route nicht verfügbar | Wechsle das Modell. Ein erneuter Versuch mit demselben Modell behebt das Problem selten |
+
+Vollständige Liste in der [Fehlerreferenz](/de/api-reference/errors).
+
+## Nächste Schritte
+
+<CardGroup cols={2}>
+  <Card title="API-Referenz" icon="code" href="/de/api-reference/overview">
+    Jeder Endpunkt, Parameter und Antwortfeld.
+  </Card>
+  <Card title="Stattdessen ein SDK verwenden" icon="plug" href="/de/guides/openai-sdk">
+    Behalte deinen OpenAI- oder Anthropic-Client und ändere eine einzige Zeile.
+  </Card>
+</CardGroup>

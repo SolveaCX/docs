@@ -1,0 +1,131 @@
+---
+title: "用 Flatkey CLI 配合 AI Agent"
+sidebarTitle: "Flatkey CLI 与 AI Agent"
+description: "在终端生成图片、视频、音频和文本，并用 JSON 输出把同样的命令交给脚本、CI 或 AI Agent 调用。"
+---
+
+Flatkey CLI 把媒体生成搬到终端，共用同一个余额。每个命令都支持 `--json`，因此可以安全地被脚本、CI 任务或解析 stdout 的 AI Agent 调用。
+
+## 安装与登录
+
+```bash
+npm install -g @flatkey-ai/cli
+flatkey login
+```
+
+需要 Node.js 18 或更高版本。在 CI 里用环境变量代替登录：
+
+```bash
+export FLATKEY_API_KEY="sk-fk-..."
+```
+
+查看当前使用的凭据：
+
+```bash
+flatkey auth status --json
+```
+
+## 生成第一个文件
+
+<Warning>
+  务必带上 `--model`。内置的默认图像模型当前不可路由，会返回 `No available channel`。
+</Warning>
+
+```bash
+flatkey image generate \
+  --prompt "杂志封面风格，黎明时分的霓虹城市" \
+  --model gpt-image-2 \
+  --output cover.png
+```
+
+```json
+{
+  "kind": "image",
+  "artifacts": [{ "path": "cover.png" }],
+  "response": { "data": [{ "url": "https://..." }] }
+}
+```
+
+## 命令
+
+| 命令 | 用途 |
+| --- | --- |
+| `flatkey image generate --prompt <txt>` | 生成图片 |
+| `flatkey image upload --file <path>` | 上传本地图片，返回临时 URL |
+| `flatkey video generate --prompt <txt>` | 生成视频 |
+| `flatkey audio generate --prompt <txt>` | 生成语音 |
+| `flatkey audio sfx --prompt <txt>` | 生成音效 |
+| `flatkey audio music --prompt <txt>` | 生成音乐 |
+| `flatkey audio voices` | 列出可用音色 |
+| `flatkey text generate --prompt <txt>` | 单次文本生成 |
+| `flatkey models` | 列出模型，可用 `--type image\|video\|audio\|text` 筛选 |
+| `flatkey credits` | 查看剩余余额 |
+| `flatkey help --ai` | 打印面向 Agent 的用法说明 |
+
+### 全局参数
+
+| 参数 | 含义 |
+| --- | --- |
+| `--json` | 机器可读输出，关闭动画 |
+| `--output`、`-o <file>` | 把产物写到这个路径 |
+| `--model <id>` | 指定模型 |
+| `--verbose` | 请求和响应日志输出到 stderr |
+
+<Warning>
+  `-o` 要放在 `--json` **之前**。短参数出现在 `--json` 后面会被判为多余参数而报错。`--output` 放在任何位置都可以。
+</Warning>
+
+### 视频参数
+
+```bash
+flatkey video generate \
+  --prompt "电影感的产品发布短片" \
+  --model seedance2 --ratio 16:9 --resolution 720p --output launch.mp4
+```
+
+`--ratio` 接受 `16:9`、`9:16`、`4:3`、`3:4`、`21:9` 和 `1:1`。`--resolution` 接受 `480p`、`720p`、`1080p`，但每个模型只支持其中一部分，见[视频生成](/zh/guides/video-generation)。
+
+### 音频参数
+
+```bash
+flatkey audio generate --prompt "欢迎使用 Flatkey" --output welcome.mp3
+flatkey audio sfx --prompt "厚重的关门声" --duration 4 --output door.mp3
+flatkey audio music --prompt "温暖的 lo-fi 循环，80 bpm" --music-length-ms 30000 --output loop.mp3
+```
+
+先运行 `flatkey audio voices --json`，再把列出的 `voice_id` 传给 `--voice-id`。
+
+## 交给 Agent 调用
+
+在 `--json` 模式下，stdout 只包含一个 JSON 对象，stderr 只包含 JSON 错误。运行 `flatkey help --ai` 可以打印一份精简的协议说明，供 Agent 在运行时读取。
+
+```python
+import json, subprocess
+
+def flatkey(*args):
+    p = subprocess.run(["flatkey", *args, "--json"], capture_output=True, text=True)
+    if p.returncode != 0:
+        raise RuntimeError(json.loads(p.stderr or "{}").get("error", {}).get("message"))
+    return json.loads(p.stdout)
+
+models = [m["id"] for m in flatkey("models", "--type", "image")["models"]]
+out = flatkey("image", "generate", "--prompt", "静水面上的纸船",
+              "--model", models[0], "--output", "boat.png")
+print(out["artifacts"][0]["path"])
+```
+
+先列模型再生成。写死模型 id 是运行失败最常见的原因。
+
+### 故障恢复
+
+| 故障 | 处理方式 |
+| --- | --- |
+| 缺少密钥 | 在 [console.flatkey.ai](https://console.flatkey.ai) 创建，然后 `flatkey onboard --api-key <key>` |
+| `No available channel` | 运行 `flatkey models --json`，换一个列出的 id 重试。不要重试同一个模型 |
+| 音色不存在 | `flatkey audio voices --json`，换一个列出的 id |
+| 余额不足 | `flatkey credits --json` 确认后充值 |
+| `unsupported resolution` | 退回 `720p` |
+
+<Warning>
+  只有在改动请求之后才重试。这些错误是确定性的，用相同参数重复调用只会浪费时间。
+</Warning>
