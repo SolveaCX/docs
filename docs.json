@@ -61,12 +61,12 @@
     },
     {
       "source": "/enterprise",
-      "destination": "https://flatkey.ai/pricing",
+      "destination": "https://flatkey.ai/contact",
       "permanent": true
     },
     {
       "source": "/zh/enterprise",
-      "destination": "https://flatkey.ai/pricing",
+      "destination": "https://flatkey.ai/contact",
       "permanent": true
     },
     {
@@ -106,7 +106,7 @@
     },
     {
       "source": "/es/enterprise",
-      "destination": "https://flatkey.ai/pricing",
+      "destination": "https://flatkey.ai/contact",
       "permanent": true
     },
     {
@@ -136,7 +136,7 @@
     },
     {
       "source": "/fr/enterprise",
-      "destination": "https://flatkey.ai/pricing",
+      "destination": "https://flatkey.ai/contact",
       "permanent": true
     },
     {
@@ -166,7 +166,7 @@
     },
     {
       "source": "/pt/enterprise",
-      "destination": "https://flatkey.ai/pricing",
+      "destination": "https://flatkey.ai/contact",
       "permanent": true
     },
     {
@@ -196,7 +196,7 @@
     },
     {
       "source": "/ru/enterprise",
-      "destination": "https://flatkey.ai/pricing",
+      "destination": "https://flatkey.ai/contact",
       "permanent": true
     },
     {
@@ -226,7 +226,7 @@
     },
     {
       "source": "/ja/enterprise",
-      "destination": "https://flatkey.ai/pricing",
+      "destination": "https://flatkey.ai/contact",
       "permanent": true
     },
     {
@@ -256,7 +256,7 @@
     },
     {
       "source": "/vi/enterprise",
-      "destination": "https://flatkey.ai/pricing",
+      "destination": "https://flatkey.ai/contact",
       "permanent": true
     },
     {
@@ -286,7 +286,7 @@
     },
     {
       "source": "/de/enterprise",
-      "destination": "https://flatkey.ai/pricing",
+      "destination": "https://flatkey.ai/contact",
       "permanent": true
     },
     {
@@ -316,7 +316,7 @@
     },
     {
       "source": "/id/enterprise",
-      "destination": "https://flatkey.ai/pricing",
+      "destination": "https://flatkey.ai/contact",
       "permanent": true
     },
     {
