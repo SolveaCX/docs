@@ -1,263 +1,154 @@
 ---
-title: "快速开始：完成第一次 Flatkey API 调用"
+title: "快速入门：选择你使用 Flatkey 的方式"
 sidebarTitle: "快速开始"
-description: "创建 Flatkey API 密钥，发送兼容 OpenAI 的请求，并在大约五分钟内通过使用日志验证结果。"
+description: "四种使用 Flatkey 的方式——REST API、OpenAI SDK、Flatkey CLI，或你的编程智能体。一个密钥、一个模型目录，背后支撑着所有这些方式。"
 ---
 
-大约五分钟即可完成第一次 Flatkey 请求。你只需要一个 API 密钥，以及兼容 OpenAI 的基础 URL `https://router.flatkey.ai/v1`。
+Flatkey 为你提供一个密钥和四种使用方式。这四种方式共享同一个账户、同一个余额和同一个模型目录——因此唯一的问题是哪一种更适合你的工作方式。
+
+<Frame>
+  ![Flatkey 控制台中展示的四种使用 Flatkey 的方式](/images/quickstart/console-choose-how.png)
+</Frame>
 
 <Tip>
-  已经在使用 OpenAI SDK？保留现有请求代码，只需把基础 URL 改为 `https://router.flatkey.ai/v1`。
+  你不必一次性做出最终选择。先从最贴近你当前工作的方式开始，之后再用同一个密钥添加其他方式。
 </Tip>
-
-## 选择你的路径
-
-所有人都从创建密钥和发出第一个请求开始。跑通之后，按你要做的事继续。
-
-<CardGroup cols={2}>
-  <Card title="写代码" icon="code" href="/zh/guides/openai-sdk">
-    使用 OpenAI 或 Anthropic SDK，也可以直接调用 REST API。
-  </Card>
-  <Card title="生成图片和视频" icon="image" href="/zh/guides/image-generation">
-    用 `gpt-image-2` 生成图片，或用 Seedance 和 `MiniMax-H3` [生成视频](/zh/guides/video-generation)。
-  </Card>
-  <Card title="接入 AI 工具" icon="terminal" href="/zh/guides/claude-code">
-    把 Claude Code、Codex CLI 或 Codex Desktop 指向 Flatkey。
-  </Card>
-  <Card title="调用你自己的函数" icon="wrench" href="/zh/guides/text-generation#调用你自己的函数">
-    在请求里加上工具调用和结构化输出。
-  </Card>
-</CardGroup>
 
 ## 开始之前
 
-你需要：
+在 [console.flatkey.ai/keys](https://console.flatkey.ai/keys) 创建一个密钥。Flatkey 密钥以 `sk-` 开头。下面的每个选项都使用这同一个密钥，因此请把它保存在环境变量中，不要提交到源代码管理中。
 
-- 一个 [Flatkey 账号](https://console.flatkey.ai/sign-up?lng=zh)
-- cURL、Python 3.10+、Node.js 22+ 或 PowerShell
-- 足以完成模型请求的预付费额度
+控制台中的每个面板也允许你选择一个已有的密钥，而不必新建一个，并会将它直接填入展示给你的代码片段中。
+
+## 面向开发者的 API
+
+使用兼容 OpenAI 的请求，通过普通 HTTP 调用任意模型。无需 SDK，无需依赖——只要你有 HTTP 客户端，就可以开始使用。
+
+<Frame>
+  ![面向开发者的 API 面板，展示了可直接运行的请求](/images/quickstart/modal-api.png)
+</Frame>
+
+控制台会为你构建请求：选择一个密钥，选择一个模型，然后复制以 **cURL**、**Node.js** 或 **Python** 形式提供的代码片段。
+
+```bash
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Say hello in one sentence."}]}'
+```
+
+<Card title="API 访问" icon="code" href="/zh/guides/api-access">
+  基础 URL、身份验证、可用端点以及错误处理。
+</Card>
+
+## 面向开发者的 SDK
+
+继续使用你已经在用的 OpenAI SDK，只需将其指向 Flatkey。你的请求代码不需要改动——只有基础 URL 需要更改。
+
+<Frame>
+  ![面向开发者的 SDK 面板，展示了 SDK 的配置方式](/images/quickstart/modal-sdk.png)
+</Frame>
+
+思路与上面相同：选择一个密钥和一个模型，然后复制适用于你所用语言的配置代码。
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+```
+
+<CardGroup cols={2}>
+  <Card title="OpenAI SDK" icon="code" href="/zh/guides/openai-sdk">
+    Python 和 Node.js 的配置方法、流式传输，以及工具调用。
+  </Card>
+  <Card title="Anthropic SDK" icon="code" href="/zh/guides/anthropic-sdk">
+    以同样的方式，通过 Flatkey 路由 Claude 请求。
+  </Card>
+</CardGroup>
+
+## Flatkey CLI
+
+从终端生成图像和视频，或者让 AI 助手为你操作该 CLI。
+
+<Frame>
+  ![Flatkey CLI 面板，展示了安装、登录以及首个提示词](/images/quickstart/modal-cli.png)
+</Frame>
 
 <Steps>
-  <Step title="设置账号和 API 密钥">
-    登录 [Flatkey 控制台](https://console.flatkey.ai/dashboard?lng=zh)。打开 **钱包**，选择适合工作负载的预付费套餐。
-
-    ![在 Flatkey 钱包中选择预付费套餐](/images/quickstart/zh/flatkey-top-up.png)
-
-    接下来打开 **API 密钥**，并选择 **创建 API 密钥**。
-
-    ![打开 API 密钥页面并选择创建 API 密钥](/images/quickstart/zh/flatkey-api-keys.png)
-
-    为密钥设置清晰的名称。选择 **保存更改** 前，还可以设置额度上限和过期时间。
-
-    ![设置 Flatkey API 密钥的名称、额度和有效期](/images/quickstart/zh/flatkey-create-api-key.png)
-
-    复制生成的密钥并安全保存。Flatkey API 密钥以 `sk-fk-` 开头。
-
-    <Warning>
-      切勿把 API 密钥提交到源代码仓库，也不要在浏览器端代码中暴露密钥。请使用环境变量或密钥管理服务。
-    </Warning>
+  <Step title="安装">
+    ```bash
+    npm i -g @flatkey-ai/cli
+    ```
   </Step>
-
-  <Step title="发送第一次请求">
-    在当前终端中设置 API 密钥：
-
-    <CodeGroup>
-    ```bash macOS and Linux
-    export FLATKEY_API_KEY="sk-fk-..."
+  <Step title="登录">
+    ```bash
+    flatkey login
     ```
-    ```powershell Windows PowerShell
-    $env:FLATKEY_API_KEY="sk-fk-..."
-    ```
-    </CodeGroup>
-
-    Python 用户可运行 `pip install openai` 安装 OpenAI SDK；TypeScript 用户可运行 `npm install openai`。cURL 和 PowerShell 不需要 SDK。
-
-    以下示例通过同一个 Flatkey 端点调用同一个模型：
-
-    <CodeGroup>
-    ```bash cURL
-    curl https://router.flatkey.ai/v1/chat/completions \
-      -H "Authorization: Bearer $FLATKEY_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "model": "gpt-4o-mini",
-        "messages": [
-          {"role": "user", "content": "Hello! What can you do?"}
-        ]
-      }'
-    ```
-    ```python Python
-    import os
-    from openai import OpenAI
-
-    client = OpenAI(
-        api_key=os.environ["FLATKEY_API_KEY"],
-        base_url="https://router.flatkey.ai/v1",
-    )
-
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "user", "content": "Hello! What can you do?"}
-        ],
-    )
-
-    print(response.choices[0].message.content)
-    ```
-    ```typescript TypeScript
-    import OpenAI from "openai";
-
-    const client = new OpenAI({
-      apiKey: process.env.FLATKEY_API_KEY,
-      baseURL: "https://router.flatkey.ai/v1",
-    });
-
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "user", content: "Hello! What can you do?" },
-      ],
-    });
-
-    console.log(response.choices[0].message.content);
-    ```
-    ```powershell PowerShell
-    $headers = @{
-      Authorization = "Bearer $env:FLATKEY_API_KEY"
-      "Content-Type" = "application/json"
-    }
-
-    $body = @{
-      model = "gpt-4o-mini"
-      messages = @(
-        @{ role = "user"; content = "Hello! What can you do?" }
-      )
-    } | ConvertTo-Json -Depth 4
-
-    $response = Invoke-RestMethod `
-      -Uri "https://router.flatkey.ai/v1/chat/completions" `
-      -Method Post `
-      -Headers $headers `
-      -Body $body
-
-    $response.choices[0].message.content
-    ```
-    </CodeGroup>
-
-    请求完成后，打开 Flatkey 控制台中的 **使用日志**。在 **模型名称** 中输入 `gpt-4o-mini`，然后选择 **搜索**。下图显示了筛选器的位置；完成的请求应出现在表格中，并显示 Token 数量、延迟和费用。
-
-    ![在 Flatkey 使用日志中使用模型名称筛选器](/images/quickstart/zh/flatkey-usage-logs.png)
-
-    如果表格仍显示 **未找到日志**，请等待几秒后重新搜索。如果仍然为空，请确认请求使用的 API 密钥和基础 URL。
   </Step>
+  <Step title="开始创作">
+    向你的 AI 助手说出你想要的内容，让它来运行该 CLI：
 
-  <Step title="继续构建">
-    将 Flatkey 连接到你使用的编程工具：
-
-    <CardGroup cols={3}>
-      <Card title="Claude Code" icon="terminal" href="/zh/guides/claude-code">
-        手动配置 Claude Code，或使用 CC Switch。
-      </Card>
-      <Card title="Codex CLI" icon="code" href="/zh/guides/codex-cli">
-        通过 Flatkey 路由 Codex CLI 请求。
-      </Card>
-      <Card title="Codex 桌面端" icon="desktop" href="/zh/guides/codex-desktop">
-        手动配置 Codex 桌面端，或使用 CC Switch。
-      </Card>
-    </CardGroup>
+    ```text
+    Use Flatkey CLI to generate a "beautiful sunrise" picture.
+    ```
   </Step>
 </Steps>
 
-## 读取响应
+<Card title="配合 AI 智能体使用的 Flatkey CLI" icon="terminal" href="/zh/guides/flatkey-cli">
+  命令、面向智能体的 JSON 输出，以及错误恢复。
+</Card>
 
-对于 Chat Completions 响应，最常使用的字段包括：
+## Codex 与 Claude Code
 
-- `choices[0].message.content` — 生成的文本
-- `model` — 处理请求的模型
-- `usage` — 输入、输出和总 Token 数量
+只需连接一次你的编程智能体，之后即可在你已经打开的项目中直接使用 Flatkey。
 
-完整结构请参阅 [Chat Completions 参考](/zh/api-reference/chat-completions)。
+<Frame>
+  ![Codex 与 Claude Code 面板，展示了安装命令](/images/quickstart/modal-agents.png)
+</Frame>
 
-## 流式接收响应
+控制台会为你提供一条适用于 **macOS**、**Linux** 或 **Windows** 的单一安装命令。如果你还没有安装该智能体，它会自动安装，询问你的密钥，并为你写入配置。
 
-如果希望在 Token 生成时立即接收，请将 `stream` 设置为 `true`。
+<Warning>
+  该安装程序是交互式的。它会询问你想要 Claude Code 还是 Codex CLI，并且需要预先安装好 Node.js。
+</Warning>
 
-Python 和 TypeScript 示例沿用你在 **发送第一次请求** 中创建的 `client`。
+<CardGroup cols={3}>
+  <Card title="Claude Code" icon="terminal" href="/zh/guides/claude-code">
+    手动设置或使用 CC Switch。
+  </Card>
+  <Card title="Codex CLI" icon="code" href="/zh/guides/codex-cli">
+    将 Codex CLI 的请求路由通过 Flatkey。
+  </Card>
+  <Card title="Codex Desktop" icon="desktop" href="/zh/guides/codex-desktop">
+    配置桌面应用。
+  </Card>
+</CardGroup>
 
-<CodeGroup>
-```bash cURL
-curl --no-buffer https://router.flatkey.ai/v1/chat/completions \
-  -H "Authorization: Bearer $FLATKEY_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gpt-4o-mini",
-    "messages": [
-      {"role": "user", "content": "Write a two-line welcome message."}
-    ],
-    "stream": true
-  }'
-```
-```python Python
-stream = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[
-        {"role": "user", "content": "Write a two-line welcome message."}
-    ],
-    stream=True,
-)
+## 检查是否成功
 
-for chunk in stream:
-    content = chunk.choices[0].delta.content
-    if content:
-        print(content, end="", flush=True)
-```
-```typescript TypeScript
-const stream = await client.chat.completions.create({
-  model: "gpt-4o-mini",
-  messages: [
-    { role: "user", content: "Write a two-line welcome message." },
-  ],
-  stream: true,
-});
+无论你选择了哪种方式，在发出第一个请求后，都可以打开[控制台](https://console.flatkey.ai)中的 **Usage Logs**（使用日志）。你应该能看到该请求被列出，包括模型、token 数量、延迟以及费用。
 
-for await (const chunk of stream) {
-  process.stdout.write(chunk.choices[0]?.delta?.content ?? "");
-}
-```
-</CodeGroup>
+![在 Flatkey 使用日志中使用模型名称筛选器](/images/quickstart/flatkey-usage-logs.png)
 
-## 处理常见错误
-
-| HTTP 状态码 | 通常含义 | 处理方法 |
-|---|---|---|
-| `401` | API 密钥缺失、无效或已撤销 | 检查 `Authorization: Bearer` 请求头，必要时创建新密钥 |
-| `401 insufficient_balance` | 预付费余额为空 | 在 **钱包** 中充值 |
-| `503 model_not_found` | 模型 ID 拼写错误或不可用 | 在[模型目录](https://flatkey.ai/models)中核对准确 ID。重试无法解决 |
-| `429` | 请求超过速率限制 | 使用指数退避和随机抖动后重试 |
-| `500` 或 `503` | 提供商或路由暂时不可用 | 先读取响应体中的 `error.code`。退避后重试，并检查[模型健康度](https://flatkey.ai/status) |
-
-<Note>
-  `503` 既可能表示服务暂时不可用，也可能表示模型 ID 不存在。重试前请先读取响应体中的 `error.code`。
-</Note>
-
-响应格式和故障排除方法请参阅 [API 错误](/zh/api-reference/errors)。
+如果没有出现任何内容，等待几秒后再次搜索，然后确认该请求实际使用的 API 密钥和基础 URL。
 
 ## 后续步骤
 
 <CardGroup cols={2}>
-  <Card title="身份验证" icon="key" href="/zh/api-reference/authentication">
-    了解 Flatkey API 密钥和身份验证请求头的工作方式。
-  </Card>
   <Card title="模型目录" icon="list" href="https://flatkey.ai/models">
-    查找支持的模型 ID 和当前价格。
+    所有受支持的模型，附带实时定价和健康状态。
   </Card>
-  <Card title="OpenAI SDK" icon="code" href="/zh/guides/openai-sdk">
-    在 OpenAI Python 和 TypeScript SDK 中使用 Flatkey。
+  <Card title="API 错误" icon="triangle-exclamation" href="/zh/api-reference/errors">
+    状态码、响应格式，以及应对方法。
   </Card>
-  <Card title="使用日志" icon="chart-bar" href="/zh/dashboard/usage">
-    监控请求、Token 用量、延迟和费用。
+  <Card title="文本生成" icon="message" href="/zh/guides/text-generation">
+    流式传输、工具调用，以及结构化输出。
   </Card>
-  <Card title="计费" icon="wallet" href="https://flatkey.ai/pricing">
-    了解预付费额度和用量费用。
+  <Card title="视频生成" icon="video" href="/zh/guides/video-generation">
+    提交任务、轮询状态，并下载 MP4 文件。
   </Card>
 </CardGroup>

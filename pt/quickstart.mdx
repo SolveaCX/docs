@@ -1,263 +1,154 @@
 ---
-title: "Início Rápido: Faça sua primeira chamada à API Flatkey"
+title: "Guia rápido: escolha como você vai usar o Flatkey"
 sidebarTitle: "Início Rápido"
-description: "Crie uma chave de API Flatkey, envie uma requisição compatível com OpenAI e verifique nos Logs de Uso em cerca de cinco minutos."
+description: "Quatro formas de usar o Flatkey — a API REST, o SDK da OpenAI, a CLI do Flatkey ou seu agente de codificação. Uma chave e um catálogo de modelos por trás de todas elas."
 ---
 
-Faça sua primeira requisição Flatkey em cerca de cinco minutos. Você precisa de uma chave de API e da URL base compatível com OpenAI `https://router.flatkey.ai/v1`.
+O Flatkey oferece uma chave e quatro formas de usá-la. Todas as quatro compartilham a mesma conta, o mesmo saldo e o mesmo catálogo de modelos — então a única pergunta é qual delas se encaixa na sua forma de trabalhar.
+
+<Frame>
+  ![As quatro formas de usar o Flatkey, mostradas no Flatkey Console](/images/quickstart/console-choose-how.png)
+</Frame>
 
 <Tip>
-  Já usa o SDK da OpenAI? Mantenha o código da sua requisição e altere apenas a URL base para `https://router.flatkey.ai/v1`.
+  Você não precisa escolher de uma vez por todas. Comece com a opção mais próxima do que você está fazendo hoje e adicione as outras depois, usando a mesma chave.
 </Tip>
-
-## Escolha seu caminho
-
-Todos começam com uma chave e uma requisição. Depois disso, vá direto ao que você está construindo.
-
-<CardGroup cols={2}>
-  <Card title="Escrever código" icon="code" href="/pt/guides/openai-sdk">
-    Use o SDK da OpenAI ou Anthropic, ou chame a API REST diretamente.
-  </Card>
-  <Card title="Gerar imagens e vídeo" icon="image" href="/pt/guides/image-generation">
-    Crie imagens com `gpt-image-2`, ou [gere vídeos](/pt/guides/video-generation) com Seedance e `MiniMax-H3`.
-  </Card>
-  <Card title="Conectar a uma ferramenta de IA" icon="terminal" href="/pt/guides/claude-code">
-    Aponte Claude Code, Codex CLI ou Codex Desktop para o Flatkey.
-  </Card>
-  <Card title="Chamar suas próprias funções" icon="wrench" href="/pt/guides/text-generation#chame-suas-proprias-funcoes">
-    Adicione chamadas de ferramentas e saídas estruturadas a uma requisição.
-  </Card>
-</CardGroup>
 
 ## Antes de começar
 
-Você precisa de:
+Crie uma chave em [console.flatkey.ai/keys](https://console.flatkey.ai/keys). As chaves do Flatkey começam com `sk-`. Todas as opções abaixo usam essa mesma chave, então mantenha-a em uma variável de ambiente e fora do controle de versão.
 
-- Uma [conta Flatkey](https://console.flatkey.ai/sign-up)
-- cURL, Python 3.10+, Node.js 22+ ou PowerShell
-- Crédito pré-pago para a requisição ao modelo
+Cada painel no Console também permite escolher uma chave existente em vez de criar uma nova, inserindo-a diretamente no trecho de código exibido.
+
+## API para desenvolvedores
+
+Chame qualquer modelo via HTTP simples com uma requisição compatível com a OpenAI. Sem SDK, sem dependências — se você tem um cliente HTTP, já está pronto.
+
+<Frame>
+  ![O painel API para desenvolvedores, com uma requisição pronta para executar](/images/quickstart/modal-api.png)
+</Frame>
+
+O Console monta a requisição para você: escolha uma chave, escolha um modelo e copie o trecho em **cURL**, **Node.js** ou **Python**.
+
+```bash
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Say hello in one sentence."}]}'
+```
+
+<Card title="Acesso à API" icon="code" href="/pt/guides/api-access">
+  URL base, autenticação, endpoints disponíveis e tratamento de erros.
+</Card>
+
+## SDKs para desenvolvedores
+
+Continue usando o SDK da OpenAI que você já utiliza e aponte-o para o Flatkey. Seu código de requisição não muda — apenas a URL base.
+
+<Frame>
+  ![O painel SDKs para desenvolvedores, com a configuração do SDK](/images/quickstart/modal-sdk.png)
+</Frame>
+
+Mesma ideia de antes: escolha uma chave e um modelo, depois copie a configuração para sua linguagem.
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+```
+
+<CardGroup cols={2}>
+  <Card title="SDK da OpenAI" icon="code" href="/pt/guides/openai-sdk">
+    Configuração em Python e Node.js, streaming e chamadas de ferramentas.
+  </Card>
+  <Card title="SDK da Anthropic" icon="code" href="/pt/guides/anthropic-sdk">
+    Roteie requisições do Claude pelo Flatkey da mesma forma.
+  </Card>
+</CardGroup>
+
+## Flatkey CLI
+
+Gere imagens e vídeos a partir do seu terminal, ou deixe um assistente de IA operar a CLI para você.
+
+<Frame>
+  ![O painel Flatkey CLI, mostrando instalação, login e primeiro prompt](/images/quickstart/modal-cli.png)
+</Frame>
 
 <Steps>
-  <Step title="Configure sua conta e chave de API">
-    Entre no [Console Flatkey](https://console.flatkey.ai). Abra **Carteira** e escolha um pacote pré-pago adequado ao seu uso.
-
-    ![Escolha um pacote pré-pago na Carteira Flatkey](/images/quickstart/flatkey-top-up.png)
-
-    Em seguida, abra **Chaves de API** e selecione **Criar Chave de API**.
-
-    ![Abra Chaves de API e selecione Criar Chave de API](/images/quickstart/flatkey-api-keys.png)
-
-    Dê um nome claro à chave. Você também pode definir um limite de crédito e um prazo de expiração antes de selecionar **Salvar alterações**.
-
-    ![Configure o nome, limite de crédito e expiração para uma chave de API Flatkey](/images/quickstart/flatkey-create-api-key.png)
-
-    Copie o segredo gerado e armazene-o com segurança. As chaves de API Flatkey começam com `sk-fk-`.
-
-    <Warning>
-      Nunca faça commit de uma chave de API no controle de versão nem a exponha em código do lado do navegador. Use uma variável de ambiente ou um gerenciador de segredos.
-    </Warning>
+  <Step title="Instalar">
+    ```bash
+    npm i -g @flatkey-ai/cli
+    ```
   </Step>
-
-  <Step title="Envie sua primeira requisição">
-    Defina a chave de API no seu shell atual:
-
-    <CodeGroup>
-    ```bash macOS and Linux
-    export FLATKEY_API_KEY="sk-fk-..."
+  <Step title="Fazer login">
+    ```bash
+    flatkey login
     ```
-    ```powershell Windows PowerShell
-    $env:FLATKEY_API_KEY="sk-fk-..."
-    ```
-    </CodeGroup>
-
-    Para Python, instale o SDK da OpenAI com `pip install openai`. Para TypeScript, execute `npm install openai`. cURL e PowerShell não precisam de SDK.
-
-    Os exemplos a seguir chamam o mesmo modelo pelo mesmo endpoint Flatkey:
-
-    <CodeGroup>
-    ```bash cURL
-    curl https://router.flatkey.ai/v1/chat/completions \
-      -H "Authorization: Bearer $FLATKEY_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "model": "gpt-4o-mini",
-        "messages": [
-          {"role": "user", "content": "Hello! What can you do?"}
-        ]
-      }'
-    ```
-    ```python Python
-    import os
-    from openai import OpenAI
-
-    client = OpenAI(
-        api_key=os.environ["FLATKEY_API_KEY"],
-        base_url="https://router.flatkey.ai/v1",
-    )
-
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "user", "content": "Hello! What can you do?"}
-        ],
-    )
-
-    print(response.choices[0].message.content)
-    ```
-    ```typescript TypeScript
-    import OpenAI from "openai";
-
-    const client = new OpenAI({
-      apiKey: process.env.FLATKEY_API_KEY,
-      baseURL: "https://router.flatkey.ai/v1",
-    });
-
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "user", content: "Hello! What can you do?" },
-      ],
-    });
-
-    console.log(response.choices[0].message.content);
-    ```
-    ```powershell PowerShell
-    $headers = @{
-      Authorization = "Bearer $env:FLATKEY_API_KEY"
-      "Content-Type" = "application/json"
-    }
-
-    $body = @{
-      model = "gpt-4o-mini"
-      messages = @(
-        @{ role = "user"; content = "Hello! What can you do?" }
-      )
-    } | ConvertTo-Json -Depth 4
-
-    $response = Invoke-RestMethod `
-      -Uri "https://router.flatkey.ai/v1/chat/completions" `
-      -Method Post `
-      -Headers $headers `
-      -Body $body
-
-    $response.choices[0].message.content
-    ```
-    </CodeGroup>
-
-    Após a conclusão da requisição, abra **Logs de Uso** no Console Flatkey. Digite `gpt-4o-mini` em **Nome do Modelo** e selecione **Pesquisar**. A captura de tela mostra onde aplicar o filtro; sua requisição concluída deve aparecer na tabela com contagens de tokens, latência e custo.
-
-    ![Use o filtro Nome do Modelo nos Logs de Uso do Flatkey](/images/quickstart/flatkey-usage-logs.png)
-
-    Se a tabela ainda mostrar **Nenhum Log Encontrado**, aguarde alguns segundos e pesquise novamente. Se continuar vazia, verifique a chave de API e a URL base usadas na requisição.
   </Step>
+  <Step title="Comece a criar">
+    Peça ao seu assistente de IA o que você deseja e deixe que ele execute a CLI:
 
-  <Step title="Continue construindo">
-    Conecte o Flatkey à ferramenta de código que você usa:
-
-    <CardGroup cols={3}>
-      <Card title="Claude Code" icon="terminal" href="/pt/guides/claude-code">
-        Configure o Claude Code manualmente ou com o CC Switch.
-      </Card>
-      <Card title="Codex CLI" icon="code" href="/pt/guides/codex-cli">
-        Roteie as requisições do Codex CLI pelo Flatkey.
-      </Card>
-      <Card title="Codex Desktop" icon="desktop" href="/pt/guides/codex-desktop">
-        Configure o aplicativo desktop Codex manualmente ou com o CC Switch.
-      </Card>
-    </CardGroup>
+    ```text
+    Use Flatkey CLI to generate a "beautiful sunrise" picture.
+    ```
   </Step>
 </Steps>
 
-## Leia a resposta
+<Card title="Flatkey CLI com agente de IA" icon="terminal" href="/pt/guides/flatkey-cli">
+  Comandos, saída em JSON para agentes e recuperação de erros.
+</Card>
 
-Para respostas de Chat Completions, os campos que você usará com mais frequência são:
+## Codex & Claude Code
 
-- `choices[0].message.content` — texto gerado
-- `model` — o modelo que processou a requisição
-- `usage` — contagens de tokens de prompt, conclusão e total
+Conecte seu agente de codificação uma vez e depois use o Flatkey nos projetos que você já tem abertos.
 
-Consulte a [referência de Chat Completions](/pt/api-reference/chat-completions) para o schema completo.
+<Frame>
+  ![O painel Codex e Claude Code, com o comando de instalação](/images/quickstart/modal-agents.png)
+</Frame>
 
-## Transmita a resposta
+O Console fornece um único comando de instalação para **macOS**, **Linux** ou **Windows**. Ele instala o agente se você ainda não o tiver, pede sua chave e grava a configuração para você.
 
-Defina `stream` como `true` quando quiser receber os tokens conforme são gerados.
+<Warning>
+  O instalador é interativo. Ele pergunta se você quer usar o Claude Code ou o Codex CLI, e é necessário já ter o Node.js instalado.
+</Warning>
 
-Os exemplos em Python e TypeScript reutilizam o `client` criado em **Envie sua primeira requisição**.
+<CardGroup cols={3}>
+  <Card title="Claude Code" icon="terminal" href="/pt/guides/claude-code">
+    Configuração manual ou CC Switch.
+  </Card>
+  <Card title="Codex CLI" icon="code" href="/pt/guides/codex-cli">
+    Roteie o Codex CLI pelo Flatkey.
+  </Card>
+  <Card title="Codex Desktop" icon="desktop" href="/pt/guides/codex-desktop">
+    Configure o aplicativo desktop.
+  </Card>
+</CardGroup>
 
-<CodeGroup>
-```bash cURL
-curl --no-buffer https://router.flatkey.ai/v1/chat/completions \
-  -H "Authorization: Bearer $FLATKEY_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gpt-4o-mini",
-    "messages": [
-      {"role": "user", "content": "Write a two-line welcome message."}
-    ],
-    "stream": true
-  }'
-```
-```python Python
-stream = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[
-        {"role": "user", "content": "Write a two-line welcome message."}
-    ],
-    stream=True,
-)
+## Verifique se funcionou
 
-for chunk in stream:
-    content = chunk.choices[0].delta.content
-    if content:
-        print(content, end="", flush=True)
-```
-```typescript TypeScript
-const stream = await client.chat.completions.create({
-  model: "gpt-4o-mini",
-  messages: [
-    { role: "user", content: "Write a two-line welcome message." },
-  ],
-  stream: true,
-});
+Qualquer que seja a opção escolhida, abra **Usage Logs** no [Console](https://console.flatkey.ai) depois da sua primeira requisição. Você deve vê-la listada com o modelo, contagem de tokens, latência e custo.
 
-for await (const chunk of stream) {
-  process.stdout.write(chunk.choices[0]?.delta?.content ?? "");
-}
-```
-</CodeGroup>
+![Use o filtro Model Name nos Flatkey Usage Logs](/images/quickstart/flatkey-usage-logs.png)
 
-## Trate erros comuns
-
-| Status HTTP | O que geralmente significa | O que fazer |
-|---|---|---|
-| `401` | A chave de API está ausente, inválida ou revogada | Verifique o cabeçalho `Authorization: Bearer` e crie uma nova chave se necessário |
-| `401 insufficient_balance` | O saldo pré-pago está zerado | Adicione crédito em **Carteira** |
-| `503 model_not_found` | O ID do modelo está escrito incorretamente ou indisponível | Verifique o [Diretório de Modelos](https://flatkey.ai/models) para o ID exato. Tentar novamente não resolve |
-| `429` | A requisição excedeu um limite de taxa | Tente novamente com backoff exponencial e jitter |
-| `500` ou `503` | O provedor ou a rota está temporariamente indisponível | Leia `error.code` no corpo da resposta primeiro. Tente novamente com backoff e verifique a [Saúde dos Modelos](https://flatkey.ai/status) |
-
-<Note>
-  Um `503` pode indicar tanto uma indisponibilidade temporária quanto um ID de modelo desconhecido. Leia `error.code` no corpo da resposta antes de tentar novamente.
-</Note>
-
-Consulte [Erros de API](/pt/api-reference/errors) para formatos de resposta e detalhes de solução de problemas.
+Se nada aparecer, espere alguns segundos e pesquise novamente, depois confirme a chave de API e a URL base que a requisição realmente usou.
 
 ## Próximos passos
 
 <CardGroup cols={2}>
-  <Card title="Autenticação" icon="key" href="/pt/api-reference/authentication">
-    Saiba como funcionam as chaves de API Flatkey e os cabeçalhos de autorização.
+  <Card title="Diretório de modelos" icon="list" href="https://flatkey.ai/models">
+    Todos os modelos suportados com preços e disponibilidade em tempo real.
   </Card>
-  <Card title="Diretório de Modelos" icon="list" href="https://flatkey.ai/models">
-    Encontre os IDs de modelos suportados e os preços atuais.
+  <Card title="Erros da API" icon="triangle-exclamation" href="/pt/api-reference/errors">
+    Códigos de status, formatos de resposta e o que fazer em cada caso.
   </Card>
-  <Card title="SDK da OpenAI" icon="code" href="/pt/guides/openai-sdk">
-    Use o Flatkey com os SDKs Python e TypeScript da OpenAI.
+  <Card title="Geração de texto" icon="message" href="/pt/guides/text-generation">
+    Streaming, chamadas de ferramentas e saída estruturada.
   </Card>
-  <Card title="Logs de Uso" icon="chart-bar" href="/pt/dashboard/usage">
-    Monitore requisições, uso de tokens, latência e custo.
-  </Card>
-  <Card title="Cobrança" icon="wallet" href="https://flatkey.ai/pricing">
-    Entenda o crédito pré-pago e as cobranças por uso.
+  <Card title="Geração de vídeo" icon="video" href="/pt/guides/video-generation">
+    Envie uma tarefa, consulte o status e baixe o MP4.
   </Card>
 </CardGroup>
