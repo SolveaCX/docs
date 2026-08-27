@@ -1,263 +1,154 @@
 ---
-title: "Mulai Cepat: Buat panggilan API Flatkey pertama Anda"
+title: "Panduan Cepat: Pilih cara Anda menggunakan Flatkey"
 sidebarTitle: "Mulai Cepat"
-description: "Buat kunci API Flatkey, kirim permintaan yang kompatibel dengan OpenAI, dan verifikasi di Log Penggunaan dalam sekitar lima menit."
+description: "Empat cara menggunakan Flatkey — REST API, OpenAI SDK, Flatkey CLI, atau agen coding Anda. Satu kunci dan satu katalog model di balik semuanya."
 ---
 
-Buat permintaan Flatkey pertama Anda dalam sekitar lima menit. Anda memerlukan satu kunci API dan URL dasar yang kompatibel dengan OpenAI `https://router.flatkey.ai/v1`.
+Flatkey memberi Anda satu kunci dan empat cara untuk menggunakannya. Keempatnya berbagi akun yang sama, saldo yang sama, dan katalog model yang sama — jadi satu-satunya pertanyaan adalah mana yang cocok dengan cara kerja Anda.
+
+<Frame>
+  ![Empat cara menggunakan Flatkey, ditampilkan di Flatkey Console](/images/quickstart/console-choose-how.png)
+</Frame>
 
 <Tip>
-  Sudah menggunakan SDK OpenAI? Pertahankan kode permintaan Anda dan ubah URL dasar ke `https://router.flatkey.ai/v1`.
+  Anda tidak harus memilih satu untuk selamanya. Mulailah dengan opsi yang paling mendekati apa yang sedang Anda kerjakan hari ini, dan tambahkan yang lain nanti menggunakan kunci yang sama.
 </Tip>
 
-## Pilih jalur Anda
+## Sebelum Anda mulai
 
-Semua orang mulai dengan satu kunci dan satu permintaan. Setelah itu, langsung ke bagian yang sedang Anda bangun.
+Buat kunci di [console.flatkey.ai/keys](https://console.flatkey.ai/keys). Kunci Flatkey diawali dengan `sk-`. Setiap opsi di bawah ini menggunakan satu kunci tersebut, jadi simpan di variabel lingkungan dan jauhkan dari kontrol sumber (source control).
+
+Setiap panel di Console juga memungkinkan Anda memilih kunci yang sudah ada alih-alih membuat kunci baru, dan langsung memasukkannya ke dalam cuplikan (snippet) yang ditampilkan.
+
+## API untuk pengembang
+
+Panggil model apa pun melalui HTTP biasa dengan permintaan yang kompatibel dengan OpenAI. Tanpa SDK, tanpa dependensi — jika Anda memiliki klien HTTP, Anda sudah siap.
+
+<Frame>
+  ![Panel API untuk pengembang, dengan permintaan yang siap dijalankan](/images/quickstart/modal-api.png)
+</Frame>
+
+Console membuatkan permintaan untuk Anda: pilih kunci, pilih model, lalu salin cuplikan dalam **cURL**, **Node.js**, atau **Python**.
+
+```bash
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Say hello in one sentence."}]}'
+```
+
+<Card title="Akses API" icon="code" href="/id/guides/api-access">
+  URL dasar, autentikasi, endpoint yang tersedia, dan penanganan error.
+</Card>
+
+## SDK untuk pengembang
+
+Tetap gunakan OpenAI SDK yang sudah Anda pakai dan arahkan ke Flatkey. Kode permintaan Anda tidak berubah — hanya URL dasarnya yang berubah.
+
+<Frame>
+  ![Panel SDK untuk pengembang, dengan pengaturan SDK](/images/quickstart/modal-sdk.png)
+</Frame>
+
+Ide yang sama seperti di atas: pilih kunci dan model, lalu salin pengaturan untuk bahasa pemrograman Anda.
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+```
 
 <CardGroup cols={2}>
-  <Card title="Tulis kode" icon="code" href="/id/guides/openai-sdk">
-    Gunakan SDK OpenAI atau Anthropic, atau panggil REST API secara langsung.
+  <Card title="OpenAI SDK" icon="code" href="/id/guides/openai-sdk">
+    Pengaturan Python dan Node.js, streaming, dan pemanggilan tool.
   </Card>
-  <Card title="Buat gambar dan video" icon="image" href="/id/guides/image-generation">
-    Buat gambar dengan `gpt-image-2`, atau [buat video](/id/guides/video-generation) dengan Seedance dan `MiniMax-H3`.
-  </Card>
-  <Card title="Sambungkan ke alat AI" icon="terminal" href="/id/guides/claude-code">
-    Arahkan Claude Code, Codex CLI, atau Codex Desktop ke Flatkey.
-  </Card>
-  <Card title="Panggil fungsi Anda sendiri" icon="wrench" href="/id/guides/text-generation#panggil-fungsi-anda-sendiri">
-    Tambahkan pemanggilan alat dan keluaran terstruktur ke permintaan.
+  <Card title="Anthropic SDK" icon="code" href="/id/guides/anthropic-sdk">
+    Arahkan permintaan Claude melalui Flatkey dengan cara yang sama.
   </Card>
 </CardGroup>
 
-## Sebelum memulai
+## Flatkey CLI
 
-Anda memerlukan:
+Hasilkan gambar dan video dari terminal Anda, atau biarkan asisten AI menjalankan CLI untuk Anda.
 
-- Sebuah [akun Flatkey](https://console.flatkey.ai/sign-up)
-- cURL, Python 3.10+, Node.js 22+, atau PowerShell
-- Kredit prabayar untuk permintaan model
+<Frame>
+  ![Panel Flatkey CLI, menampilkan instalasi, masuk, dan prompt pertama](/images/quickstart/modal-cli.png)
+</Frame>
 
 <Steps>
-  <Step title="Siapkan akun dan kunci API Anda">
-    Masuk ke [Konsol Flatkey](https://console.flatkey.ai). Buka **Dompet** dan pilih paket prabayar yang sesuai dengan kebutuhan Anda.
-
-    ![Pilih paket prabayar di Dompet Flatkey](/images/quickstart/flatkey-top-up.png)
-
-    Selanjutnya, buka **Kunci API** dan pilih **Buat Kunci API**.
-
-    ![Buka Kunci API dan pilih Buat Kunci API](/images/quickstart/flatkey-api-keys.png)
-
-    Beri nama yang jelas pada kunci tersebut. Anda juga dapat menetapkan batas kredit dan waktu kedaluwarsa sebelum memilih **Simpan perubahan**.
-
-    ![Konfigurasikan nama, batas kredit, dan kedaluwarsa untuk kunci API Flatkey](/images/quickstart/flatkey-create-api-key.png)
-
-    Salin rahasia yang dihasilkan dan simpan dengan aman. Kunci API Flatkey dimulai dengan `sk-fk-`.
-
-    <Warning>
-      Jangan pernah menyimpan kunci API di kontrol sumber atau mengeksposnya dalam kode sisi browser. Gunakan variabel lingkungan atau manajer rahasia.
-    </Warning>
+  <Step title="Instal">
+    ```bash
+    npm i -g @flatkey-ai/cli
+    ```
   </Step>
-
-  <Step title="Kirim permintaan pertama Anda">
-    Setel kunci API di shell Anda saat ini:
-
-    <CodeGroup>
-    ```bash macOS and Linux
-    export FLATKEY_API_KEY="sk-fk-..."
+  <Step title="Masuk">
+    ```bash
+    flatkey login
     ```
-    ```powershell Windows PowerShell
-    $env:FLATKEY_API_KEY="sk-fk-..."
-    ```
-    </CodeGroup>
-
-    Untuk Python, instal SDK OpenAI dengan `pip install openai`. Untuk TypeScript, jalankan `npm install openai`. cURL dan PowerShell tidak memerlukan SDK.
-
-    Contoh-contoh berikut memanggil model yang sama melalui endpoint Flatkey yang sama:
-
-    <CodeGroup>
-    ```bash cURL
-    curl https://router.flatkey.ai/v1/chat/completions \
-      -H "Authorization: Bearer $FLATKEY_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "model": "gpt-4o-mini",
-        "messages": [
-          {"role": "user", "content": "Hello! What can you do?"}
-        ]
-      }'
-    ```
-    ```python Python
-    import os
-    from openai import OpenAI
-
-    client = OpenAI(
-        api_key=os.environ["FLATKEY_API_KEY"],
-        base_url="https://router.flatkey.ai/v1",
-    )
-
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "user", "content": "Hello! What can you do?"}
-        ],
-    )
-
-    print(response.choices[0].message.content)
-    ```
-    ```typescript TypeScript
-    import OpenAI from "openai";
-
-    const client = new OpenAI({
-      apiKey: process.env.FLATKEY_API_KEY,
-      baseURL: "https://router.flatkey.ai/v1",
-    });
-
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "user", content: "Hello! What can you do?" },
-      ],
-    });
-
-    console.log(response.choices[0].message.content);
-    ```
-    ```powershell PowerShell
-    $headers = @{
-      Authorization = "Bearer $env:FLATKEY_API_KEY"
-      "Content-Type" = "application/json"
-    }
-
-    $body = @{
-      model = "gpt-4o-mini"
-      messages = @(
-        @{ role = "user"; content = "Hello! What can you do?" }
-      )
-    } | ConvertTo-Json -Depth 4
-
-    $response = Invoke-RestMethod `
-      -Uri "https://router.flatkey.ai/v1/chat/completions" `
-      -Method Post `
-      -Headers $headers `
-      -Body $body
-
-    $response.choices[0].message.content
-    ```
-    </CodeGroup>
-
-    Setelah permintaan selesai, buka **Log Penggunaan** di Konsol Flatkey. Masukkan `gpt-4o-mini` di **Nama Model** dan pilih **Cari**. Tangkapan layar menunjukkan tempat menerapkan filter; permintaan Anda yang telah selesai seharusnya muncul di tabel dengan jumlah token, latensi, dan biaya.
-
-    ![Gunakan filter Nama Model di Log Penggunaan Flatkey](/images/quickstart/flatkey-usage-logs.png)
-
-    Jika tabel masih menampilkan **Tidak Ada Log Ditemukan**, tunggu beberapa detik dan cari lagi. Jika tetap kosong, konfirmasikan kunci API dan URL Dasar yang digunakan oleh permintaan.
   </Step>
+  <Step title="Mulai membuat">
+    Minta asisten AI Anda untuk membuat apa yang Anda inginkan, dan biarkan CLI-nya berjalan:
 
-  <Step title="Terus membangun">
-    Hubungkan Flatkey ke alat pengodean yang Anda gunakan:
-
-    <CardGroup cols={3}>
-      <Card title="Claude Code" icon="terminal" href="/id/guides/claude-code">
-        Konfigurasikan Claude Code secara manual atau dengan CC Switch.
-      </Card>
-      <Card title="Codex CLI" icon="code" href="/id/guides/codex-cli">
-        Arahkan permintaan Codex CLI melalui Flatkey.
-      </Card>
-      <Card title="Codex Desktop" icon="desktop" href="/id/guides/codex-desktop">
-        Konfigurasikan aplikasi desktop Codex secara manual atau dengan CC Switch.
-      </Card>
-    </CardGroup>
+    ```text
+    Use Flatkey CLI to generate a "beautiful sunrise" picture.
+    ```
   </Step>
 </Steps>
 
-## Baca responsnya
+<Card title="Flatkey CLI dengan Agen AI" icon="terminal" href="/id/guides/flatkey-cli">
+  Perintah, output JSON untuk agen, dan pemulihan error.
+</Card>
 
-Untuk respons Chat Completions, kolom yang paling sering Anda gunakan adalah:
+## Codex & Claude Code
 
-- `choices[0].message.content` — teks yang dihasilkan
-- `model` — model yang menangani permintaan
-- `usage` — jumlah token prompt, penyelesaian, dan total
+Hubungkan agen coding Anda sekali, lalu gunakan Flatkey dari proyek-proyek yang sudah Anda buka.
 
-Lihat [referensi Chat Completions](/id/api-reference/chat-completions) untuk skema lengkapnya.
+<Frame>
+  ![Panel Codex dan Claude Code, dengan perintah instalasi](/images/quickstart/modal-agents.png)
+</Frame>
 
-## Streaming respons
+Console memberi Anda satu perintah instalasi untuk **macOS**, **Linux**, atau **Windows**. Perintah ini akan menginstal agen jika Anda belum memilikinya, meminta kunci Anda, dan menuliskan konfigurasinya untuk Anda.
 
-Setel `stream` ke `true` jika Anda menginginkan token saat dihasilkan.
+<Warning>
+  Installer bersifat interaktif. Ia akan menanyakan apakah Anda ingin menggunakan Claude Code atau Codex CLI, dan memerlukan Node.js yang sudah terinstal.
+</Warning>
 
-Contoh Python dan TypeScript menggunakan kembali `client` yang Anda buat di **Kirim permintaan pertama Anda**.
+<CardGroup cols={3}>
+  <Card title="Claude Code" icon="terminal" href="/id/guides/claude-code">
+    Pengaturan manual atau CC Switch.
+  </Card>
+  <Card title="Codex CLI" icon="code" href="/id/guides/codex-cli">
+    Arahkan Codex CLI melalui Flatkey.
+  </Card>
+  <Card title="Codex Desktop" icon="desktop" href="/id/guides/codex-desktop">
+    Konfigurasi aplikasi desktop.
+  </Card>
+</CardGroup>
 
-<CodeGroup>
-```bash cURL
-curl --no-buffer https://router.flatkey.ai/v1/chat/completions \
-  -H "Authorization: Bearer $FLATKEY_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gpt-4o-mini",
-    "messages": [
-      {"role": "user", "content": "Write a two-line welcome message."}
-    ],
-    "stream": true
-  }'
-```
-```python Python
-stream = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[
-        {"role": "user", "content": "Write a two-line welcome message."}
-    ],
-    stream=True,
-)
+## Pastikan berhasil
 
-for chunk in stream:
-    content = chunk.choices[0].delta.content
-    if content:
-        print(content, end="", flush=True)
-```
-```typescript TypeScript
-const stream = await client.chat.completions.create({
-  model: "gpt-4o-mini",
-  messages: [
-    { role: "user", content: "Write a two-line welcome message." },
-  ],
-  stream: true,
-});
+Apa pun opsi yang Anda pilih, buka **Usage Logs** di [Console](https://console.flatkey.ai) setelah permintaan pertama Anda. Anda akan melihatnya terdaftar dengan model, jumlah token, latensi, dan biaya.
 
-for await (const chunk of stream) {
-  process.stdout.write(chunk.choices[0]?.delta?.content ?? "");
-}
-```
-</CodeGroup>
+![Gunakan filter Model Name di Flatkey Usage Logs](/images/quickstart/flatkey-usage-logs.png)
 
-## Menangani kesalahan umum
-
-| Status HTTP | Arti umumnya | Yang harus dilakukan |
-|---|---|---|
-| `401` | Kunci API hilang, tidak valid, atau dicabut | Periksa header `Authorization: Bearer` dan buat kunci baru jika diperlukan |
-| `401 insufficient_balance` | Saldo prabayar kosong | Tambahkan kredit dari **Dompet** |
-| `503 model_not_found` | ID model salah eja atau tidak tersedia | Periksa [Direktori Model](https://flatkey.ai/models) untuk ID yang tepat. Mencoba ulang tidak akan membantu |
-| `429` | Permintaan melebihi batas kecepatan | Coba ulang dengan backoff eksponensial dan jitter |
-| `500` atau `503` | Penyedia atau rute sedang tidak tersedia sementara | Baca `error.code` di isi respons terlebih dahulu. Coba ulang dengan backoff dan periksa [Kesehatan Model](https://flatkey.ai/status) |
-
-<Note>
-  `503` bisa berarti gangguan sementara atau ID model yang tidak dikenal. Baca `error.code` di isi respons sebelum Anda mencoba ulang.
-</Note>
-
-Lihat [Kesalahan API](/id/api-reference/errors) untuk format respons dan detail pemecahan masalah.
+Jika tidak ada yang muncul, tunggu beberapa detik dan cari lagi, lalu pastikan kunci API dan URL dasar yang sebenarnya digunakan oleh permintaan tersebut.
 
 ## Langkah selanjutnya
 
 <CardGroup cols={2}>
-  <Card title="Autentikasi" icon="key" href="/id/api-reference/authentication">
-    Pelajari cara kerja kunci API Flatkey dan header otorisasi.
-  </Card>
   <Card title="Direktori Model" icon="list" href="https://flatkey.ai/models">
-    Temukan ID model yang didukung dan harga saat ini.
+    Semua model yang didukung dengan harga dan status langsung.
   </Card>
-  <Card title="SDK OpenAI" icon="code" href="/id/guides/openai-sdk">
-    Gunakan Flatkey dengan SDK Python dan TypeScript OpenAI.
+  <Card title="Error API" icon="triangle-exclamation" href="/id/api-reference/errors">
+    Kode status, format respons, dan cara mengatasinya.
   </Card>
-  <Card title="Log Penggunaan" icon="chart-bar" href="/id/dashboard/usage">
-    Pantau permintaan, penggunaan token, latensi, dan biaya.
+  <Card title="Generasi Teks" icon="message" href="/id/guides/text-generation">
+    Streaming, pemanggilan tool, dan output terstruktur.
   </Card>
-  <Card title="Penagihan" icon="wallet" href="https://flatkey.ai/pricing">
-    Pahami kredit prabayar dan biaya penggunaan.
+  <Card title="Generasi Video" icon="video" href="/id/guides/video-generation">
+    Kirim tugas, pantau statusnya, dan unduh MP4.
   </Card>
 </CardGroup>

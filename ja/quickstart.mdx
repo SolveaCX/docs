@@ -1,263 +1,154 @@
 ---
-title: "クイックスタート: 初めてのFlatkey API呼び出し"
+title: "クイックスタート: Flatkey の使い方を選ぶ"
 sidebarTitle: "クイックスタート"
-description: "Flatkey APIキーを作成し、OpenAI互換のリクエストを送信して、約5分以内にUsage Logsで確認する。"
+description: "Flatkey を使う4つの方法 — REST API、OpenAI SDK、Flatkey CLI、またはあなたのコーディングエージェント。すべての背後にあるのは、1つのキーと1つのモデルカタログです。"
 ---
 
-初めてのFlatkeyリクエストを約5分で行います。APIキーが1つと、OpenAI互換のベースURL `https://router.flatkey.ai/v1` が必要です。
+Flatkey は1つのキーと、それを使う4つの方法を提供します。この4つはすべて同じアカウント、同じ残高、同じモデルカタログを共有しています——つまり問題は、どれがあなたの作業スタイルに合うかだけです。
+
+<Frame>
+  ![Flatkey Console に表示された、Flatkey を使う4つの方法](/images/quickstart/console-choose-how.png)
+</Frame>
 
 <Tip>
-  すでにOpenAI SDKを使用していますか？リクエストコードはそのままに、ベースURLを `https://router.flatkey.ai/v1` に変更するだけです。
+  一度きりの選択にする必要はありません。今取り組んでいることに最も近いものから始めて、同じキーに対して後から他の方法を追加してください。
 </Tip>
-
-## 利用目的を選ぶ
-
-まずキーを1つ取得し、リクエストを1件送信します。その後は、構築したいものに応じて進んでください。
-
-<CardGroup cols={2}>
-  <Card title="コードを書く" icon="code" href="/ja/guides/openai-sdk">
-    OpenAIまたはAnthropic SDKを使用するか、REST APIを直接呼び出す。
-  </Card>
-  <Card title="画像・動画を生成する" icon="image" href="/ja/guides/image-generation">
-    `gpt-image-2` で画像を作成するか、SeedanceおよびMiniMax H3で[動画を生成する](/ja/guides/video-generation)。
-  </Card>
-  <Card title="AIツールに接続する" icon="terminal" href="/ja/guides/claude-code">
-    Claude Code、Codex CLI、またはCodex DesktopをFlatkeyに向ける。
-  </Card>
-  <Card title="独自の関数を呼び出す" icon="wrench" href="/ja/guides/text-generation#独自の関数を呼び出す">
-    リクエストにツール呼び出しと構造化出力を追加する。
-  </Card>
-</CardGroup>
 
 ## 始める前に
 
-必要なもの:
+[console.flatkey.ai/keys](https://console.flatkey.ai/keys) でキーを作成してください。Flatkey のキーは `sk-` で始まります。以下のすべての選択肢はこの1つのキーを使うので、環境変数に保存し、ソースコード管理には含めないようにしてください。
 
-- [Flatkeyアカウント](https://console.flatkey.ai/sign-up)
-- cURL、Python 3.10+、Node.js 22+、またはPowerShell
-- モデルリクエスト用のプリペイドクレジット
+Console の各パネルでは、新しいキーを作成する代わりに既存のキーを選ぶこともでき、表示されるスニペットにそのまま挿入されます。
+
+## 開発者向け API
+
+OpenAI 互換のリクエストで、どのモデルもプレーンな HTTP 経由で呼び出せます。SDK も依存関係も不要です——HTTP クライアントさえあれば準備完了です。
+
+<Frame>
+  ![すぐに実行できるリクエストを備えた、開発者向け API パネル](/images/quickstart/modal-api.png)
+</Frame>
+
+Console がリクエストを構築してくれます。キーとモデルを選び、**cURL**、**Node.js**、**Python** のいずれかでスニペットをコピーするだけです。
+
+```bash
+curl https://router.flatkey.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $FLATKEY_API_KEY" \
+  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Say hello in one sentence."}]}'
+```
+
+<Card title="API アクセス" icon="code" href="/ja/guides/api-access">
+  ベース URL、認証、利用可能なエンドポイント、エラー処理について。
+</Card>
+
+## 開発者向け SDK
+
+すでに使っている OpenAI SDK をそのまま使い、Flatkey に向けるだけです。リクエストのコードは変わりません——変わるのはベース URL だけです。
+
+<Frame>
+  ![SDK セットアップを示す、開発者向け SDK パネル](/images/quickstart/modal-sdk.png)
+</Frame>
+
+上記と同じ考え方です。キーとモデルを選び、お使いの言語向けのセットアップをコピーしてください。
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["FLATKEY_API_KEY"],
+    base_url="https://router.flatkey.ai/v1",
+)
+```
+
+<CardGroup cols={2}>
+  <Card title="OpenAI SDK" icon="code" href="/ja/guides/openai-sdk">
+    Python と Node.js のセットアップ、ストリーミング、ツール呼び出し。
+  </Card>
+  <Card title="Anthropic SDK" icon="code" href="/ja/guides/anthropic-sdk">
+    同じ方法で Claude へのリクエストを Flatkey 経由にルーティング。
+  </Card>
+</CardGroup>
+
+## Flatkey CLI
+
+ターミナルから画像や動画を生成する、あるいは AI アシスタントに CLI を操作させます。
+
+<Frame>
+  ![インストール、サインイン、最初のプロンプトを示す、Flatkey CLI パネル](/images/quickstart/modal-cli.png)
+</Frame>
 
 <Steps>
-  <Step title="アカウントとAPIキーを設定する">
-    [Flatkey Console](https://console.flatkey.ai) にサインインします。**Wallet** を開き、ワークロードに合ったプリペイドパッケージを選択します。
-
-    ![FlatkeのWalletでプリペイドパッケージを選択する](/images/quickstart/flatkey-top-up.png)
-
-    次に、**API Keys** を開き、**Create API Key** を選択します。
-
-    ![API Keysを開き、Create API Keyを選択する](/images/quickstart/flatkey-api-keys.png)
-
-    わかりやすい名前を付けます。**Save changes** を選択する前に、クレジット上限と有効期限を設定することもできます。
-
-    ![Flatkey APIキーの名前、クレジット上限、有効期限を設定する](/images/quickstart/flatkey-create-api-key.png)
-
-    生成されたシークレットをコピーし、安全に保管してください。Flatkey APIキーは `sk-fk-` で始まります。
-
-    <Warning>
-      APIキーをソース管理にコミットしたり、ブラウザ側のコードに露出させたりしないでください。環境変数またはシークレットマネージャーを使用してください。
-    </Warning>
+  <Step title="インストール">
+    ```bash
+    npm i -g @flatkey-ai/cli
+    ```
   </Step>
-
-  <Step title="最初のリクエストを送信する">
-    現在のシェルにAPIキーを設定します:
-
-    <CodeGroup>
-    ```bash macOS and Linux
-    export FLATKEY_API_KEY="sk-fk-..."
+  <Step title="サインイン">
+    ```bash
+    flatkey login
     ```
-    ```powershell Windows PowerShell
-    $env:FLATKEY_API_KEY="sk-fk-..."
-    ```
-    </CodeGroup>
-
-    Pythonの場合は、`pip install openai` でOpenAI SDKをインストールします。TypeScriptの場合は、`npm install openai` を実行します。cURLとPowerShellはSDK不要です。
-
-    以下の例はすべて、同じFlatkeyエンドポイントを通じて同じモデルを呼び出します:
-
-    <CodeGroup>
-    ```bash cURL
-    curl https://router.flatkey.ai/v1/chat/completions \
-      -H "Authorization: Bearer $FLATKEY_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "model": "gpt-4o-mini",
-        "messages": [
-          {"role": "user", "content": "Hello! What can you do?"}
-        ]
-      }'
-    ```
-    ```python Python
-    import os
-    from openai import OpenAI
-
-    client = OpenAI(
-        api_key=os.environ["FLATKEY_API_KEY"],
-        base_url="https://router.flatkey.ai/v1",
-    )
-
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "user", "content": "Hello! What can you do?"}
-        ],
-    )
-
-    print(response.choices[0].message.content)
-    ```
-    ```typescript TypeScript
-    import OpenAI from "openai";
-
-    const client = new OpenAI({
-      apiKey: process.env.FLATKEY_API_KEY,
-      baseURL: "https://router.flatkey.ai/v1",
-    });
-
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "user", content: "Hello! What can you do?" },
-      ],
-    });
-
-    console.log(response.choices[0].message.content);
-    ```
-    ```powershell PowerShell
-    $headers = @{
-      Authorization = "Bearer $env:FLATKEY_API_KEY"
-      "Content-Type" = "application/json"
-    }
-
-    $body = @{
-      model = "gpt-4o-mini"
-      messages = @(
-        @{ role = "user"; content = "Hello! What can you do?" }
-      )
-    } | ConvertTo-Json -Depth 4
-
-    $response = Invoke-RestMethod `
-      -Uri "https://router.flatkey.ai/v1/chat/completions" `
-      -Method Post `
-      -Headers $headers `
-      -Body $body
-
-    $response.choices[0].message.content
-    ```
-    </CodeGroup>
-
-    リクエストが完了したら、Flatkey Consoleで **Usage Logs** を開きます。**Model Name** に `gpt-4o-mini` を入力し、**Search** を選択します。スクリーンショットはフィルターを適用する場所を示しています。完了したリクエストがトークン数、レイテンシ、コストとともにテーブルに表示されるはずです。
-
-    ![Flatkey Usage LogsでModel Nameフィルターを使用する](/images/quickstart/flatkey-usage-logs.png)
-
-    テーブルに **No Logs Found** と表示された場合は、数秒待ってから再度検索してください。それでも空のままであれば、リクエストで使用されたAPIキーとBase URLを確認してください。
   </Step>
+  <Step title="作成を始める">
+    AI アシスタントに欲しいものを伝えて、CLI を実行させましょう:
 
-  <Step title="開発を続ける">
-    使用しているコーディングツールにFlatkeyを接続します:
-
-    <CardGroup cols={3}>
-      <Card title="Claude Code" icon="terminal" href="/ja/guides/claude-code">
-        Claude Codeを手動またはCC Switchで設定する。
-      </Card>
-      <Card title="Codex CLI" icon="code" href="/ja/guides/codex-cli">
-        Codex CLIのリクエストをFlatkey経由でルーティングする。
-      </Card>
-      <Card title="Codex Desktop" icon="desktop" href="/ja/guides/codex-desktop">
-        Codex デスクトップアプリを手動またはCC Switchで設定する。
-      </Card>
-    </CardGroup>
+    ```text
+    Use Flatkey CLI to generate a "beautiful sunrise" picture.
+    ```
   </Step>
 </Steps>
 
-## レスポンスを読む
+<Card title="AI エージェントと Flatkey CLI" icon="terminal" href="/ja/guides/flatkey-cli">
+  コマンド、エージェント向けの JSON 出力、エラー復旧について。
+</Card>
 
-Chat Completionsレスポンスで最もよく使うフィールドは次のとおりです:
+## Codex & Claude Code
 
-- `choices[0].message.content` — 生成されたテキスト
-- `model` — リクエストを処理したモデル
-- `usage` — プロンプト、補完、および合計トークン数
+コーディングエージェントを一度接続すれば、すでに開いているプロジェクトから Flatkey を利用できます。
 
-完全なスキーマは [Chat Completionsリファレンス](/ja/api-reference/chat-completions) を参照してください。
+<Frame>
+  ![インストールコマンドを示す、Codex と Claude Code のパネル](/images/quickstart/modal-agents.png)
+</Frame>
 
-## レスポンスをストリーミングする
+Console は **macOS**、**Linux**、**Windows** 向けに単一のインストールコマンドを提供します。エージェントが未インストールならインストールし、キーの入力を求め、設定を書き込んでくれます。
 
-トークンが生成されるたびに受け取りたい場合は、`stream` を `true` に設定します。
+<Warning>
+  インストーラーは対話形式です。Claude Code か Codex CLI かを尋ねられ、事前に Node.js がインストールされている必要があります。
+</Warning>
 
-PythonとTypeScriptの例は、**最初のリクエストを送信する** で作成した `client` を再利用します。
+<CardGroup cols={3}>
+  <Card title="Claude Code" icon="terminal" href="/ja/guides/claude-code">
+    手動セットアップ、または CC Switch。
+  </Card>
+  <Card title="Codex CLI" icon="code" href="/ja/guides/codex-cli">
+    Codex CLI を Flatkey 経由でルーティング。
+  </Card>
+  <Card title="Codex Desktop" icon="desktop" href="/ja/guides/codex-desktop">
+    デスクトップアプリの設定。
+  </Card>
+</CardGroup>
 
-<CodeGroup>
-```bash cURL
-curl --no-buffer https://router.flatkey.ai/v1/chat/completions \
-  -H "Authorization: Bearer $FLATKEY_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gpt-4o-mini",
-    "messages": [
-      {"role": "user", "content": "Write a two-line welcome message."}
-    ],
-    "stream": true
-  }'
-```
-```python Python
-stream = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[
-        {"role": "user", "content": "Write a two-line welcome message."}
-    ],
-    stream=True,
-)
+## 動作確認をする
 
-for chunk in stream:
-    content = chunk.choices[0].delta.content
-    if content:
-        print(content, end="", flush=True)
-```
-```typescript TypeScript
-const stream = await client.chat.completions.create({
-  model: "gpt-4o-mini",
-  messages: [
-    { role: "user", content: "Write a two-line welcome message." },
-  ],
-  stream: true,
-});
+どの方法を選んでも、最初のリクエストの後に [Console](https://console.flatkey.ai) の **Usage Logs** を開いてください。モデル、トークン数、レイテンシー、コストとともにリクエストが記録されているはずです。
 
-for await (const chunk of stream) {
-  process.stdout.write(chunk.choices[0]?.delta?.content ?? "");
-}
-```
-</CodeGroup>
+![Flatkey Usage Logs でモデル名フィルターを使う](/images/quickstart/flatkey-usage-logs.png)
 
-## 一般的なエラーへの対処
-
-| HTTPステータス | 一般的な意味 | 対処方法 |
-|---|---|---|
-| `401` | APIキーが見つからない、無効、または失効している | `Authorization: Bearer` ヘッダーを確認し、必要に応じて新しいキーを作成する |
-| `401 insufficient_balance` | プリペイド残高が不足している | **Wallet** からクレジットを追加する |
-| `503 model_not_found` | モデルIDのスペルが間違っているか、利用できない | 正確なIDは [Model Directory](https://flatkey.ai/models) で確認する。再試行しても解決しない |
-| `429` | リクエストがレート制限を超えた | 指数バックオフとジッターを使用して再試行する |
-| `500` または `503` | プロバイダーまたはルートが一時的に利用できない | まずレスポンスボディの `error.code` を確認する。バックオフして再試行し、[Model Health](https://flatkey.ai/status) を確認する |
-
-<Note>
-  `503` は一時的な障害またはモデルIDが不明であることを意味する場合があります。再試行する前にレスポンスボディの `error.code` を確認してください。
-</Note>
-
-レスポンス形式とトラブルシューティングの詳細は [APIエラー](/ja/api-reference/errors) を参照してください。
+何も表示されない場合は、数秒待ってから再度検索し、リクエストが実際に使用した API キーとベース URL を確認してください。
 
 ## 次のステップ
 
 <CardGroup cols={2}>
-  <Card title="認証" icon="key" href="/ja/api-reference/authentication">
-    Flatkey APIキーと認証ヘッダーの仕組みを学ぶ。
+  <Card title="モデルディレクトリ" icon="list" href="https://flatkey.ai/models">
+    リアルタイムの料金とステータスを備えた、対応するすべてのモデル。
   </Card>
-  <Card title="Model Directory" icon="list" href="https://flatkey.ai/models">
-    対応しているモデルIDと現在の料金を確認する。
+  <Card title="API エラー" icon="triangle-exclamation" href="/ja/api-reference/errors">
+    ステータスコード、レスポンス形式、対処方法について。
   </Card>
-  <Card title="OpenAI SDK" icon="code" href="/ja/guides/openai-sdk">
-    OpenAIのPythonおよびTypeScript SDKでFlatkeyを使用する。
+  <Card title="テキスト生成" icon="message" href="/ja/guides/text-generation">
+    ストリーミング、ツール呼び出し、構造化出力。
   </Card>
-  <Card title="Usage Logs" icon="chart-bar" href="/ja/dashboard/usage">
-    リクエスト、トークン使用量、レイテンシ、コストを監視する。
-  </Card>
-  <Card title="請求" icon="wallet" href="https://flatkey.ai/pricing">
-    プリペイドクレジットと使用料金について理解する。
+  <Card title="動画生成" icon="video" href="/ja/guides/video-generation">
+    タスクを送信し、ポーリングして、MP4 をダウンロード。
   </Card>
 </CardGroup>
