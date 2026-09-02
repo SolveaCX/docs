@@ -358,9 +358,13 @@ curl.exe -sS https://router.flatkey.ai/v1/real-persons `
 ```
 </CodeGroup>
 
-The response includes a profile `id`, a `status`, and a one-time `verification_url`. Send `verification_url` to the real person and ask them to open it themselves. Do not publish this link.
+The response includes a profile `id`, a `status`, and a one-time `verification_url`. The `id` is the stable Flatkey profile ID, such as `rph_...`. Save it immediately and reuse it for status checks, new verification sessions, and every asset that belongs to this person. Create one profile for each logical person.
 
-If the link expires or the person needs another link, create a new verification session:
+Flatkey binds the upstream real-person asset group after verification and manages that group internally. You do not need to create, store, or send the upstream group ID. If your application already has its own CRM or person ID, store a mapping from that ID to the returned Flatkey `rph_...` ID. This API does not require an `external_person_id` field.
+
+Send `verification_url` to the real person and ask them to open it themselves. Do not publish this link.
+
+If the link expires or the person needs another link, create a new verification session under the same profile ID. Do not create another profile for the same person:
 
 <CodeGroup>
 ```bash Bash
@@ -392,7 +396,24 @@ curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef `
 
 Wait until the profile status is `active` before creating assets. If it is `pending_verification` or `verifying`, wait and poll again. If it is `failed` or `expired`, create a new verification session.
 
-#### 3. Create a real-person asset from a public URL
+#### 3. Recover or manage multiple profiles
+
+Keep the returned `rph_...` ID in your own user record. If you need to recover profiles or manage many people, list them with cursor pagination:
+
+<CodeGroup>
+```bash Bash
+curl -sS "https://router.flatkey.ai/v1/real-persons?limit=20" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS "https://router.flatkey.ai/v1/real-persons?limit=20" `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+Use each returned profile's `id` for later requests. If the response contains a non-empty `next_after`, request the next page with `?limit=20&after=NEXT_AFTER`. Listing profiles is a recovery and administration path; storing the `rph_...` ID when you create the profile is the primary lookup path.
+
+#### 4. Create a real-person asset from a public URL
 
 <CodeGroup>
 ```bash Bash
@@ -419,9 +440,9 @@ curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/asse
 ```
 </CodeGroup>
 
-#### 4. Upload a local file
+#### 5. Upload a local file
 
-Local upload uses `multipart/form-data` and is available only for real-person assets. Use one `file` field and let curl set the multipart boundary.
+Local upload uses `multipart/form-data` and is available only for real-person assets. It also requires upload storage on the account or channel that serves the profile. Use one `file` field and let curl set the multipart boundary. If local upload returns `asset_channel_unavailable`, host the file at a public HTTPS URL and use the URL flow in the previous step.
 
 <CodeGroup>
 ```bash Bash
@@ -444,7 +465,7 @@ curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/asse
 
 The create response includes an asset ID or `asset_uri`, for example `asset://ast_1234567890abcdef1234567890abcdef`.
 
-#### 5. Poll readiness and call Seedance
+#### 6. Poll readiness and call Seedance
 
 Real-person asset responses do not include `available_models`. List the assets under the profile until the asset `status` is `Active`:
 

@@ -349,9 +349,13 @@ curl.exe -sS https://router.flatkey.ai/v1/real-persons `
 ```
 </CodeGroup>
 
-响应会包含真人档案 `id`、`status` 和一次性的 `verification_url`。把 `verification_url` 交给本人，让本人打开并完成认证。不要公开这个链接。
+响应会包含真人档案 `id`、`status` 和一次性的 `verification_url`。这个 `id` 是稳定的 Flatkey 真人档案 ID，例如 `rph_...`。拿到后立即保存，并在查询状态、重新创建认证会话和管理这个人的全部素材时复用。同一个自然人只创建一个真人档案。
 
-如果链接过期，或本人需要新的链接，创建一个新的认证会话：
+认证完成后，Flatkey 会在内部绑定并管理上游真人素材组。你的客户端不需要创建、保存或传递上游 GroupId。如果你的业务已经有 CRM 用户 ID 或人员 ID，请在自己的系统里保存“业务人员 ID → Flatkey `rph_...`”映射。这个接口不要求传 `external_person_id` 字段。
+
+把 `verification_url` 交给本人，让本人打开并完成认证。不要公开这个链接。
+
+如果链接过期，或本人需要新的链接，请在同一个真人档案 ID 下创建新的认证会话。不要为同一个人再建一个真人档案：
 
 <CodeGroup>
 ```bash Bash
@@ -383,7 +387,24 @@ curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef `
 
 等档案状态变成 `active` 后再创建素材。如果还是 `pending_verification` 或 `verifying`，稍后继续查。如果是 `failed` 或 `expired`，重新创建认证会话。
 
-#### 3. 用公网 URL 创建真人素材
+#### 3. 找回或管理多个真人档案
+
+请把返回的 `rph_...` ID 保存到你自己的用户记录中。如果需要找回档案，或同一个客户需要管理多个真人，可以用游标分页列出真人档案：
+
+<CodeGroup>
+```bash Bash
+curl -sS "https://router.flatkey.ai/v1/real-persons?limit=20" \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+```powershell Windows PowerShell
+curl.exe -sS "https://router.flatkey.ai/v1/real-persons?limit=20" `
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY"
+```
+</CodeGroup>
+
+后续请求都使用列表中每个档案返回的 `id`。如果响应里的 `next_after` 非空，用 `?limit=20&after=NEXT_AFTER` 获取下一页。列表接口用于找回和管理；正常流程仍应在创建档案时立即保存 `rph_...` ID。
+
+#### 4. 用公网 URL 创建真人素材
 
 <CodeGroup>
 ```bash Bash
@@ -410,9 +431,9 @@ curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/asse
 ```
 </CodeGroup>
 
-#### 4. 上传本地文件
+#### 5. 上传本地文件
 
-本地上传使用 `multipart/form-data`，只用于真人素材。使用一个 `file` 字段，并让 curl 自动设置 multipart boundary。
+本地上传使用 `multipart/form-data`，只用于真人素材，并且依赖承载该档案的账号或渠道已经配置上传存储。使用一个 `file` 字段，并让 curl 自动设置 multipart boundary。如果本地上传返回 `asset_channel_unavailable`，请把文件放到公网可访问的 HTTPS URL，再使用上一步的 URL 创建方式。
 
 <CodeGroup>
 ```bash Bash
@@ -435,7 +456,7 @@ curl.exe -sS https://router.flatkey.ai/v1/real-persons/rph_1234567890abcdef/asse
 
 创建响应会包含素材 ID 或 `asset_uri`，例如 `asset://ast_1234567890abcdef1234567890abcdef`。
 
-#### 5. 轮询素材状态并调用 Seedance
+#### 6. 轮询素材状态并调用 Seedance
 
 真人素材响应不包含 `available_models`。列出这个真人档案下的素材，直到素材 `status` 变成 `Active`：
 
