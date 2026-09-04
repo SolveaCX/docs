@@ -149,30 +149,34 @@ html[data-current-path^="/zh/api-reference"] #navbar nav[aria-label="Main"] a[hr
   color: #DDD6FE;
 }
 
+/* Console CTA — matched to the homepage nav "Console" button:
+   h-8 (32px), rounded-lg (8px), subtle outline, px-3.5 (14px), text-xs (12px), font-medium. */
 #topbar-cta-button {
-  min-height: 40px;
+  min-height: 32px;
   padding: 0;
-  background: var(--fk-ink);
-  border: 1px solid var(--fk-ink);
-  border-radius: 9px;
-  color: var(--fk-paper);
+  background: transparent;
+  border: 1px solid var(--fk-border-strong);
+  border-radius: 8px;
+  color: var(--fk-ink-2);
   box-shadow: none;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 #topbar-cta-button > a {
-  min-height: 40px;
-  padding-inline: 17px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 14px;
   border-radius: inherit;
   background: transparent;
   color: inherit;
 }
 
 #topbar-cta-button:hover {
-  background: var(--fk-violet);
-  border-color: var(--fk-violet);
-  color: #FFFFFF;
+  background: transparent;
+  border-color: var(--fk-ink-3);
+  color: var(--fk-ink);
   transform: none;
 }
 
