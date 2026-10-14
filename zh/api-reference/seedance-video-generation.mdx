@@ -87,7 +87,7 @@ POST https://router.flatkey.ai/v1/videos
 | 模式 | `content` 写法 |
 |---|---|
 | 首帧 | 一张 `role: "first_frame"` 的图片。 |
-| 首尾帧 | 两张图片，分别为 `role: "first_frame"` 和 `role: "last_frame"`。两张图宽高比不一致时，尾帧会按首帧比例裁剪。 |
+| 首尾帧 | 两张图片，分别为 `role: "first_frame"` 和 `role: "last_frame"`。`last_frame` 必须和 `first_frame` 一起使用，且两者都不能与参考类素材混用。 |
 | 参考 | `reference_image`、`reference_video`、`reference_audio` 任意组合。 |
 
 <Note>
@@ -349,6 +349,7 @@ curl -L "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000
 | `content` 为空 | 请求会被拒绝。请提供非空文本、图片或视频。 |
 | 模型不可用 | 请求的 `model` 未对当前路由开放。 |
 | 余额不足 | 任务不会创建。 |
+| 输入不符合模型限制 | 请求返回 `400` 和 `fail_to_fetch_task`；使用 `asset://` 引用的请求则是任务失败，错误为 `task preparation failed`。请对照上文的分辨率、时长、素材限制和输入模式规则检查。不会扣费。 |
 | 服务暂时不可用 | 请按常规退避策略稍后重试。 |
 
 ## 端到端示例

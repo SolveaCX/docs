@@ -87,7 +87,7 @@ Choose one input mode per task. These modes cannot be mixed:
 | Mode | How to build `content` |
 |---|---|
 | First frame | One image with `role: "first_frame"`. |
-| First and last frames | Two images, one with `role: "first_frame"` and one with `role: "last_frame"`. If their aspect ratios differ, the last frame is cropped to match the first. |
+| First and last frames | Two images, one with `role: "first_frame"` and one with `role: "last_frame"`. `last_frame` always needs a `first_frame`, and neither can be combined with reference items. |
 | Reference | Any combination of `reference_image`, `reference_video`, and `reference_audio` items. |
 
 <Note>
@@ -349,6 +349,7 @@ Request-time errors use Flatkey's standard error envelope:
 | Empty `content` | The request is rejected. Include non-empty text, an image, or a video. |
 | Unavailable model | The requested `model` is not enabled for the route. |
 | Insufficient balance | The task is not created. |
+| Invalid input for the model | The request returns `400` with `fail_to_fetch_task`, or, for requests that use `asset://` references, the task fails with `task preparation failed`. Check resolution, duration, content limits, and input-mode rules above. You are not charged. |
 | Temporary service failure | Retry later using your normal backoff policy. |
 
 ## End-to-end example
