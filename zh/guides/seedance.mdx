@@ -108,6 +108,73 @@ curl.exe -L "$videoUrl" -o output.mp4
 
 任务完成后，用 `metadata.url` 可以直接下载 MP4 文件，不需要鉴权头。请把这个 URL 当作私密信息，不要公开。
 
+## 首尾帧生成
+
+提供开头和结尾两张图，Seedance 会生成两帧之间的运动过程。在 `content` 里加一个 `role: "first_frame"` 的 `image_url` 和一个 `role: "last_frame"` 的 `image_url`，文字提示词描述中间的变化。
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "红色小球从左向右平稳滚过桌面，并逐渐变成蓝色"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/first.png" },
+        "role": "first_frame"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/last.png" },
+        "role": "last_frame"
+      }
+    ],
+    "resolution": "720p",
+    "ratio": "16:9",
+    "duration": 5,
+    "generate_audio": false
+  }'
+```
+```python Python
+import base64
+import requests
+
+def data_uri(path):
+    with open(path, "rb") as f:
+        return "data:image/png;base64," + base64.b64encode(f.read()).decode()
+
+response = requests.post(
+    "https://router.flatkey.ai/v1/videos",
+    headers={"Authorization": "Bearer YOUR_FLATKEY_API_KEY"},
+    json={
+        "model": "seedance-2.0",
+        "content": [
+            {"type": "text", "text": "红色小球从左向右平稳滚过桌面，并逐渐变成蓝色"},
+            {"type": "image_url", "image_url": {"url": data_uri("first.png")}, "role": "first_frame"},
+            {"type": "image_url", "image_url": {"url": data_uri("last.png")}, "role": "last_frame"},
+        ],
+        "resolution": "720p",
+        "ratio": "16:9",
+        "duration": 5,
+        "generate_audio": False,
+    },
+)
+print(response.json()["id"])
+```
+</CodeGroup>
+
+图片可以是公网 HTTPS URL，也可以是 `data:image/...;base64,` 格式的 data URI。图片宽高比尽量与 `ratio` 一致。任务的轮询和下载方式与上文「调用 Seedance」第 2 步相同。
+
+<Note>
+  如果要做多段视频续接，请加上 `"return_last_frame": true`。任务完成后响应里会带 `metadata.last_frame_url`，下载这张图并作为下一个任务的 `first_frame` 即可。
+</Note>
+
 ## 使用素材库
 
 当你想先登记一个参考素材、等待它可用、然后在 Seedance 请求里反复使用时，用素材库。素材库分两类：

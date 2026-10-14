@@ -117,6 +117,73 @@ curl.exe -L "$videoUrl" -o output.mp4
 
 After the task is complete, `metadata.url` downloads the MP4 file without an authorization header. Treat this URL as private and do not publish it.
 
+## Generate from first and last frames
+
+Give Seedance the opening image and the closing image, and it generates the motion between them. Add one `image_url` item with `role: "first_frame"` and one with `role: "last_frame"`. The text prompt describes the transition.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "The red ball rolls smoothly across the table from left to right and turns blue"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/first.png" },
+        "role": "first_frame"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/last.png" },
+        "role": "last_frame"
+      }
+    ],
+    "resolution": "720p",
+    "ratio": "16:9",
+    "duration": 5,
+    "generate_audio": false
+  }'
+```
+```python Python
+import base64
+import requests
+
+def data_uri(path):
+    with open(path, "rb") as f:
+        return "data:image/png;base64," + base64.b64encode(f.read()).decode()
+
+response = requests.post(
+    "https://router.flatkey.ai/v1/videos",
+    headers={"Authorization": "Bearer YOUR_FLATKEY_API_KEY"},
+    json={
+        "model": "seedance-2.0",
+        "content": [
+            {"type": "text", "text": "The red ball rolls smoothly across the table from left to right and turns blue"},
+            {"type": "image_url", "image_url": {"url": data_uri("first.png")}, "role": "first_frame"},
+            {"type": "image_url", "image_url": {"url": data_uri("last.png")}, "role": "last_frame"},
+        ],
+        "resolution": "720p",
+        "ratio": "16:9",
+        "duration": 5,
+        "generate_audio": False,
+    },
+)
+print(response.json()["id"])
+```
+</CodeGroup>
+
+Each image can be a public HTTPS URL or a `data:image/...;base64,` data URI. Use images with the same aspect ratio as `ratio`. Poll and download the result the same way as in step 2 of [Call Seedance](#call-seedance).
+
+<Note>
+  To chain clips, add `"return_last_frame": true`. The completed task then includes `metadata.last_frame_url`; download that image and pass it as the `first_frame` of the next task.
+</Note>
+
 ## Use the asset library
 
 Use the asset library when you want to register a reference once, wait until it is ready, and reuse it in Seedance requests. There are two asset types:
