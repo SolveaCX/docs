@@ -6,7 +6,7 @@ description: "Create Seedance video tasks with text and multimodal inputs, poll 
 
 Use `POST /v1/videos` to create an asynchronous Seedance video-generation task. Poll the task until it completes, then download the video from the returned Flatkey URL.
 
-Supported models include `seedance-2.0` and `seedance-2.0-fast`. Availability depends on your account; use [`GET /v1/models`](/api-reference/models) to retrieve the current model list.
+Supported models are `seedance-2.0`, `seedance-2.0-fast`, `seedance-2.0-mini`, and `seedance-2.5`. Availability depends on your account; use [`GET /v1/models`](/api-reference/models) to retrieve the current model list.
 
 ## Endpoint
 
@@ -30,83 +30,69 @@ POST https://router.flatkey.ai/v1/videos
 ### Body parameters
 
 <ParamField body="model" type="string" required>
-  Seedance model ID. Use `"seedance-2.0"` or `"seedance-2.0-fast"`.
+  Seedance model ID: `"seedance-2.0"`, `"seedance-2.0-fast"`, `"seedance-2.0-mini"`, or `"seedance-2.5"`.
 </ParamField>
 
 <ParamField body="content" type="array" required>
-  Multimodal input items. Include at least one non-empty text item, image URL, or video URL.
+  Multimodal input items. Include at least one non-empty text item, image, video, or audio item. See [`content` items](#content-items).
 </ParamField>
 
 <ParamField body="resolution" type="string">
-  Output resolution: `"480p"`, `"720p"`, or `"1080p"`.
+  Output resolution. Default: `"720p"`.
+
+  | Model | Supported values |
+  |---|---|
+  | `seedance-2.0` | `"480p"`, `"720p"`, `"1080p"`, `"4k"` |
+  | `seedance-2.0-fast`, `seedance-2.0-mini` | `"480p"`, `"720p"` |
+  | `seedance-2.5` | `"480p"`, `"720p"`, `"1080p"` |
 </ParamField>
 
 <ParamField body="ratio" type="string">
-  Output aspect ratio: `"16:9"`, `"4:3"`, `"1:1"`, `"3:4"`, `"9:16"`, `"21:9"`, or `"adaptive"`.
+  Output aspect ratio: `"16:9"`, `"4:3"`, `"1:1"`, `"3:4"`, `"9:16"`, `"21:9"`, or `"adaptive"`. Default: `"adaptive"`. With `"adaptive"`, the model picks the ratio from your input images or videos. For `seedance-2.5`, first-frame and first/last-frame tasks support only `"adaptive"`.
 </ParamField>
 
 <ParamField body="duration" type="integer">
-  Video duration from 4 through 15 seconds. Use `-1` to let the model choose.
+  Video length in seconds. Default: `5`. Seedance 2.0 models accept 4 through 15; `seedance-2.5` accepts 4 through 30.
 </ParamField>
 
-<ParamField body="seed" type="integer">
-  Random seed. Omit it to use a random seed.
-</ParamField>
+<Warning>
+  Always send a positive `duration`. Flatkey bills Seedance per second, so `-1` (let the model choose the length) is rejected with `video_price_not_configured`.
+</Warning>
 
 <ParamField body="watermark" type="boolean">
-  Whether to add a watermark. Default: `false`.
+  Add an "AI generated" watermark to the lower-right corner. Default: `false`.
 </ParamField>
 
 <ParamField body="generate_audio" type="boolean">
-  Whether to generate synchronized audio.
+  Generate a synchronized mono audio track. Default: `true`. Set it to `false` if you only need video; generated audio can occasionally fail copyright checks.
+</ParamField>
+
+<ParamField body="return_last_frame" type="boolean">
+  Accepted and forwarded, but Flatkey does not return the last-frame image yet. To chain clips, extract the last frame from the downloaded MP4.
 </ParamField>
 
 ### `content` items
 
-| `type` | Value field | Supported `role` | Purpose |
+| `type` | Value field | Supported `role` | Limits |
 |---|---|---|---|
-| `text` | `text` | — | Text prompt. Multiple text items are joined in order. |
-| `image_url` | `image_url.url` | `first_frame`, `last_frame`, `reference_image` | Input or reference image. Up to 9 images. |
-| `video_url` | `video_url.url` | `reference_video` | Reference video. Up to 3 videos. |
-| `audio_url` | `audio_url.url` | `reference_audio` | Reference audio. Up to 3 clips. |
+| `text` | `text` | — | Prompt text. Keep it under about 1,000 English words. |
+| `image_url` | `image_url.url` | `first_frame`, `last_frame`, `reference_image` | Up to 9 reference images (`seedance-2.5`: 30). JPEG, PNG, WebP, BMP, TIFF, GIF, HEIC, or HEIF; under 30 MB; 300–6000 px per side; aspect ratio 0.4–2.5. |
+| `video_url` | `video_url.url` | `reference_video` | Up to 3 videos, 2–15 seconds each and 15 seconds total (`seedance-2.5`: 10 videos, 30 seconds). MP4 or MOV; under 200 MB; at least about 409,600 total pixels (for example 854×480). |
+| `audio_url` | `audio_url.url` | `reference_audio` | Up to 3 clips, 2–15 seconds each and 15 seconds total (`seedance-2.5`: 10 clips, 30 seconds). WAV or MP3; under 15 MB. Seedance 2.0 models need at least one image or video alongside audio. |
 
-If an image uses the `first_frame` or `last_frame` role, the API uses first/last-frame mode. Other images are treated as references.
+Each URL can be a public HTTPS URL, a `data:<mime>;base64,` data URI (images and audio only), or an `asset://` reference from the [asset library](/guides/seedance#use-the-asset-library). The whole request body must stay under 64 MB.
 
-### Advanced parameters
+Choose one input mode per task. These modes cannot be mixed:
 
-<ParamField body="input_type" type="string">
-  Explicit input mode: `"reference"` or `"first_last_frame"`. Omit it to infer the mode from `content`.
-</ParamField>
+| Mode | How to build `content` |
+|---|---|
+| First frame | One image with `role: "first_frame"`. |
+| First and last frames | Two images, one with `role: "first_frame"` and one with `role: "last_frame"`. If their aspect ratios differ, the last frame is cropped to match the first. |
+| Reference | Any combination of `reference_image`, `reference_video`, and `reference_audio` items. |
 
-<ParamField body="web_search" type="boolean">
-  Enable web-search augmentation for the task.
-</ParamField>
-
-<ParamField body="super_resolution_config" type="object">
-  Upscale the generated video while retaining the same public task ID.
-
-  <Expandable title="super_resolution_config fields">
-    <ParamField body="resolution" type="string">
-      Target resolution: `"720p"`, `"1080p"`, `"2k"`, or `"4k"`. It must exceed the original resolution and cannot be combined with `resolution_limit`.
-    </ParamField>
-    <ParamField body="resolution_limit" type="integer">
-      Custom short-edge pixel limit from 64 through 2160. It cannot be combined with `resolution`.
-    </ParamField>
-    <ParamField body="scene" type="string">
-      Upscaling scene: `"aigc"`, `"short_series"`, `"ugc"`, or `"old_film"`.
-    </ParamField>
-    <ParamField body="tool_version" type="string">
-      Upscaling mode: `"standard"` (default) or `"professional"`.
-    </ParamField>
-    <ParamField body="fps" type="integer">
-      Output frame rate from 1 through 120. Values above the source frame rate enable frame interpolation.
-    </ParamField>
-  </Expandable>
-</ParamField>
-
-<Warning>
-  `camera_fixed`, `frames`, `callback_url`, and `return_last_frame` are accepted for compatibility but currently have no effect.
-</Warning>
+<Note>
+  Seedance does not accept images or videos that show real human faces directly. Upload them as [real-person assets](/guides/seedance#real-person-assets) and reference them with `asset://`.
+</Note>
 
 ## Example requests
 
@@ -200,11 +186,12 @@ curl https://router.flatkey.ai/v1/videos \
   ],
   "resolution": "720p",
   "ratio": "16:9",
-  "duration": 5
+  "duration": 5,
+  "generate_audio": false
 }
 ```
 
-### Multimodal reference with upscaling
+### Multimodal reference
 
 ```json
 {
@@ -220,13 +207,7 @@ curl https://router.flatkey.ai/v1/videos \
   "resolution": "1080p",
   "ratio": "16:9",
   "duration": 5,
-  "watermark": false,
-  "super_resolution_config": {
-    "resolution": "4k",
-    "scene": "aigc",
-    "tool_version": "professional",
-    "fps": 60
-  }
+  "watermark": false
 }
 ```
 
@@ -316,7 +297,7 @@ Failed tasks return the error details with the task response:
   "status": "failed",
   "error": {
     "message": "The video generation task failed.",
-    "code": "video_generation_failed"
+    "code": ""
   }
 }
 ```

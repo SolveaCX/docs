@@ -6,7 +6,7 @@ description: "通过 Flatkey 使用文本和多模态输入创建 Seedance 视�
 
 使用 `POST /v1/videos` 创建异步 Seedance 视频生成任务。轮询任务直至完成，然后通过返回的 Flatkey 地址下载视频。
 
-支持的模型包括 `seedance-2.0` 和 `seedance-2.0-fast`。模型可用性取决于你的账户，请使用 [`GET /v1/models`](/zh/api-reference/models) 获取当前模型列表。
+支持的模型有 `seedance-2.0`、`seedance-2.0-fast`、`seedance-2.0-mini` 和 `seedance-2.5`。模型可用性取决于你的账户，请使用 [`GET /v1/models`](/zh/api-reference/models) 获取当前模型列表。
 
 ## 端点
 
@@ -30,83 +30,69 @@ POST https://router.flatkey.ai/v1/videos
 ### 请求体参数
 
 <ParamField body="model" type="string" required>
-  Seedance 模型 ID。可使用 `"seedance-2.0"` 或 `"seedance-2.0-fast"`。
+  Seedance 模型 ID：`"seedance-2.0"`、`"seedance-2.0-fast"`、`"seedance-2.0-mini"` 或 `"seedance-2.5"`。
 </ParamField>
 
 <ParamField body="content" type="array" required>
-  多模态输入数组。至少包含一条非空文本、一张图片或一段视频。
+  多模态输入元素。至少包含一条非空文本、图片、视频或音频。见 [`content` 元素](#content-元素)。
 </ParamField>
 
 <ParamField body="resolution" type="string">
-  输出分辨率：`"480p"`、`"720p"` 或 `"1080p"`。
+  输出分辨率，默认 `"720p"`。
+
+  | 模型 | 支持的值 |
+  |---|---|
+  | `seedance-2.0` | `"480p"`、`"720p"`、`"1080p"`、`"4k"` |
+  | `seedance-2.0-fast`、`seedance-2.0-mini` | `"480p"`、`"720p"` |
+  | `seedance-2.5` | `"480p"`、`"720p"`、`"1080p"` |
 </ParamField>
 
 <ParamField body="ratio" type="string">
-  输出画面比例：`"16:9"`、`"4:3"`、`"1:1"`、`"3:4"`、`"9:16"`、`"21:9"` 或 `"adaptive"`。
+  输出宽高比：`"16:9"`、`"4:3"`、`"1:1"`、`"3:4"`、`"9:16"`、`"21:9"` 或 `"adaptive"`，默认 `"adaptive"`。设为 `"adaptive"` 时，模型根据输入的图片或视频自动选择比例。`seedance-2.5` 的首帧和首尾帧任务只支持 `"adaptive"`。
 </ParamField>
 
 <ParamField body="duration" type="integer">
-  视频时长，范围为 4 至 15 秒。传入 `-1` 时由模型决定。
+  视频时长（秒），默认 `5`。Seedance 2.0 系列支持 4 至 15；`seedance-2.5` 支持 4 至 30。
 </ParamField>
 
-<ParamField body="seed" type="integer">
-  随机种子。不传时使用随机种子。
-</ParamField>
+<Warning>
+  请始终传正数 `duration`。Flatkey 对 Seedance 按秒计费，`-1`（由模型自行决定时长）会被拒绝并返回 `video_price_not_configured`。
+</Warning>
 
 <ParamField body="watermark" type="boolean">
-  是否添加水印。默认值：`false`。
+  是否在右下角添加 "AI generated" 水印，默认 `false`。
 </ParamField>
 
 <ParamField body="generate_audio" type="boolean">
-  是否生成同步音频。
+  是否生成同步的单声道音频，默认 `true`。只需要画面时设为 `false`；生成的音频偶尔会因版权检测导致任务失败。
+</ParamField>
+
+<ParamField body="return_last_frame" type="boolean">
+  会被接受并转发，但 Flatkey 暂不返回尾帧图片。如需多段续接，请从下载的 MP4 中自行截取最后一帧。
 </ParamField>
 
 ### `content` 元素
 
-| `type` | 值字段 | 支持的 `role` | 用途 |
+| `type` | 值字段 | 支持的 `role` | 限制 |
 |---|---|---|---|
-| `text` | `text` | — | 文本提示词。多条文本会按顺序拼接。 |
-| `image_url` | `image_url.url` | `first_frame`、`last_frame`、`reference_image` | 输入图或参考图，最多 9 张。 |
-| `video_url` | `video_url.url` | `reference_video` | 参考视频，最多 3 段。 |
-| `audio_url` | `audio_url.url` | `reference_audio` | 参考音频，最多 3 段。 |
+| `text` | `text` | — | 提示词，建议不超过 500 个汉字。 |
+| `image_url` | `image_url.url` | `first_frame`、`last_frame`、`reference_image` | 参考图最多 9 张（`seedance-2.5` 为 30 张）。支持 JPEG、PNG、WebP、BMP、TIFF、GIF、HEIC、HEIF；单张小于 30 MB；每边 300–6000 像素；宽高比 0.4–2.5。 |
+| `video_url` | `video_url.url` | `reference_video` | 最多 3 段，每段 2–15 秒、合计不超过 15 秒（`seedance-2.5` 为 10 段、合计 30 秒）。MP4 或 MOV；小于 200 MB；总像素至少约 409,600（例如 854×480）。 |
+| `audio_url` | `audio_url.url` | `reference_audio` | 最多 3 段，每段 2–15 秒、合计不超过 15 秒（`seedance-2.5` 为 10 段、合计 30 秒）。WAV 或 MP3；小于 15 MB。Seedance 2.0 系列不能只传音频，需同时提供至少一张图片或一段视频。 |
 
-当图片使用 `first_frame` 或 `last_frame` 角色时，API 会采用首尾帧模式；其他图片会作为参考图处理。
+每个 URL 可以是公网 HTTPS 地址、`data:<mime>;base64,` 格式的 data URI（仅图片和音频），或者[素材库](/zh/guides/seedance#使用素材库)中的 `asset://` 引用。整个请求体不得超过 64 MB。
 
-### 进阶参数
+每个任务只能选择一种输入模式，不能混用：
 
-<ParamField body="input_type" type="string">
-  显式指定输入模式：`"reference"` 或 `"first_last_frame"`。不传时根据 `content` 自动推断。
-</ParamField>
+| 模式 | `content` 写法 |
+|---|---|
+| 首帧 | 一张 `role: "first_frame"` 的图片。 |
+| 首尾帧 | 两张图片，分别为 `role: "first_frame"` 和 `role: "last_frame"`。两张图宽高比不一致时，尾帧会按首帧比例裁剪。 |
+| 参考 | `reference_image`、`reference_video`、`reference_audio` 任意组合。 |
 
-<ParamField body="web_search" type="boolean">
-  为任务启用联网搜索增强。
-</ParamField>
-
-<ParamField body="super_resolution_config" type="object">
-  对生成视频进行超分，同时保留同一个公开任务 ID。
-
-  <Expandable title="super_resolution_config 字段">
-    <ParamField body="resolution" type="string">
-      目标分辨率：`"720p"`、`"1080p"`、`"2k"` 或 `"4k"`。目标必须高于原始分辨率，且不能与 `resolution_limit` 同时使用。
-    </ParamField>
-    <ParamField body="resolution_limit" type="integer">
-      自定义短边像素限制，范围为 64 至 2160。不能与 `resolution` 同时使用。
-    </ParamField>
-    <ParamField body="scene" type="string">
-      超分场景：`"aigc"`、`"short_series"`、`"ugc"` 或 `"old_film"`。
-    </ParamField>
-    <ParamField body="tool_version" type="string">
-      超分模式：`"standard"`（默认）或 `"professional"`。
-    </ParamField>
-    <ParamField body="fps" type="integer">
-      输出帧率，范围为 1 至 120。高于源帧率时会启用智能插帧。
-    </ParamField>
-  </Expandable>
-</ParamField>
-
-<Warning>
-  `camera_fixed`、`frames`、`callback_url` 和 `return_last_frame` 为兼容目的而接受，但当前不会生效。
-</Warning>
+<Note>
+  Seedance 不接受直接上传含真人人脸的图片或视频。请先上传为[真人素材](/zh/guides/seedance#真人素材)，再用 `asset://` 引用。
+</Note>
 
 ## 请求示例
 
@@ -200,11 +186,12 @@ curl https://router.flatkey.ai/v1/videos \
   ],
   "resolution": "720p",
   "ratio": "16:9",
-  "duration": 5
+  "duration": 5,
+  "generate_audio": false
 }
 ```
 
-### 多模态参考与画质超分
+### 多模态参考
 
 ```json
 {
@@ -220,13 +207,7 @@ curl https://router.flatkey.ai/v1/videos \
   "resolution": "1080p",
   "ratio": "16:9",
   "duration": 5,
-  "watermark": false,
-  "super_resolution_config": {
-    "resolution": "4k",
-    "scene": "aigc",
-    "tool_version": "professional",
-    "fps": 60
-  }
+  "watermark": false
 }
 ```
 
@@ -316,7 +297,7 @@ curl https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2 \
   "status": "failed",
   "error": {
     "message": "视频生成任务失败。",
-    "code": "video_generation_failed"
+    "code": ""
   }
 }
 ```
