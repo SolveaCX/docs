@@ -68,7 +68,7 @@ POST https://router.flatkey.ai/v1/videos
 </ParamField>
 
 <ParamField body="return_last_frame" type="boolean">
-  会被接受并转发，但 Flatkey 暂不返回尾帧图片。如需多段续接，请从下载的 MP4 中自行截取最后一帧。
+  是否以图片形式返回生成视频的最后一帧，默认 `false`。设为 `true` 时，任务完成后响应中会带 `metadata.last_frame_url`，可下载与视频尺寸相同、无水印的 JPEG。把它作为下一个任务的 `first_frame`，即可实现多段续接。与 `metadata.url` 一样，下载无需鉴权头，请妥善保管该地址。
 </ParamField>
 
 ### `content` 元素
@@ -281,7 +281,8 @@ curl https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2 \
     "total_tokens": 120
   },
   "metadata": {
-    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content"
+    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content",
+    "last_frame_url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/last-frame"
   },
   "created_at": 1780306574,
   "completed_at": 1780306750

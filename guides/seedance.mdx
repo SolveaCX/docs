@@ -181,7 +181,7 @@ print(response.json()["id"])
 Each image can be a public HTTPS URL or a `data:image/...;base64,` data URI. Use images with the same aspect ratio as `ratio`. Poll and download the result the same way as in step 2 of [Call Seedance](#call-seedance).
 
 <Note>
-  `return_last_frame` is not supported yet: the task response does not include a last-frame image URL. To chain clips, extract the last frame from the downloaded MP4 yourself.
+  To chain clips, add `"return_last_frame": true`. The completed task then includes `metadata.last_frame_url`; download that image and pass it as the `first_frame` of the next task.
 </Note>
 
 ## Use the asset library

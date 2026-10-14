@@ -172,7 +172,7 @@ print(response.json()["id"])
 图片可以是公网 HTTPS URL，也可以是 `data:image/...;base64,` 格式的 data URI。图片宽高比尽量与 `ratio` 一致。任务的轮询和下载方式与上文「调用 Seedance」第 2 步相同。
 
 <Note>
-  暂不支持 `return_last_frame`：任务响应里不会返回尾帧图片 URL。如果要做多段视频续接，请自己从下载的 MP4 里截取最后一帧。
+  如果要做多段视频续接，请加上 `"return_last_frame": true`。任务完成后响应里会带 `metadata.last_frame_url`，下载这张图并作为下一个任务的 `first_frame` 即可。
 </Note>
 
 ## 使用素材库

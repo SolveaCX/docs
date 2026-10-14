@@ -68,7 +68,7 @@ POST https://router.flatkey.ai/v1/videos
 </ParamField>
 
 <ParamField body="return_last_frame" type="boolean">
-  Accepted and forwarded, but Flatkey does not return the last-frame image yet. To chain clips, extract the last frame from the downloaded MP4.
+  Return the last frame of the generated video as an image. Default: `false`. When `true`, the completed task includes `metadata.last_frame_url`, which downloads a JPEG with the same dimensions as the video and no watermark. Use it as the `first_frame` of the next task to chain clips. Like `metadata.url`, it needs no authorization header; treat it as private.
 </ParamField>
 
 ### `content` items
@@ -281,7 +281,8 @@ When the task completes, the response includes the video URL and token usage:
     "total_tokens": 120
   },
   "metadata": {
-    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content"
+    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content",
+    "last_frame_url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/last-frame"
   },
   "created_at": 1780306574,
   "completed_at": 1780306750
