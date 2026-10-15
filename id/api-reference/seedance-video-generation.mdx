@@ -56,7 +56,7 @@ POST https://router.flatkey.ai/v1/videos
 </ParamField>
 
 <Warning>
-  Selalu kirim `duration` bernilai positif. Flatkey menagih Seedance per detik, sehingga `-1` (membiarkan model memilih durasi) ditolak dengan `video_price_not_configured`.
+  Selalu kirim `duration` bernilai positif. Flatkey menagih Seedance per detik, sehingga `-1` (membiarkan model memilih durasi) ditolak dengan `video_price_not_configured`. Satu-satunya pengecualian adalah [pengeditan video `seedance-2.5`](#pengeditan-video), yang mewajibkan `-1`.
 </Warning>
 
 <ParamField body="watermark" type="boolean">
@@ -69,6 +69,26 @@ POST https://router.flatkey.ai/v1/videos
 
 <ParamField body="return_last_frame" type="boolean">
   Mengembalikan frame terakhir dari video yang dihasilkan sebagai gambar. Default: `false`. Jika `true`, tugas yang telah selesai menyertakan `metadata.last_frame_url`, yang mengunduh JPEG berdimensi sama dengan video dan tanpa tanda air. Gunakan gambar ini sebagai `first_frame` untuk tugas berikutnya guna menyambung klip. Seperti `metadata.url`, URL ini tidak memerlukan header otorisasi; perlakukan sebagai privat.
+</ParamField>
+
+<ParamField body="output_format" type="string">
+  Khusus `seedance-2.5`. Kontainer video yang dihasilkan: `"mp4"` atau `"mov"`. Default: `"mp4"`. MOV mempertahankan presisi warna yang lebih tinggi untuk color grading dan compositing (H.264, YUV 4:4:4, audio PCM), tetapi beberapa pemutar tidak dapat membukanya. [Endpoint konten](#unduh-video) mengembalikan `video/quicktime` untuk hasil MOV.
+</ParamField>
+
+<ParamField body="omni_reference_task_type" type="string">
+  Khusus `seedance-2.5`, untuk tugas mode referensi. Memberi tahu model tugas yang ingin Anda jalankan: `"auto"` (default), `"reference"`, `"edit"`, atau `"extend"`. Menetapkannya secara eksplisit memindahkan pemeriksaan jenis tugas ke saat pengiriman, sehingga kombinasi yang tidak valid langsung gagal alih-alih gagal setelah tugas dimulai. `"reference"`, `"edit"`, dan `"extend"` semuanya memerlukan item referensi di `content`; permintaan yang hanya berisi teks dengan `"reference"` akan ditolak. Lihat [pengeditan dan perpanjangan video](#pengeditan-video).
+</ParamField>
+
+<ParamField body="priority" type="integer">
+  Prioritas antrean dari `0` hingga `9`. Default: `0`. Nilai yang lebih tinggi menempatkan tugas di depan tugas berprioritas lebih rendah yang menunggu model yang sama. Didukung di semua model Seedance 2.0 dan `seedance-2.5`. Nilai di luar 0–9 ditolak dengan `400`.
+</ParamField>
+
+<ParamField body="execution_expires_after" type="integer">
+  Jumlah detik tugas boleh menunggu dan berjalan sebelum kedaluwarsa. Default: `172800` (48 jam). Gunakan nilai yang lebih pendek jika hasil yang terlambat tidak berguna bagi Anda.
+</ParamField>
+
+<ParamField body="callback_url" type="string">
+  URL HTTPS publik yang menerima `POST` setiap kali status tugas berubah. Lihat [Callback tugas](#callback-tugas). Harus menggunakan `https`, tidak berisi kredensial pengguna, panjangnya maksimal 2.048 karakter, dan di-resolve ke alamat publik; jika tidak, permintaan ditolak dengan `400`.
 </ParamField>
 
 ### Item `content`
@@ -89,6 +109,31 @@ Pilih satu mode input per tugas. Mode-mode ini tidak dapat dicampur:
 | Frame pertama | Satu gambar dengan `role: "first_frame"`. |
 | Frame pertama dan terakhir | Dua gambar, satu dengan `role: "first_frame"` dan satu dengan `role: "last_frame"`. `last_frame` selalu memerlukan `first_frame`, dan keduanya tidak dapat digabungkan dengan item referensi. |
 | Referensi | Kombinasi apa pun dari item `reference_image`, `reference_video`, dan `reference_audio`. |
+
+### Pengeditan video
+
+`seedance-2.5` dapat mengedit atau memperpanjang video yang sudah ada dalam mode referensi. Jelaskan perubahannya di prompt dan sebut video tersebut sebagai `@Video1`.
+
+| Tugas | Pengaturan wajib | Durasi output |
+|---|---|---|
+| Edit (mengganti subjek, menambah atau menghapus objek, mengubah audio) | Setidaknya satu `reference_video` berdurasi 4–30 detik, `ratio: "adaptive"`, `duration: -1`. Disarankan: `omni_reference_task_type: "edit"`. | Sama dengan video input yang diedit |
+| Perpanjangan (melanjutkan video ke depan atau ke belakang) | Setidaknya satu `reference_video`, `ratio: "adaptive"`, `duration` bernilai positif. Disarankan: `omni_reference_task_type: "extend"`. | `duration` |
+
+```json
+{
+  "model": "seedance-2.5",
+  "resolution": "720p",
+  "ratio": "adaptive",
+  "duration": -1,
+  "omni_reference_task_type": "edit",
+  "content": [
+    { "type": "text", "text": "Edit @Video1: make the ball bright green and keep everything else unchanged." },
+    { "type": "video_url", "video_url": { "url": "https://example.com/input.mp4" }, "role": "reference_video" }
+  ]
+}
+```
+
+Seperti setiap permintaan `seedance-2.5` dengan video referensi, pengeditan ditagih dengan tarif dengan video untuk resolusi tersebut selama 30 detik tetap, berapa pun durasi input maupun output-nya.
 
 <Note>
   Seedance tidak menerima secara langsung gambar atau video yang menampilkan wajah manusia asli. Unggah sebagai [aset orang-nyata](/id/guides/seedance#aset-orang-nyata) lalu rujuk dengan `asset://`.
@@ -314,6 +359,35 @@ Saldo yang telah dikonsumsi sebelumnya akan dikembalikan secara otomatis.
 | `completed` | Video siap di `metadata.url`, dan penggunaan token tersedia di `usage`. |
 | `failed` | Pembuatan gagal. Detail tersedia di `error.message`, dan saldo yang telah dikonsumsi sebelumnya akan dikembalikan. |
 
+## Callback tugas
+
+Atur `callback_url` untuk menerima perubahan status sebagai pengganti polling, atau sebagai pelengkapnya. Flatkey mengirim `POST` dengan `Content-Type: application/json` saat tugas berpindah ke `in_progress`, `completed`, atau `failed`. Body-nya persis sama dengan yang dikembalikan [`GET /v1/videos/{task_id}`](#pantau-status-tugas) pada saat itu, termasuk `metadata.url` dan `metadata.last_frame_url` untuk tugas yang telah selesai.
+
+```json
+{
+  "id": "task_3f9a00000000000000000000000000e2",
+  "object": "video",
+  "status": "completed",
+  "progress": 100,
+  "model": "seedance-2.0",
+  "usage": {
+    "completion_tokens": 120,
+    "total_tokens": 120
+  },
+  "metadata": {
+    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content"
+  },
+  "created_at": 1780306574,
+  "completed_at": 1780306750
+}
+```
+
+| Header | Nilai |
+|---|---|
+| `X-Flatkey-Event-Id` | `<task_id>:<status>`, misalnya `task_3f9a…e2:completed`. Event yang sama dapat dikirim lebih dari sekali; gunakan header ini untuk mengabaikan duplikat. |
+
+Balas dengan status `2xx` apa pun dalam 5 detik. Jika tidak, Flatkey mencoba ulang dua kali, setelah 2 dan 8 detik, lalu berhenti. Redirect tidak diikuti. Callback tidak ditandatangani, jadi verifikasi hasilnya dengan memantau tugas sebelum menindaklanjutinya, dan tetap jadikan polling sebagai sumber kebenaran jika ada callback yang hilang.
+
 ## Unduh video
 
 ```http
@@ -325,7 +399,7 @@ curl -L "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000
   -o output.mp4
 ```
 
-Endpoint konten mengalirkan data `video/mp4`. Endpoint ini tidak memerlukan token Bearer dan dapat digunakan langsung sebagai sumber `<video>`.
+Endpoint konten mengalirkan data `video/mp4`, atau `video/quicktime` jika tugas menggunakan `output_format: "mov"`. Endpoint ini tidak memerlukan token Bearer dan dapat digunakan langsung sebagai sumber `<video>`.
 
 <Warning>
   Endpoint konten hanya berfungsi setelah tugas selesai dan dibatasi kecepatannya berdasarkan IP klien. Perlakukan URL sebagai informasi sensitif karena siapa pun yang memilikinya dapat mengunduh video.
@@ -350,6 +424,9 @@ Kesalahan pada saat permintaan menggunakan amplop kesalahan standar Flatkey:
 | `content` kosong | Permintaan ditolak. Sertakan teks yang tidak kosong, gambar, atau video. |
 | Model tidak tersedia | `model` yang diminta tidak diaktifkan untuk rute tersebut. |
 | Saldo tidak mencukupi | Tugas tidak dibuat. |
+| `priority` di luar 0–9 | Permintaan mengembalikan `400` dengan `invalid_request`. |
+| `callback_url` tidak valid | Permintaan mengembalikan `400` dengan `invalid_request` jika URL bukan HTTPS, berisi kredensial, lebih dari 2.048 karakter, atau mengarah ke alamat privat atau lokal. |
+| `duration: -1` di luar pengeditan video `seedance-2.5` | Permintaan mengembalikan `400` dengan `video_price_not_configured`. |
 | Input tidak valid untuk model | Permintaan mengembalikan `400` dengan `fail_to_fetch_task`, atau, untuk permintaan yang menggunakan referensi `asset://`, tugas gagal dengan `task preparation failed`. Periksa resolusi, durasi, batasan konten, dan aturan mode input di atas. Anda tidak dikenai biaya. |
 | Kegagalan layanan sementara | Coba lagi nanti menggunakan kebijakan backoff normal Anda. |
 

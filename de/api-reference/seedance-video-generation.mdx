@@ -56,7 +56,7 @@ POST https://router.flatkey.ai/v1/videos
 </ParamField>
 
 <Warning>
-  Sende immer eine positive `duration`. Flatkey rechnet Seedance pro Sekunde ab, daher wird `-1` (das Modell wählt die Länge) mit `video_price_not_configured` abgelehnt.
+  Sende immer eine positive `duration`. Flatkey rechnet Seedance pro Sekunde ab, daher wird `-1` (das Modell wählt die Länge) mit `video_price_not_configured` abgelehnt. Die einzige Ausnahme ist eine [Videobearbeitung mit `seedance-2.5`](#videobearbeitung), die `-1` erfordert.
 </Warning>
 
 <ParamField body="watermark" type="boolean">
@@ -69,6 +69,26 @@ POST https://router.flatkey.ai/v1/videos
 
 <ParamField body="return_last_frame" type="boolean">
   Gibt den letzten Frame des generierten Videos als Bild zurück. Standard: `false`. Bei `true` enthält die abgeschlossene Aufgabe `metadata.last_frame_url`, über die du ein JPEG in denselben Abmessungen wie das Video und ohne Wasserzeichen herunterlädst. Verwende es als `first_frame` der nächsten Aufgabe, um Clips aneinanderzureihen. Wie `metadata.url` benötigt es keinen Autorisierungsheader; behandle es als privat.
+</ParamField>
+
+<ParamField body="output_format" type="string">
+  Nur `seedance-2.5`. Container des generierten Videos: `"mp4"` oder `"mov"`. Standard: `"mp4"`. MOV bewahrt mehr Farbpräzision für Color Grading und Compositing (H.264, YUV 4:4:4, PCM-Audio), lässt sich aber in manchen Playern nicht öffnen. Der [Content-Endpunkt](#video-herunterladen) liefert für MOV-Ergebnisse `video/quicktime`.
+</ParamField>
+
+<ParamField body="omni_reference_task_type" type="string">
+  Nur `seedance-2.5`, für Aufgaben im Referenzmodus. Teilt dem Modell mit, welche Aufgabe du beabsichtigst: `"auto"` (Standard), `"reference"`, `"edit"` oder `"extend"`. Wenn du den Wert explizit setzt, werden die Prüfungen des Aufgabentyps bereits beim Absenden ausgeführt, sodass eine ungültige Kombination sofort fehlschlägt statt erst nach dem Start der Aufgabe. `"reference"`, `"edit"` und `"extend"` erfordern alle Referenzelemente in `content`; eine reine Textanfrage mit `"reference"` wird abgelehnt. Siehe [Videobearbeitung und -verlängerung](#videobearbeitung).
+</ParamField>
+
+<ParamField body="priority" type="integer">
+  Warteschlangenpriorität von `0` bis `9`. Standard: `0`. Höhere Werte ziehen die Aufgabe vor Aufgaben mit niedrigerer Priorität, die auf dasselbe Modell warten. Unterstützt von allen Seedance-2.0-Modellen und `seedance-2.5`. Werte außerhalb von 0–9 werden mit `400` abgelehnt.
+</ParamField>
+
+<ParamField body="execution_expires_after" type="integer">
+  Sekunden, die die Aufgabe warten und laufen darf, bevor sie abläuft. Standard: `172800` (48 Stunden). Verwende einen kürzeren Wert, wenn dir ein verspätetes Ergebnis nichts nützt.
+</ParamField>
+
+<ParamField body="callback_url" type="string">
+  Öffentliche HTTPS-URL, die bei jeder Statusänderung der Aufgabe einen `POST` erhält. Siehe [Aufgaben-Callbacks](#aufgaben-callbacks). Sie muss `https` verwenden, darf keine Benutzer-Anmeldedaten enthalten, darf höchstens 2.048 Zeichen lang sein und muss zu einer öffentlichen Adresse aufgelöst werden; andernfalls wird die Anfrage mit `400` abgelehnt.
 </ParamField>
 
 ### `content`-Elemente
@@ -89,6 +109,31 @@ Wähle pro Aufgabe einen Eingabemodus. Diese Modi lassen sich nicht kombinieren:
 | Erster Frame | Ein Bild mit `role: "first_frame"`. |
 | Erster und letzter Frame | Zwei Bilder, eines mit `role: "first_frame"` und eines mit `role: "last_frame"`. `last_frame` erfordert immer einen `first_frame`, und keines der beiden lässt sich mit Referenzelementen kombinieren. |
 | Referenz | Eine beliebige Kombination aus `reference_image`-, `reference_video`- und `reference_audio`-Elementen. |
+
+### Videobearbeitung
+
+`seedance-2.5` kann ein vorhandenes Video im Referenzmodus bearbeiten oder verlängern. Beschreibe die Änderung im Prompt und verweise auf das Video als `@Video1`.
+
+| Aufgabe | Erforderliche Einstellungen | Ausgabelänge |
+|---|---|---|
+| Bearbeitung (ein Motiv ersetzen, Objekte hinzufügen oder entfernen, Audio ändern) | Mindestens ein `reference_video` mit 4–30 Sekunden Länge, `ratio: "adaptive"`, `duration: -1`. Empfohlen: `omni_reference_task_type: "edit"`. | Wie das bearbeitete Eingabevideo |
+| Verlängerung (ein Video vorwärts oder rückwärts fortsetzen) | Mindestens ein `reference_video`, `ratio: "adaptive"`, eine positive `duration`. Empfohlen: `omni_reference_task_type: "extend"`. | `duration` |
+
+```json
+{
+  "model": "seedance-2.5",
+  "resolution": "720p",
+  "ratio": "adaptive",
+  "duration": -1,
+  "omni_reference_task_type": "edit",
+  "content": [
+    { "type": "text", "text": "Edit @Video1: make the ball bright green and keep everything else unchanged." },
+    { "type": "video_url", "video_url": { "url": "https://example.com/input.mp4" }, "role": "reference_video" }
+  ]
+}
+```
+
+Wie jede `seedance-2.5`-Anfrage mit Referenzvideo wird eine Bearbeitung zum Mit-Video-Tarif der jeweiligen Auflösung für pauschal 30 Sekunden abgerechnet, unabhängig von der Eingabe- oder Ausgabelänge.
 
 <Note>
   Seedance akzeptiert keine Bilder oder Videos, die echte menschliche Gesichter direkt zeigen. Lade sie als [personenbezogene Assets](/de/guides/seedance#personenbezogene-assets) hoch und referenziere sie mit `asset://`.
@@ -314,6 +359,35 @@ Jedes vorab verbrauchte Guthaben wird automatisch erstattet.
 | `completed` | Das Video ist unter `metadata.url` verfügbar, und die Token-Nutzung ist in `usage` einsehbar. |
 | `failed` | Die Generierung ist fehlgeschlagen. Details sind in `error.message` verfügbar, und jedes vorab verbrauchte Guthaben wird erstattet. |
 
+## Aufgaben-Callbacks
+
+Setze `callback_url`, um Statusänderungen anstelle der Abfrage oder zusätzlich dazu zu empfangen. Flatkey sendet einen `POST` mit `Content-Type: application/json`, wenn die Aufgabe in `in_progress`, `completed` oder `failed` wechselt. Der Body entspricht genau dem, was [`GET /v1/videos/{task_id}`](#aufgabenstatus-abrufen) in diesem Moment zurückgibt, einschließlich `metadata.url` und `metadata.last_frame_url` bei abgeschlossenen Aufgaben.
+
+```json
+{
+  "id": "task_3f9a00000000000000000000000000e2",
+  "object": "video",
+  "status": "completed",
+  "progress": 100,
+  "model": "seedance-2.0",
+  "usage": {
+    "completion_tokens": 120,
+    "total_tokens": 120
+  },
+  "metadata": {
+    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content"
+  },
+  "created_at": 1780306574,
+  "completed_at": 1780306750
+}
+```
+
+| Header | Wert |
+|---|---|
+| `X-Flatkey-Event-Id` | `<task_id>:<status>`, zum Beispiel `task_3f9a…e2:completed`. Dasselbe Ereignis kann mehrfach zugestellt werden; verwende diesen Header, um Duplikate zu ignorieren. |
+
+Antworte innerhalb von 5 Sekunden mit einem beliebigen `2xx`-Status. Andernfalls versucht Flatkey es noch zweimal, nach 2 und nach 8 Sekunden, und gibt dann auf. Weiterleitungen werden nicht verfolgt. Callbacks sind nicht signiert. Prüfe ein Ergebnis daher durch Abfragen der Aufgabe, bevor du darauf reagierst, und nutze die Abfrage weiterhin als maßgebliche Quelle, falls ein Callback verloren geht.
+
 ## Video herunterladen
 
 ```http
@@ -325,7 +399,7 @@ curl -L "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000
   -o output.mp4
 ```
 
-Der Content-Endpunkt streamt `video/mp4`-Daten. Er erfordert kein Bearer-Token und kann direkt als `<video>`-Quelle verwendet werden.
+Der Content-Endpunkt streamt `video/mp4`-Daten oder `video/quicktime`, wenn die Aufgabe `output_format: "mov"` verwendet hat. Er erfordert kein Bearer-Token und kann direkt als `<video>`-Quelle verwendet werden.
 
 <Warning>
   Der Content-Endpunkt funktioniert nur nach Abschluss der Aufgabe und ist nach Client-IP ratenbegrenzt. Behandle die URL als vertraulich, da jeder mit Zugriff darauf das Video herunterladen kann.
@@ -350,6 +424,9 @@ Fehler zur Anfragezeit verwenden den Standard-Fehlerrahmen von Flatkey:
 | Leerer `content` | Die Anfrage wird abgelehnt. Füge nicht leeren Text, ein Bild oder ein Video ein. |
 | Nicht verfügbares Modell | Das angeforderte `model` ist für die Route nicht aktiviert. |
 | Unzureichendes Guthaben | Die Aufgabe wird nicht erstellt. |
+| `priority` außerhalb von 0–9 | Die Anfrage gibt `400` mit `invalid_request` zurück. |
+| Ungültige `callback_url` | Die Anfrage gibt `400` mit `invalid_request` zurück, wenn die URL kein HTTPS verwendet, Anmeldedaten enthält, länger als 2.048 Zeichen ist oder auf eine private oder lokale Adresse verweist. |
+| `duration: -1` außerhalb einer Videobearbeitung mit `seedance-2.5` | Die Anfrage gibt `400` mit `video_price_not_configured` zurück. |
 | Ungültige Eingabe für das Modell | Die Anfrage gibt `400` mit `fail_to_fetch_task` zurück, oder bei Anfragen mit `asset://`-Referenzen schlägt die Aufgabe mit `task preparation failed` fehl. Prüfe Auflösung, Dauer, Inhaltsgrenzen und die oben beschriebenen Regeln für Eingabemodi. Dir wird nichts berechnet. |
 | Vorübergehender Dienstausfall | Wiederhole den Versuch später gemäß deiner normalen Backoff-Strategie. |
 

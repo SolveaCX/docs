@@ -184,6 +184,18 @@ Cada imagem pode ser uma URL HTTPS pública ou uma data URI `data:image/...;base
   Para encadear clipes, adicione `"return_last_frame": true`. A tarefa concluída passa a incluir `metadata.last_frame_url`; baixe essa imagem e passe-a como `first_frame` da próxima tarefa.
 </Note>
 
+## Mais opções
+
+Estes campos da requisição são opcionais. Veja a [referência da API](/pt/api-reference/seedance-video-generation) para mais detalhes.
+
+| Objetivo | Campo |
+|---|---|
+| Receber notificações em vez de consultar | `callback_url`: o Flatkey envia a tarefa via `POST` para o seu endpoint HTTPS quando o status dela muda. Veja [Callbacks de tarefa](/pt/api-reference/seedance-video-generation#callbacks-de-tarefa). |
+| Executar uma tarefa à frente de outras na fila | `priority`: `0`–`9`; valores mais altos são executados primeiro. |
+| Obter um arquivo MOV para pós-produção | `output_format: "mov"` (somente `seedance-2.5`). |
+| Editar ou estender um vídeo existente | `seedance-2.5` com um `reference_video` e `omni_reference_task_type`. Veja [Edição de vídeo](/pt/api-reference/seedance-video-generation#edição-de-vídeo). |
+| Descartar uma tarefa que espera demais | `execution_expires_after`: segundos até a tarefa expirar. Padrão: 48 horas. |
+
 ## Use a biblioteca de ativos
 
 Use a biblioteca de ativos quando quiser registrar uma referência uma vez, esperar até que esteja pronta e reutilizá-la em requisições do Seedance. Existem dois tipos de ativos:

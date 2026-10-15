@@ -56,7 +56,7 @@ POST https://router.flatkey.ai/v1/videos
 </ParamField>
 
 <Warning>
-  Envoyez toujours une valeur `duration` positive. Flatkey facture Seedance à la seconde : `-1` (laisser le modèle choisir la durée) est donc rejeté avec `video_price_not_configured`.
+  Envoyez toujours une valeur `duration` positive. Flatkey facture Seedance à la seconde : `-1` (laisser le modèle choisir la durée) est donc rejeté avec `video_price_not_configured`. La seule exception est une [édition vidéo `seedance-2.5`](#édition-vidéo), qui exige `-1`.
 </Warning>
 
 <ParamField body="watermark" type="boolean">
@@ -69,6 +69,26 @@ POST https://router.flatkey.ai/v1/videos
 
 <ParamField body="return_last_frame" type="boolean">
   Renvoie la dernière image de la vidéo générée sous forme d'image. Par défaut : `false`. Avec `true`, la tâche terminée inclut `metadata.last_frame_url`, qui permet de télécharger un JPEG aux mêmes dimensions que la vidéo, sans filigrane. Utilisez-le comme `first_frame` de la tâche suivante pour enchaîner des clips. Comme `metadata.url`, il ne nécessite pas d'en-tête d'autorisation ; traitez-le comme confidentiel.
+</ParamField>
+
+<ParamField body="output_format" type="string">
+  `seedance-2.5` uniquement. Conteneur de la vidéo générée : `"mp4"` ou `"mov"`. Par défaut : `"mp4"`. Le MOV conserve une meilleure précision des couleurs pour l'étalonnage et la composition (H.264, YUV 4:4:4, audio PCM), mais certains lecteurs ne peuvent pas l'ouvrir. Le [point de terminaison de contenu](#télécharger-la-vidéo) renvoie `video/quicktime` pour les résultats MOV.
+</ParamField>
+
+<ParamField body="omni_reference_task_type" type="string">
+  `seedance-2.5` uniquement, pour les tâches en mode référence. Indique au modèle le type de tâche souhaité : `"auto"` (par défaut), `"reference"`, `"edit"` ou `"extend"`. Le définir explicitement avance les vérifications du type de tâche au moment de la soumission : une combinaison non valide échoue donc immédiatement au lieu d'échouer après le démarrage de la tâche. `"reference"`, `"edit"` et `"extend"` nécessitent tous des éléments de référence dans `content` ; une requête contenant uniquement du texte avec `"reference"` est rejetée. Consultez [Édition et prolongation vidéo](#édition-vidéo).
+</ParamField>
+
+<ParamField body="priority" type="integer">
+  Priorité dans la file d'attente, de `0` à `9`. Par défaut : `0`. Les valeurs plus élevées font passer la tâche devant les tâches de priorité inférieure en attente sur le même modèle. Pris en charge par tous les modèles Seedance 2.0 et par `seedance-2.5`. Les valeurs hors de la plage 0 à 9 sont rejetées avec `400`.
+</ParamField>
+
+<ParamField body="execution_expires_after" type="integer">
+  Nombre de secondes pendant lesquelles la tâche peut attendre et s'exécuter avant d'expirer. Par défaut : `172800` (48 heures). Utilisez une valeur plus courte si un résultat tardif ne vous est d'aucune utilité.
+</ParamField>
+
+<ParamField body="callback_url" type="string">
+  URL HTTPS publique qui reçoit un `POST` à chaque changement de statut de la tâche. Consultez [Callbacks de tâche](#callbacks-de-tâche). Elle doit utiliser `https`, ne contenir aucun identifiant utilisateur, comporter au plus 2 048 caractères et se résoudre en une adresse publique ; sinon, la requête est rejetée avec `400`.
 </ParamField>
 
 ### Éléments `content`
@@ -89,6 +109,31 @@ Choisissez un seul mode d'entrée par tâche. Ces modes ne peuvent pas être com
 | Première image | Une image avec `role: "first_frame"`. |
 | Première et dernière images | Deux images, l'une avec `role: "first_frame"` et l'autre avec `role: "last_frame"`. `last_frame` nécessite toujours un `first_frame`, et aucune des deux ne peut être combinée avec des éléments de référence. |
 | Référence | Toute combinaison d'éléments `reference_image`, `reference_video` et `reference_audio`. |
+
+### Édition vidéo
+
+`seedance-2.5` peut modifier ou prolonger une vidéo existante en mode référence. Décrivez la modification dans l'invite et désignez la vidéo par `@Video1`.
+
+| Tâche | Paramètres requis | Durée de sortie |
+|---|---|---|
+| Édition (remplacer un sujet, ajouter ou supprimer des objets, modifier l'audio) | Au moins un `reference_video` de 4 à 30 secondes, `ratio: "adaptive"`, `duration: -1`. Recommandé : `omni_reference_task_type: "edit"`. | Identique à celle de la vidéo d'entrée modifiée |
+| Prolongation (poursuivre une vidéo vers l'avant ou vers l'arrière) | Au moins un `reference_video`, `ratio: "adaptive"`, une valeur `duration` positive. Recommandé : `omni_reference_task_type: "extend"`. | `duration` |
+
+```json
+{
+  "model": "seedance-2.5",
+  "resolution": "720p",
+  "ratio": "adaptive",
+  "duration": -1,
+  "omni_reference_task_type": "edit",
+  "content": [
+    { "type": "text", "text": "Edit @Video1: make the ball bright green and keep everything else unchanged." },
+    { "type": "video_url", "video_url": { "url": "https://example.com/input.mp4" }, "role": "reference_video" }
+  ]
+}
+```
+
+Comme toute requête `seedance-2.5` comportant une vidéo de référence, une édition est facturée au tarif avec vidéo de la résolution choisie, pour une durée fixe de 30 secondes, quelle que soit la durée d'entrée ou de sortie.
 
 <Note>
   Seedance n'accepte pas directement les images ou vidéos montrant de vrais visages humains. Téléversez-les en tant que [ressources de personne réelle](/fr/guides/seedance#ressources-de-personne-réelle) et référencez-les avec `asset://`.
@@ -314,6 +359,35 @@ Tout solde prélevé à l'avance est automatiquement remboursé.
 | `completed` | La vidéo est prête à l'adresse `metadata.url`, et l'utilisation des tokens est disponible dans `usage`. |
 | `failed` | La génération a échoué. Les détails sont disponibles dans `error.message`, et tout solde prélevé à l'avance est remboursé. |
 
+## Callbacks de tâche
+
+Définissez `callback_url` pour recevoir les changements de statut au lieu d'interroger la tâche, ou en complément. Flatkey envoie un `POST` avec `Content-Type: application/json` lorsque la tâche passe à `in_progress`, `completed` ou `failed`. Le corps correspond exactement à ce que renvoie [`GET /v1/videos/{task_id}`](#interroger-le-statut-de-la-tâche) à ce moment-là, y compris `metadata.url` et `metadata.last_frame_url` pour les tâches terminées.
+
+```json
+{
+  "id": "task_3f9a00000000000000000000000000e2",
+  "object": "video",
+  "status": "completed",
+  "progress": 100,
+  "model": "seedance-2.0",
+  "usage": {
+    "completion_tokens": 120,
+    "total_tokens": 120
+  },
+  "metadata": {
+    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content"
+  },
+  "created_at": 1780306574,
+  "completed_at": 1780306750
+}
+```
+
+| En-tête | Valeur |
+|---|---|
+| `X-Flatkey-Event-Id` | `<task_id>:<status>`, par exemple `task_3f9a…e2:completed`. Le même événement peut être livré plusieurs fois ; utilisez cet en-tête pour ignorer les doublons. |
+
+Répondez avec n'importe quel statut `2xx` dans un délai de 5 secondes. Sinon, Flatkey réessaie deux fois, après 2 puis 8 secondes, puis abandonne. Les redirections ne sont pas suivies. Les callbacks ne sont pas signés : vérifiez donc un résultat en interrogeant la tâche avant d'agir, et continuez de considérer l'interrogation comme la source de vérité au cas où un callback serait perdu.
+
 ## Télécharger la vidéo
 
 ```http
@@ -325,7 +399,7 @@ curl -L "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000
   -o output.mp4
 ```
 
-Le point de terminaison de contenu diffuse des données `video/mp4`. Il ne nécessite pas de token Bearer et peut être utilisé directement comme source `<video>`.
+Le point de terminaison de contenu diffuse des données `video/mp4`, ou `video/quicktime` si la tâche a utilisé `output_format: "mov"`. Il ne nécessite pas de token Bearer et peut être utilisé directement comme source `<video>`.
 
 <Warning>
   Le point de terminaison de contenu ne fonctionne qu'une fois la tâche terminée et est limité en débit par adresse IP cliente. Traitez l'URL comme sensible car toute personne la possédant peut télécharger la vidéo.
@@ -350,6 +424,9 @@ Les erreurs survenant au moment de la requête utilisent l'enveloppe d'erreur st
 | `content` vide | La requête est rejetée. Incluez du texte non vide, une image ou une vidéo. |
 | Modèle indisponible | Le `model` demandé n'est pas activé pour la route. |
 | Solde insuffisant | La tâche n'est pas créée. |
+| `priority` hors de la plage 0 à 9 | La requête renvoie `400` avec `invalid_request`. |
+| `callback_url` non valide | La requête renvoie `400` avec `invalid_request` lorsque l'URL n'utilise pas HTTPS, contient des identifiants, dépasse 2 048 caractères ou pointe vers une adresse privée ou locale. |
+| `duration: -1` en dehors d'une édition vidéo `seedance-2.5` | La requête renvoie `400` avec `video_price_not_configured`. |
 | Entrée non valide pour le modèle | La requête renvoie `400` avec `fail_to_fetch_task` ou, pour les requêtes qui utilisent des références `asset://`, la tâche échoue avec `task preparation failed`. Vérifiez la résolution, la durée, les limites de contenu et les règles de mode d'entrée ci-dessus. Aucuns frais ne vous sont facturés. |
 | Défaillance temporaire du service | Réessayez plus tard en utilisant votre politique de délai exponentiel habituelle. |
 

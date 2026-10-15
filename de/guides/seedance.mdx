@@ -184,6 +184,18 @@ Jedes Bild kann eine öffentliche HTTPS-URL oder eine `data:image/...;base64,`-D
   Um Clips aneinanderzureihen, füge `"return_last_frame": true` hinzu. Der abgeschlossene Task enthält dann `metadata.last_frame_url`; lade dieses Bild herunter und übergib es als `first_frame` des nächsten Tasks.
 </Note>
 
+## Weitere Optionen
+
+Diese Anfragefelder sind optional. Details findest du in der [API-Referenz](/de/api-reference/seedance-video-generation).
+
+| Ziel | Feld |
+|---|---|
+| Benachrichtigt werden statt abzufragen | `callback_url`: Flatkey sendet den Task per `POST` an deinen HTTPS-Endpunkt, wenn sich sein Status ändert. Siehe [Aufgaben-Callbacks](/de/api-reference/seedance-video-generation#aufgaben-callbacks). |
+| Einen Task in der Warteschlange vorziehen | `priority`: `0`–`9`, höhere Werte laufen zuerst. |
+| Eine MOV-Datei für die Postproduktion erhalten | `output_format: "mov"` (nur `seedance-2.5`). |
+| Ein vorhandenes Video bearbeiten oder verlängern | `seedance-2.5` mit einem `reference_video` und `omni_reference_task_type`. Siehe [Videobearbeitung](/de/api-reference/seedance-video-generation#videobearbeitung). |
+| Einen Task verwerfen, der zu lange wartet | `execution_expires_after`: Sekunden, bis der Task abläuft. Standard: 48 Stunden. |
+
 ## Die Asset-Bibliothek nutzen
 
 Verwende die Asset-Bibliothek, wenn du eine Referenz einmal registrieren, warten möchtest, bis sie bereit ist, und sie dann in Seedance-Anfragen wiederverwenden möchtest. Es gibt zwei Asset-Typen:

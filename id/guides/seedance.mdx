@@ -184,6 +184,18 @@ Setiap gambar dapat berupa URL HTTPS publik atau data URI `data:image/...;base64
   Untuk menyambung klip, tambahkan `"return_last_frame": true`. Tugas yang telah selesai kemudian menyertakan `metadata.last_frame_url`; unduh gambar tersebut dan teruskan sebagai `first_frame` untuk tugas berikutnya.
 </Note>
 
+## Opsi lainnya
+
+Kolom permintaan berikut bersifat opsional. Lihat [referensi API](/id/api-reference/seedance-video-generation) untuk detailnya.
+
+| Tujuan | Kolom |
+|---|---|
+| Mendapat notifikasi alih-alih polling | `callback_url`: Flatkey mengirim tugas lewat `POST` ke endpoint HTTPS Anda saat statusnya berubah. Lihat [Callback tugas](/id/api-reference/seedance-video-generation#callback-tugas). |
+| Menjalankan tugas lebih dulu daripada tugas lain di antrean | `priority`: `0`–`9`, nilai lebih tinggi dijalankan lebih dulu. |
+| Mendapatkan file MOV untuk pascaproduksi | `output_format: "mov"` (khusus `seedance-2.5`). |
+| Mengedit atau memperpanjang video yang sudah ada | `seedance-2.5` dengan `reference_video` dan `omni_reference_task_type`. Lihat [Pengeditan video](/id/api-reference/seedance-video-generation#pengeditan-video). |
+| Membuang tugas yang menunggu terlalu lama | `execution_expires_after`: jumlah detik sebelum tugas kedaluwarsa. Default: 48 jam. |
+
 ## Menggunakan pustaka aset
 
 Gunakan pustaka aset ketika Anda ingin mendaftarkan sebuah referensi sekali, menunggu hingga siap, dan menggunakannya kembali dalam permintaan Seedance. Ada dua jenis aset:

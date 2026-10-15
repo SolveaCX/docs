@@ -184,6 +184,18 @@ Each image can be a public HTTPS URL or a `data:image/...;base64,` data URI. Use
   To chain clips, add `"return_last_frame": true`. The completed task then includes `metadata.last_frame_url`; download that image and pass it as the `first_frame` of the next task.
 </Note>
 
+## More options
+
+These request fields are optional. See the [API reference](/api-reference/seedance-video-generation) for details.
+
+| Goal | Field |
+|---|---|
+| Get notified instead of polling | `callback_url`: Flatkey `POST`s the task to your HTTPS endpoint when its status changes. See [Task callbacks](/api-reference/seedance-video-generation#task-callbacks). |
+| Run a task ahead of others in the queue | `priority`: `0`–`9`, higher runs first. |
+| Get a MOV file for post-production | `output_format: "mov"` (`seedance-2.5` only). |
+| Edit or extend an existing video | `seedance-2.5` with a `reference_video` and `omni_reference_task_type`. See [Video editing](/api-reference/seedance-video-generation#video-editing). |
+| Drop a task that waits too long | `execution_expires_after`: seconds before the task expires. Default: 48 hours. |
+
 ## Use the asset library
 
 Use the asset library when you want to register a reference once, wait until it is ready, and reuse it in Seedance requests. There are two asset types:

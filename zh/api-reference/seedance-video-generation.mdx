@@ -56,7 +56,7 @@ POST https://router.flatkey.ai/v1/videos
 </ParamField>
 
 <Warning>
-  请始终传正数 `duration`。Flatkey 对 Seedance 按秒计费，`-1`（由模型自行决定时长）会被拒绝并返回 `video_price_not_configured`。
+  请始终传正数 `duration`。Flatkey 对 Seedance 按秒计费，`-1`（由模型自行决定时长）会被拒绝并返回 `video_price_not_configured`。唯一例外是 [`seedance-2.5` 视频编辑](#视频编辑)，它要求传 `-1`。
 </Warning>
 
 <ParamField body="watermark" type="boolean">
@@ -69,6 +69,26 @@ POST https://router.flatkey.ai/v1/videos
 
 <ParamField body="return_last_frame" type="boolean">
   是否以图片形式返回生成视频的最后一帧，默认 `false`。设为 `true` 时，任务完成后响应中会带 `metadata.last_frame_url`，可下载与视频尺寸相同、无水印的 JPEG。把它作为下一个任务的 `first_frame`，即可实现多段续接。与 `metadata.url` 一样，下载无需鉴权头，请妥善保管该地址。
+</ParamField>
+
+<ParamField body="output_format" type="string">
+  仅 `seedance-2.5`。生成视频的封装格式：`"mp4"` 或 `"mov"`，默认 `"mp4"`。MOV 色彩精度更高，适合调色、抠像、合成等后期（H.264、YUV 4:4:4、PCM 音频），但部分播放器无法打开。MOV 结果通过[内容端点](#下载视频)下载时返回 `video/quicktime`。
+</ParamField>
+
+<ParamField body="omni_reference_task_type" type="string">
+  仅 `seedance-2.5` 的参考模式任务。告诉模型你要做哪类任务：`"auto"`（默认）、`"reference"`、`"edit"` 或 `"extend"`。显式指定后，任务类型相关的校验会提前到提交时进行，不合法的组合会立即报错，而不是任务开始后才失败。`"reference"`、`"edit"`、`"extend"` 都要求 `content` 中有参考素材；只有文本却指定 `"reference"` 会被拒绝。详见[视频编辑与延长](#视频编辑)。
+</ParamField>
+
+<ParamField body="priority" type="integer">
+  排队优先级，取值 `0` 至 `9`，默认 `0`。数值越大，越会排在同一模型下优先级更低的任务之前。Seedance 2.0 全系列和 `seedance-2.5` 支持。超出 0–9 会返回 `400`。
+</ParamField>
+
+<ParamField body="execution_expires_after" type="integer">
+  任务从创建起最多等待和运行的秒数，超时即过期。默认 `172800`（48 小时）。如果结果来得太晚就没有用，可以设得更短。
+</ParamField>
+
+<ParamField body="callback_url" type="string">
+  公网 HTTPS 地址，任务状态每次变化时都会收到一次 `POST`，详见[任务回调](#任务回调)。必须使用 `https`、不能包含用户名密码、长度不超过 2048 个字符，并且解析到公网地址，否则请求返回 `400`。
 </ParamField>
 
 ### `content` 元素
@@ -89,6 +109,31 @@ POST https://router.flatkey.ai/v1/videos
 | 首帧 | 一张 `role: "first_frame"` 的图片。 |
 | 首尾帧 | 两张图片，分别为 `role: "first_frame"` 和 `role: "last_frame"`。`last_frame` 必须和 `first_frame` 一起使用，且两者都不能与参考类素材混用。 |
 | 参考 | `reference_image`、`reference_video`、`reference_audio` 任意组合。 |
+
+### 视频编辑
+
+`seedance-2.5` 可以在参考模式下编辑或延长已有视频。在提示词里描述要做的改动，并用 `@Video1` 指代该视频。
+
+| 任务 | 必须的设置 | 输出时长 |
+|---|---|---|
+| 编辑（替换主体、增删物体、修改音频） | 至少一段 4–30 秒的 `reference_video`，`ratio: "adaptive"`，`duration: -1`。建议加 `omni_reference_task_type: "edit"`。 | 与被编辑的输入视频相同 |
+| 延长（向前或向后续写视频） | 至少一段 `reference_video`，`ratio: "adaptive"`，`duration` 为正数。建议加 `omni_reference_task_type: "extend"`。 | `duration` |
+
+```json
+{
+  "model": "seedance-2.5",
+  "resolution": "720p",
+  "ratio": "adaptive",
+  "duration": -1,
+  "omni_reference_task_type": "edit",
+  "content": [
+    { "type": "text", "text": "Edit @Video1: make the ball bright green and keep everything else unchanged." },
+    { "type": "video_url", "video_url": { "url": "https://example.com/input.mp4" }, "role": "reference_video" }
+  ]
+}
+```
+
+和所有带参考视频的 `seedance-2.5` 请求一样，编辑按对应分辨率的带视频单价、固定 30 秒计费，与输入、输出视频的实际时长无关。
 
 <Note>
   Seedance 不接受直接上传含真人人脸的图片或视频。请先上传为[真人素材](/zh/guides/seedance#真人素材)，再用 `asset://` 引用。
@@ -314,6 +359,35 @@ curl https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2 \
 | `completed` | 视频已生成，地址位于 `metadata.url`，token 用量位于 `usage`。 |
 | `failed` | 生成失败，详情位于 `error.message`，已预扣的余额会自动退还。 |
 
+## 任务回调
+
+设置 `callback_url` 后，可以接收任务状态变化通知，替代轮询或与轮询配合使用。任务进入 `in_progress`、`completed` 或 `failed` 时，Flatkey 会以 `Content-Type: application/json` 发送一次 `POST`。请求体与此刻调用 [`GET /v1/videos/{task_id}`](#查询任务状态) 的返回完全一致，任务完成时包含 `metadata.url` 和 `metadata.last_frame_url`。
+
+```json
+{
+  "id": "task_3f9a00000000000000000000000000e2",
+  "object": "video",
+  "status": "completed",
+  "progress": 100,
+  "model": "seedance-2.0",
+  "usage": {
+    "completion_tokens": 120,
+    "total_tokens": 120
+  },
+  "metadata": {
+    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content"
+  },
+  "created_at": 1780306574,
+  "completed_at": 1780306750
+}
+```
+
+| 请求头 | 值 |
+|---|---|
+| `X-Flatkey-Event-Id` | `<task_id>:<status>`，例如 `task_3f9a…e2:completed`。同一事件可能重复送达，请用这个请求头去重。 |
+
+请在 5 秒内返回任意 `2xx` 状态码。否则 Flatkey 会在 2 秒和 8 秒后各重试一次，之后不再发送。不跟随重定向。回调没有签名，处理结果前请先查询任务确认；回调可能丢失，请以查询接口为准。
+
 ## 下载视频
 
 ```http
@@ -325,7 +399,7 @@ curl -L "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000
   -o output.mp4
 ```
 
-内容端点以流式方式返回 `video/mp4` 数据。该端点不需要 Bearer token，也可以直接作为 `<video>` 的资源地址。
+内容端点以流式方式返回 `video/mp4` 数据；任务使用 `output_format: "mov"` 时返回 `video/quicktime`。该端点不需要 Bearer token，也可以直接作为 `<video>` 的资源地址。
 
 <Warning>
   只有任务完成后才能访问内容端点，且该端点会按客户端 IP 限流。任何获得该 URL 的人都可以下载视频，请将它视为敏感信息。
@@ -350,6 +424,9 @@ curl -L "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000
 | `content` 为空 | 请求会被拒绝。请提供非空文本、图片或视频。 |
 | 模型不可用 | 请求的 `model` 未对当前路由开放。 |
 | 余额不足 | 任务不会创建。 |
+| `priority` 超出 0–9 | 请求返回 `400`，code 为 `invalid_request`。 |
+| `callback_url` 不合法 | 不是 HTTPS、包含用户名密码、超过 2048 个字符，或指向内网、本机地址时，请求返回 `400`，code 为 `invalid_request`。 |
+| 非 `seedance-2.5` 视频编辑却传 `duration: -1` | 请求返回 `400`，code 为 `video_price_not_configured`。 |
 | 输入不符合模型限制 | 请求返回 `400` 和 `fail_to_fetch_task`；使用 `asset://` 引用的请求则是任务失败，错误为 `task preparation failed`。请对照上文的分辨率、时长、素材限制和输入模式规则检查。不会扣费。 |
 | 服务暂时不可用 | 请按常规退避策略稍后重试。 |
 

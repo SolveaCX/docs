@@ -184,6 +184,18 @@ Mỗi hình ảnh có thể là một URL HTTPS công khai hoặc một data URI
   Để nối các clip, hãy thêm `"return_last_frame": true`. Khi đó tác vụ đã hoàn tất sẽ có `metadata.last_frame_url`; tải xuống hình ảnh đó và truyền nó làm `first_frame` cho tác vụ tiếp theo.
 </Note>
 
+## Các tùy chọn khác
+
+Các trường sau trong yêu cầu đều là tùy chọn. Xem [tài liệu tham khảo API](/vi/api-reference/seedance-video-generation) để biết chi tiết.
+
+| Mục tiêu | Trường |
+|---|---|
+| Nhận thông báo thay vì kiểm tra liên tục | `callback_url`: Flatkey gửi `POST` tác vụ tới endpoint HTTPS của bạn khi trạng thái tác vụ thay đổi. Xem [Callback tác vụ](/vi/api-reference/seedance-video-generation#callback-tác-vụ). |
+| Cho một tác vụ chạy trước các tác vụ khác trong hàng đợi | `priority`: `0`–`9`, giá trị cao hơn chạy trước. |
+| Nhận file MOV để làm hậu kỳ | `output_format: "mov"` (chỉ `seedance-2.5`). |
+| Chỉnh sửa hoặc kéo dài một video có sẵn | `seedance-2.5` với một `reference_video` và `omni_reference_task_type`. Xem [Chỉnh sửa video](/vi/api-reference/seedance-video-generation#chỉnh-sửa-video). |
+| Bỏ một tác vụ phải chờ quá lâu | `execution_expires_after`: số giây trước khi tác vụ hết hạn. Mặc định: 48 giờ. |
+
 ## Sử dụng thư viện tài sản
 
 Sử dụng thư viện tài sản khi bạn muốn đăng ký một tham chiếu một lần, chờ cho đến khi nó sẵn sàng, và tái sử dụng nó trong các yêu cầu Seedance. Có hai loại tài sản:

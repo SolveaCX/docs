@@ -184,6 +184,18 @@ print(response.json()["id"])
   クリップをつなげるには、`"return_last_frame": true` を追加します。完了したタスクには `metadata.last_frame_url` が含まれるので、その画像をダウンロードして次のタスクの `first_frame` として渡してください。
 </Note>
 
+## その他のオプション
+
+以下のリクエストフィールドはすべて省略可能です。詳細は[APIリファレンス](/ja/api-reference/seedance-video-generation)を参照してください。
+
+| 目的 | フィールド |
+|---|---|
+| ポーリングせずに通知を受け取る | `callback_url`: タスクのステータスが変わると、FlatkeyがタスクをHTTPSエンドポイントに `POST` します。[タスクコールバック](/ja/api-reference/seedance-video-generation#タスクコールバック)を参照してください。 |
+| キュー内で他のタスクより先に実行する | `priority`: `0`〜`9`。値が大きいほど先に実行されます。 |
+| ポストプロダクション用にMOVファイルを取得する | `output_format: "mov"`（`seedance-2.5` のみ）。 |
+| 既存の動画を編集または延長する | `seedance-2.5` で `reference_video` と `omni_reference_task_type` を使用します。[動画編集](/ja/api-reference/seedance-video-generation#動画編集)を参照してください。 |
+| 待ち時間が長すぎるタスクを破棄する | `execution_expires_after`: タスクが期限切れになるまでの秒数。デフォルト: 48時間。 |
+
 ## アセットライブラリを使用する
 
 参照を一度登録し、準備が完了するまで待ってから、Seedanceのリクエストで再利用したい場合は、アセットライブラリを使用します。アセットタイプには2種類あります。

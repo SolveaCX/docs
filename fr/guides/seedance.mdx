@@ -184,6 +184,18 @@ Chaque image peut être une URL HTTPS publique ou un URI de données `data:image
   Pour enchaîner des clips, ajoutez `"return_last_frame": true`. La tâche terminée inclut alors `metadata.last_frame_url` ; téléchargez cette image et transmettez-la comme `first_frame` de la tâche suivante.
 </Note>
 
+## Autres options
+
+Ces champs de requête sont facultatifs. Consultez la [référence de l'API](/fr/api-reference/seedance-video-generation) pour plus de détails.
+
+| Objectif | Champ |
+|---|---|
+| Être notifié au lieu d'interroger la tâche | `callback_url` : Flatkey envoie la tâche par `POST` à votre point de terminaison HTTPS lorsque son statut change. Consultez [Callbacks de tâche](/fr/api-reference/seedance-video-generation#callbacks-de-tâche). |
+| Faire passer une tâche avant les autres dans la file d'attente | `priority` : de `0` à `9`, les valeurs les plus élevées passent en premier. |
+| Obtenir un fichier MOV pour la postproduction | `output_format: "mov"` (`seedance-2.5` uniquement). |
+| Modifier ou prolonger une vidéo existante | `seedance-2.5` avec un `reference_video` et `omni_reference_task_type`. Consultez [Édition vidéo](/fr/api-reference/seedance-video-generation#édition-vidéo). |
+| Abandonner une tâche qui attend trop longtemps | `execution_expires_after` : nombre de secondes avant l'expiration de la tâche. Par défaut : 48 heures. |
+
 ## Utiliser la bibliothèque de ressources
 
 Utilisez la bibliothèque de ressources lorsque vous souhaitez enregistrer une référence une seule fois, attendre qu'elle soit prête, puis la réutiliser dans des requêtes Seedance. Il existe deux types de ressources :
