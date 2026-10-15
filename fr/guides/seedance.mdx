@@ -117,6 +117,73 @@ curl.exe -L "$videoUrl" -o output.mp4
 
 Une fois la tâche terminée, `metadata.url` permet de télécharger le fichier MP4 sans en-tête d'autorisation. Traitez cette URL comme confidentielle et ne la publiez pas.
 
+## Générer à partir de la première et de la dernière image
+
+Fournissez à Seedance l'image de début et l'image de fin : il génère le mouvement entre les deux. Ajoutez un élément `image_url` avec `role: "first_frame"` et un autre avec `role: "last_frame"`. L'invite textuelle décrit la transition.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "The red ball rolls smoothly across the table from left to right and turns blue"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/first.png" },
+        "role": "first_frame"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/last.png" },
+        "role": "last_frame"
+      }
+    ],
+    "resolution": "720p",
+    "ratio": "16:9",
+    "duration": 5,
+    "generate_audio": false
+  }'
+```
+```python Python
+import base64
+import requests
+
+def data_uri(path):
+    with open(path, "rb") as f:
+        return "data:image/png;base64," + base64.b64encode(f.read()).decode()
+
+response = requests.post(
+    "https://router.flatkey.ai/v1/videos",
+    headers={"Authorization": "Bearer YOUR_FLATKEY_API_KEY"},
+    json={
+        "model": "seedance-2.0",
+        "content": [
+            {"type": "text", "text": "The red ball rolls smoothly across the table from left to right and turns blue"},
+            {"type": "image_url", "image_url": {"url": data_uri("first.png")}, "role": "first_frame"},
+            {"type": "image_url", "image_url": {"url": data_uri("last.png")}, "role": "last_frame"},
+        ],
+        "resolution": "720p",
+        "ratio": "16:9",
+        "duration": 5,
+        "generate_audio": False,
+    },
+)
+print(response.json()["id"])
+```
+</CodeGroup>
+
+Chaque image peut être une URL HTTPS publique ou un URI de données `data:image/...;base64,`. Utilisez des images ayant le même format que `ratio`. Interrogez la tâche et téléchargez le résultat de la même manière qu'à l'étape 2 de [Appeler Seedance](#appeler-seedance).
+
+<Note>
+  Pour enchaîner des clips, ajoutez `"return_last_frame": true`. La tâche terminée inclut alors `metadata.last_frame_url` ; téléchargez cette image et transmettez-la comme `first_frame` de la tâche suivante.
+</Note>
+
 ## Utiliser la bibliothèque de ressources
 
 Utilisez la bibliothèque de ressources lorsque vous souhaitez enregistrer une référence une seule fois, attendre qu'elle soit prête, puis la réutiliser dans des requêtes Seedance. Il existe deux types de ressources :

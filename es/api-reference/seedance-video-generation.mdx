@@ -6,7 +6,7 @@ description: "Crea tareas de generación de vídeo con Seedance usando entradas 
 
 Usa `POST /v1/videos` para crear una tarea asíncrona de generación de vídeo con Seedance. Consulta el estado de la tarea hasta que se complete y luego descarga el vídeo desde la URL de Flatkey devuelta.
 
-Los modelos compatibles incluyen `seedance-2.0` y `seedance-2.0-fast`. La disponibilidad depende de tu cuenta; usa [`GET /v1/models`](/es/api-reference/models) para obtener la lista de modelos actual.
+Los modelos compatibles son `seedance-2.0`, `seedance-2.0-fast`, `seedance-2.0-mini` y `seedance-2.5`. La disponibilidad depende de tu cuenta; usa [`GET /v1/models`](/es/api-reference/models) para obtener la lista de modelos actual.
 
 ## Endpoint
 
@@ -30,83 +30,69 @@ POST https://router.flatkey.ai/v1/videos
 ### Parámetros del cuerpo
 
 <ParamField body="model" type="string" required>
-  ID del modelo Seedance. Usa `"seedance-2.0"` o `"seedance-2.0-fast"`.
+  ID del modelo Seedance: `"seedance-2.0"`, `"seedance-2.0-fast"`, `"seedance-2.0-mini"` o `"seedance-2.5"`.
 </ParamField>
 
 <ParamField body="content" type="array" required>
-  Elementos de entrada multimodal. Incluye al menos un elemento de texto no vacío, una URL de imagen o una URL de vídeo.
+  Elementos de entrada multimodal. Incluye al menos un elemento no vacío de texto, imagen, vídeo o audio. Consulta [Elementos de `content`](#elementos-de-content).
 </ParamField>
 
 <ParamField body="resolution" type="string">
-  Resolución de salida: `"480p"`, `"720p"` o `"1080p"`.
+  Resolución de salida. Valor por defecto: `"720p"`.
+
+  | Modelo | Valores admitidos |
+  |---|---|
+  | `seedance-2.0` | `"480p"`, `"720p"`, `"1080p"`, `"4k"` |
+  | `seedance-2.0-fast`, `seedance-2.0-mini` | `"480p"`, `"720p"` |
+  | `seedance-2.5` | `"480p"`, `"720p"`, `"1080p"` |
 </ParamField>
 
 <ParamField body="ratio" type="string">
-  Relación de aspecto de salida: `"16:9"`, `"4:3"`, `"1:1"`, `"3:4"`, `"9:16"`, `"21:9"` o `"adaptive"`.
+  Relación de aspecto de salida: `"16:9"`, `"4:3"`, `"1:1"`, `"3:4"`, `"9:16"`, `"21:9"` o `"adaptive"`. Valor por defecto: `"adaptive"`. Con `"adaptive"`, el modelo elige la relación de aspecto a partir de tus imágenes o vídeos de entrada. En `seedance-2.5`, las tareas de primer fotograma y de primer y último fotograma solo admiten `"adaptive"`.
 </ParamField>
 
 <ParamField body="duration" type="integer">
-  Duración del vídeo de 4 a 15 segundos. Usa `-1` para que el modelo elija.
+  Duración del vídeo en segundos. Valor por defecto: `5`. Los modelos Seedance 2.0 admiten de 4 a 15; `seedance-2.5` admite de 4 a 30.
 </ParamField>
 
-<ParamField body="seed" type="integer">
-  Semilla aleatoria. Omítela para usar una semilla aleatoria.
-</ParamField>
+<Warning>
+  Envía siempre un valor positivo en `duration`. Flatkey factura Seedance por segundo, por lo que `-1` (dejar que el modelo elija la duración) se rechaza con `video_price_not_configured`.
+</Warning>
 
 <ParamField body="watermark" type="boolean">
-  Si se añade una marca de agua. Valor por defecto: `false`.
+  Añade una marca de agua "AI generated" en la esquina inferior derecha. Valor por defecto: `false`.
 </ParamField>
 
 <ParamField body="generate_audio" type="boolean">
-  Si se genera audio sincronizado.
+  Genera una pista de audio mono sincronizada. Valor por defecto: `true`. Establécelo en `false` si solo necesitas el vídeo; el audio generado puede no superar ocasionalmente las comprobaciones de derechos de autor.
+</ParamField>
+
+<ParamField body="return_last_frame" type="boolean">
+  Devuelve el último fotograma del vídeo generado como imagen. Valor por defecto: `false`. Si es `true`, la tarea completada incluye `metadata.last_frame_url`, que descarga un JPEG con las mismas dimensiones que el vídeo y sin marca de agua. Úsalo como `first_frame` de la siguiente tarea para encadenar clips. Al igual que `metadata.url`, no requiere cabecera de autorización; trátalo como privado.
 </ParamField>
 
 ### Elementos de `content`
 
-| `type` | Campo de valor | `role` admitido | Finalidad |
+| `type` | Campo de valor | `role` admitido | Límites |
 |---|---|---|---|
-| `text` | `text` | — | Indicación de texto. Varios elementos de texto se unen en orden. |
-| `image_url` | `image_url.url` | `first_frame`, `last_frame`, `reference_image` | Imagen de entrada o referencia. Hasta 9 imágenes. |
-| `video_url` | `video_url.url` | `reference_video` | Vídeo de referencia. Hasta 3 vídeos. |
-| `audio_url` | `audio_url.url` | `reference_audio` | Audio de referencia. Hasta 3 clips. |
+| `text` | `text` | — | Texto del prompt. Mantenlo por debajo de unas 1.000 palabras en inglés. |
+| `image_url` | `image_url.url` | `first_frame`, `last_frame`, `reference_image` | Hasta 9 imágenes de referencia (`seedance-2.5`: 30). JPEG, PNG, WebP, BMP, TIFF, GIF, HEIC o HEIF; menos de 30 MB; de 300 a 6000 px por lado; relación de aspecto de 0,4 a 2,5. |
+| `video_url` | `video_url.url` | `reference_video` | Hasta 3 vídeos, de 2 a 15 segundos cada uno y 15 segundos en total (`seedance-2.5`: 10 vídeos, 30 segundos). MP4 o MOV; menos de 200 MB; al menos unos 409.600 píxeles en total (por ejemplo, 854×480). |
+| `audio_url` | `audio_url.url` | `reference_audio` | Hasta 3 clips, de 2 a 15 segundos cada uno y 15 segundos en total (`seedance-2.5`: 10 clips, 30 segundos). WAV o MP3; menos de 15 MB. Los modelos Seedance 2.0 necesitan al menos una imagen o un vídeo junto con el audio. |
 
-Si una imagen usa el rol `first_frame` o `last_frame`, la API activa el modo de primer/último fotograma. Las demás imágenes se tratan como referencias.
+Cada URL puede ser una URL HTTPS pública, un data URI `data:<mime>;base64,` (solo imágenes y audio) o una referencia `asset://` de la [biblioteca de activos](/es/guides/seedance#usa-la-biblioteca-de-activos). El cuerpo completo de la solicitud debe ocupar menos de 64 MB.
 
-### Parámetros avanzados
+Elige un único modo de entrada por tarea. Estos modos no se pueden mezclar:
 
-<ParamField body="input_type" type="string">
-  Modo de entrada explícito: `"reference"` o `"first_last_frame"`. Omítelo para inferir el modo a partir de `content`.
-</ParamField>
+| Modo | Cómo construir `content` |
+|---|---|
+| Primer fotograma | Una imagen con `role: "first_frame"`. |
+| Primer y último fotograma | Dos imágenes, una con `role: "first_frame"` y otra con `role: "last_frame"`. `last_frame` siempre necesita un `first_frame`, y ninguno de los dos puede combinarse con elementos de referencia. |
+| Referencia | Cualquier combinación de elementos `reference_image`, `reference_video` y `reference_audio`. |
 
-<ParamField body="web_search" type="boolean">
-  Activa la búsqueda web como complemento para la tarea.
-</ParamField>
-
-<ParamField body="super_resolution_config" type="object">
-  Aumenta la resolución del vídeo generado manteniendo el mismo ID de tarea público.
-
-  <Expandable title="Campos de super_resolution_config">
-    <ParamField body="resolution" type="string">
-      Resolución de destino: `"720p"`, `"1080p"`, `"2k"` o `"4k"`. Debe superar la resolución original y no puede combinarse con `resolution_limit`.
-    </ParamField>
-    <ParamField body="resolution_limit" type="integer">
-      Límite personalizado de píxeles en el lado corto, de 64 a 2160. No puede combinarse con `resolution`.
-    </ParamField>
-    <ParamField body="scene" type="string">
-      Escena de escalado: `"aigc"`, `"short_series"`, `"ugc"` o `"old_film"`.
-    </ParamField>
-    <ParamField body="tool_version" type="string">
-      Modo de escalado: `"standard"` (por defecto) o `"professional"`.
-    </ParamField>
-    <ParamField body="fps" type="integer">
-      Tasa de fotogramas de salida de 1 a 120. Los valores superiores a la tasa de fotogramas original activan la interpolación de fotogramas.
-    </ParamField>
-  </Expandable>
-</ParamField>
-
-<Warning>
-  `camera_fixed`, `frames`, `callback_url` y `return_last_frame` se aceptan por compatibilidad, pero actualmente no tienen ningún efecto.
-</Warning>
+<Note>
+  Seedance no acepta directamente imágenes ni vídeos que muestren rostros humanos reales. Súbelos como [activos de persona real](/es/guides/seedance#activos-de-persona-real) y haz referencia a ellos con `asset://`.
+</Note>
 
 ## Ejemplos de solicitudes
 
@@ -200,11 +186,12 @@ curl https://router.flatkey.ai/v1/videos \
   ],
   "resolution": "720p",
   "ratio": "16:9",
-  "duration": 5
+  "duration": 5,
+  "generate_audio": false
 }
 ```
 
-### Referencia multimodal con escalado de resolución
+### Referencia multimodal
 
 ```json
 {
@@ -220,13 +207,7 @@ curl https://router.flatkey.ai/v1/videos \
   "resolution": "1080p",
   "ratio": "16:9",
   "duration": 5,
-  "watermark": false,
-  "super_resolution_config": {
-    "resolution": "4k",
-    "scene": "aigc",
-    "tool_version": "professional",
-    "fps": 60
-  }
+  "watermark": false
 }
 ```
 
@@ -300,7 +281,8 @@ Cuando la tarea se completa, la respuesta incluye la URL del vídeo y el uso de 
     "total_tokens": 120
   },
   "metadata": {
-    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content"
+    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content",
+    "last_frame_url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/last-frame"
   },
   "created_at": 1780306574,
   "completed_at": 1780306750
@@ -316,7 +298,7 @@ Las tareas fallidas devuelven los detalles del error junto con la respuesta de l
   "status": "failed",
   "error": {
     "message": "The video generation task failed.",
-    "code": "video_generation_failed"
+    "code": ""
   }
 }
 ```
@@ -368,6 +350,7 @@ Los errores en el momento de la solicitud usan el sobre de error estándar de Fl
 | `content` vacío | La solicitud es rechazada. Incluye texto no vacío, una imagen o un vídeo. |
 | Modelo no disponible | El `model` solicitado no está habilitado para la ruta. |
 | Saldo insuficiente | La tarea no se crea. |
+| Entrada no válida para el modelo | La solicitud devuelve `400` con `fail_to_fetch_task` o, en las solicitudes que usan referencias `asset://`, la tarea falla con `task preparation failed`. Revisa la resolución, la duración, los límites de contenido y las reglas de modo de entrada indicados arriba. No se te cobra nada. |
 | Fallo temporal del servicio | Reintenta más tarde usando tu política de retroceso habitual. |
 
 ## Ejemplo de extremo a extremo

@@ -117,6 +117,73 @@ curl.exe -L "$videoUrl" -o output.mp4
 
 Sau khi tác vụ hoàn tất, `metadata.url` tải xuống file MP4 mà không cần header xác thực. Coi URL này là riêng tư và không công khai nó.
 
+## Tạo video từ khung đầu và khung cuối
+
+Cung cấp cho Seedance hình ảnh mở đầu và hình ảnh kết thúc, mô hình sẽ tạo chuyển động ở giữa hai hình đó. Thêm một mục `image_url` với `role: "first_frame"` và một mục với `role: "last_frame"`. Prompt văn bản mô tả quá trình chuyển tiếp.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "The red ball rolls smoothly across the table from left to right and turns blue"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/first.png" },
+        "role": "first_frame"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/last.png" },
+        "role": "last_frame"
+      }
+    ],
+    "resolution": "720p",
+    "ratio": "16:9",
+    "duration": 5,
+    "generate_audio": false
+  }'
+```
+```python Python
+import base64
+import requests
+
+def data_uri(path):
+    with open(path, "rb") as f:
+        return "data:image/png;base64," + base64.b64encode(f.read()).decode()
+
+response = requests.post(
+    "https://router.flatkey.ai/v1/videos",
+    headers={"Authorization": "Bearer YOUR_FLATKEY_API_KEY"},
+    json={
+        "model": "seedance-2.0",
+        "content": [
+            {"type": "text", "text": "The red ball rolls smoothly across the table from left to right and turns blue"},
+            {"type": "image_url", "image_url": {"url": data_uri("first.png")}, "role": "first_frame"},
+            {"type": "image_url", "image_url": {"url": data_uri("last.png")}, "role": "last_frame"},
+        ],
+        "resolution": "720p",
+        "ratio": "16:9",
+        "duration": 5,
+        "generate_audio": False,
+    },
+)
+print(response.json()["id"])
+```
+</CodeGroup>
+
+Mỗi hình ảnh có thể là một URL HTTPS công khai hoặc một data URI dạng `data:image/...;base64,`. Sử dụng hình ảnh có cùng tỷ lệ khung hình với `ratio`. Kiểm tra liên tục và tải xuống kết quả giống như ở bước 2 của [Gọi Seedance](#gọi-seedance).
+
+<Note>
+  Để nối các clip, hãy thêm `"return_last_frame": true`. Khi đó tác vụ đã hoàn tất sẽ có `metadata.last_frame_url`; tải xuống hình ảnh đó và truyền nó làm `first_frame` cho tác vụ tiếp theo.
+</Note>
+
 ## Sử dụng thư viện tài sản
 
 Sử dụng thư viện tài sản khi bạn muốn đăng ký một tham chiếu một lần, chờ cho đến khi nó sẵn sàng, và tái sử dụng nó trong các yêu cầu Seedance. Có hai loại tài sản:

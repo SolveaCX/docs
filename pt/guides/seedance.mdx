@@ -117,6 +117,73 @@ curl.exe -L "$videoUrl" -o output.mp4
 
 Depois que a tarefa é concluída, `metadata.url` baixa o arquivo MP4 sem um cabeçalho de autorização. Trate essa URL como privada e não a publique.
 
+## Gere a partir do primeiro e do último quadro
+
+Forneça ao Seedance a imagem de abertura e a imagem de encerramento, e ele gera o movimento entre elas. Adicione um item `image_url` com `role: "first_frame"` e outro com `role: "last_frame"`. O prompt de texto descreve a transição.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "The red ball rolls smoothly across the table from left to right and turns blue"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/first.png" },
+        "role": "first_frame"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/last.png" },
+        "role": "last_frame"
+      }
+    ],
+    "resolution": "720p",
+    "ratio": "16:9",
+    "duration": 5,
+    "generate_audio": false
+  }'
+```
+```python Python
+import base64
+import requests
+
+def data_uri(path):
+    with open(path, "rb") as f:
+        return "data:image/png;base64," + base64.b64encode(f.read()).decode()
+
+response = requests.post(
+    "https://router.flatkey.ai/v1/videos",
+    headers={"Authorization": "Bearer YOUR_FLATKEY_API_KEY"},
+    json={
+        "model": "seedance-2.0",
+        "content": [
+            {"type": "text", "text": "The red ball rolls smoothly across the table from left to right and turns blue"},
+            {"type": "image_url", "image_url": {"url": data_uri("first.png")}, "role": "first_frame"},
+            {"type": "image_url", "image_url": {"url": data_uri("last.png")}, "role": "last_frame"},
+        ],
+        "resolution": "720p",
+        "ratio": "16:9",
+        "duration": 5,
+        "generate_audio": False,
+    },
+)
+print(response.json()["id"])
+```
+</CodeGroup>
+
+Cada imagem pode ser uma URL HTTPS pública ou uma data URI `data:image/...;base64,`. Use imagens com a mesma proporção definida em `ratio`. Consulte a tarefa e baixe o resultado da mesma forma que na etapa 2 de [Chame o Seedance](#chame-o-seedance).
+
+<Note>
+  Para encadear clipes, adicione `"return_last_frame": true`. A tarefa concluída passa a incluir `metadata.last_frame_url`; baixe essa imagem e passe-a como `first_frame` da próxima tarefa.
+</Note>
+
 ## Use a biblioteca de ativos
 
 Use a biblioteca de ativos quando quiser registrar uma referência uma vez, esperar até que esteja pronta e reutilizá-la em requisições do Seedance. Existem dois tipos de ativos:

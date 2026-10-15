@@ -117,6 +117,73 @@ curl.exe -L "$videoUrl" -o output.mp4
 
 После завершения задачи `metadata.url` позволяет скачать MP4-файл без заголовка авторизации. Относитесь к этому URL как к приватному и не публикуйте его.
 
+## Генерация по первому и последнему кадрам
+
+Передайте Seedance начальное и конечное изображения, и модель сгенерирует движение между ними. Добавьте один элемент `image_url` с `role: "first_frame"` и один с `role: "last_frame"`. Текстовый промпт описывает переход.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "The red ball rolls smoothly across the table from left to right and turns blue"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/first.png" },
+        "role": "first_frame"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/last.png" },
+        "role": "last_frame"
+      }
+    ],
+    "resolution": "720p",
+    "ratio": "16:9",
+    "duration": 5,
+    "generate_audio": false
+  }'
+```
+```python Python
+import base64
+import requests
+
+def data_uri(path):
+    with open(path, "rb") as f:
+        return "data:image/png;base64," + base64.b64encode(f.read()).decode()
+
+response = requests.post(
+    "https://router.flatkey.ai/v1/videos",
+    headers={"Authorization": "Bearer YOUR_FLATKEY_API_KEY"},
+    json={
+        "model": "seedance-2.0",
+        "content": [
+            {"type": "text", "text": "The red ball rolls smoothly across the table from left to right and turns blue"},
+            {"type": "image_url", "image_url": {"url": data_uri("first.png")}, "role": "first_frame"},
+            {"type": "image_url", "image_url": {"url": data_uri("last.png")}, "role": "last_frame"},
+        ],
+        "resolution": "720p",
+        "ratio": "16:9",
+        "duration": 5,
+        "generate_audio": False,
+    },
+)
+print(response.json()["id"])
+```
+</CodeGroup>
+
+Каждое изображение может быть публичным HTTPS URL или data URI вида `data:image/...;base64,`. Используйте изображения с тем же соотношением сторон, что указано в `ratio`. Опрашивайте задачу и скачивайте результат так же, как в шаге 2 раздела [Вызов Seedance](#вызов-seedance).
+
+<Note>
+  Чтобы выстроить клипы в цепочку, добавьте `"return_last_frame": true`. Тогда завершённая задача будет содержать `metadata.last_frame_url`; скачайте это изображение и передайте его как `first_frame` следующей задачи.
+</Note>
+
 ## Использование библиотеки ассетов
 
 Используйте библиотеку ассетов, когда хотите зарегистрировать ссылку один раз, дождаться её готовности и повторно использовать в запросах Seedance. Есть два типа ассетов:

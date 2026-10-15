@@ -6,7 +6,7 @@ description: "Создавайте задачи генерации видео Se
 
 Используйте `POST /v1/videos` для создания асинхронной задачи генерации видео Seedance. Опрашивайте задачу до её завершения, затем скачайте видео по возвращённому URL Flatkey.
 
-Поддерживаемые модели: `seedance-2.0` и `seedance-2.0-fast`. Доступность зависит от вашего аккаунта; используйте [`GET /v1/models`](/ru/api-reference/models) для получения актуального списка моделей.
+Поддерживаемые модели: `seedance-2.0`, `seedance-2.0-fast`, `seedance-2.0-mini` и `seedance-2.5`. Доступность зависит от вашего аккаунта; используйте [`GET /v1/models`](/ru/api-reference/models) для получения актуального списка моделей.
 
 ## Эндпоинт
 
@@ -30,83 +30,69 @@ POST https://router.flatkey.ai/v1/videos
 ### Параметры тела запроса
 
 <ParamField body="model" type="string" required>
-  Идентификатор модели Seedance. Используйте `"seedance-2.0"` или `"seedance-2.0-fast"`.
+  Идентификатор модели Seedance: `"seedance-2.0"`, `"seedance-2.0-fast"`, `"seedance-2.0-mini"` или `"seedance-2.5"`.
 </ParamField>
 
 <ParamField body="content" type="array" required>
-  Мультимодальные входные элементы. Включите хотя бы один непустой текстовый элемент, URL изображения или URL видео.
+  Мультимодальные входные элементы. Включите хотя бы один непустой текстовый элемент, изображение, видео или аудио. См. [элементы `content`](#элементы-content).
 </ParamField>
 
 <ParamField body="resolution" type="string">
-  Разрешение выходного видео: `"480p"`, `"720p"` или `"1080p"`.
+  Разрешение выходного видео. По умолчанию: `"720p"`.
+
+  | Модель | Поддерживаемые значения |
+  |---|---|
+  | `seedance-2.0` | `"480p"`, `"720p"`, `"1080p"`, `"4k"` |
+  | `seedance-2.0-fast`, `seedance-2.0-mini` | `"480p"`, `"720p"` |
+  | `seedance-2.5` | `"480p"`, `"720p"`, `"1080p"` |
 </ParamField>
 
 <ParamField body="ratio" type="string">
-  Соотношение сторон выходного видео: `"16:9"`, `"4:3"`, `"1:1"`, `"3:4"`, `"9:16"`, `"21:9"` или `"adaptive"`.
+  Соотношение сторон выходного видео: `"16:9"`, `"4:3"`, `"1:1"`, `"3:4"`, `"9:16"`, `"21:9"` или `"adaptive"`. По умолчанию: `"adaptive"`. При `"adaptive"` модель подбирает соотношение сторон по входным изображениям или видео. Для `seedance-2.5` задачи с первым кадром и с первым и последним кадрами поддерживают только `"adaptive"`.
 </ParamField>
 
 <ParamField body="duration" type="integer">
-  Длительность видео от 4 до 15 секунд. Используйте `-1`, чтобы модель выбрала длительность самостоятельно.
+  Длительность видео в секундах. По умолчанию: `5`. Модели Seedance 2.0 принимают значения от 4 до 15; `seedance-2.5` — от 4 до 30.
 </ParamField>
 
-<ParamField body="seed" type="integer">
-  Случайное начальное значение. Опустите для использования случайного значения.
-</ParamField>
+<Warning>
+  Всегда передавайте положительное значение `duration`. Flatkey тарифицирует Seedance посекундно, поэтому `-1` (длительность выбирает модель) отклоняется с ошибкой `video_price_not_configured`.
+</Warning>
 
 <ParamField body="watermark" type="boolean">
-  Добавлять ли водяной знак. По умолчанию: `false`.
+  Добавить водяной знак "AI generated" в правый нижний угол. По умолчанию: `false`.
 </ParamField>
 
 <ParamField body="generate_audio" type="boolean">
-  Генерировать ли синхронизированное аудио.
+  Сгенерировать синхронизированную монофоническую звуковую дорожку. По умолчанию: `true`. Установите `false`, если вам нужно только видео; сгенерированное аудио иногда может не пройти проверку на авторские права.
+</ParamField>
+
+<ParamField body="return_last_frame" type="boolean">
+  Вернуть последний кадр сгенерированного видео в виде изображения. По умолчанию: `false`. При значении `true` завершённая задача содержит `metadata.last_frame_url`, по которому скачивается JPEG того же размера, что и видео, без водяного знака. Используйте его как `first_frame` следующей задачи, чтобы выстраивать клипы в цепочку. Как и `metadata.url`, этот URL не требует заголовка авторизации; не раскрывайте его посторонним.
 </ParamField>
 
 ### Элементы `content`
 
-| `type` | Поле значения | Поддерживаемый `role` | Назначение |
+| `type` | Поле значения | Поддерживаемый `role` | Ограничения |
 |---|---|---|---|
-| `text` | `text` | — | Текстовый промпт. Несколько текстовых элементов объединяются по порядку. |
-| `image_url` | `image_url.url` | `first_frame`, `last_frame`, `reference_image` | Входное или референсное изображение. До 9 изображений. |
-| `video_url` | `video_url.url` | `reference_video` | Референсное видео. До 3 видео. |
-| `audio_url` | `audio_url.url` | `reference_audio` | Референсное аудио. До 3 клипов. |
+| `text` | `text` | — | Текст промпта. Не более примерно 1000 английских слов. |
+| `image_url` | `image_url.url` | `first_frame`, `last_frame`, `reference_image` | До 9 референсных изображений (`seedance-2.5`: 30). JPEG, PNG, WebP, BMP, TIFF, GIF, HEIC или HEIF; менее 30 МБ; 300–6000 пикселей по каждой стороне; соотношение сторон 0,4–2,5. |
+| `video_url` | `video_url.url` | `reference_video` | До 3 видео длительностью 2–15 секунд каждое и не более 15 секунд в сумме (`seedance-2.5`: 10 видео, 30 секунд). MP4 или MOV; менее 200 МБ; не менее примерно 409 600 пикселей в кадре (например, 854×480). |
+| `audio_url` | `audio_url.url` | `reference_audio` | До 3 клипов длительностью 2–15 секунд каждый и не более 15 секунд в сумме (`seedance-2.5`: 10 клипов, 30 секунд). WAV или MP3; менее 15 МБ. Моделям Seedance 2.0 вместе с аудио нужно хотя бы одно изображение или видео. |
 
-Если изображение использует роль `first_frame` или `last_frame`, API переходит в режим первого/последнего кадра. Остальные изображения обрабатываются как референсы.
+Каждый URL может быть публичным HTTPS URL, data URI вида `data:<mime>;base64,` (только для изображений и аудио) или ссылкой `asset://` из [библиотеки ассетов](/ru/guides/seedance#использование-библиотеки-ассетов). Размер всего тела запроса должен быть меньше 64 МБ.
 
-### Дополнительные параметры
+Для каждой задачи выберите один режим ввода. Смешивать режимы нельзя:
 
-<ParamField body="input_type" type="string">
-  Явный режим входных данных: `"reference"` или `"first_last_frame"`. Опустите, чтобы режим определялся автоматически на основе `content`.
-</ParamField>
+| Режим | Как сформировать `content` |
+|---|---|
+| Первый кадр | Одно изображение с `role: "first_frame"`. |
+| Первый и последний кадры | Два изображения: одно с `role: "first_frame"`, другое с `role: "last_frame"`. `last_frame` всегда требует `first_frame`, и ни один из них нельзя сочетать с референсными элементами. |
+| Референс | Любая комбинация элементов `reference_image`, `reference_video` и `reference_audio`. |
 
-<ParamField body="web_search" type="boolean">
-  Включить расширение задачи с помощью веб-поиска.
-</ParamField>
-
-<ParamField body="super_resolution_config" type="object">
-  Увеличить разрешение сгенерированного видео, сохраняя тот же публичный идентификатор задачи.
-
-  <Expandable title="Поля super_resolution_config">
-    <ParamField body="resolution" type="string">
-      Целевое разрешение: `"720p"`, `"1080p"`, `"2k"` или `"4k"`. Должно превышать исходное разрешение и не может сочетаться с `resolution_limit`.
-    </ParamField>
-    <ParamField body="resolution_limit" type="integer">
-      Пользовательский предел пикселей по короткой стороне от 64 до 2160. Не может сочетаться с `resolution`.
-    </ParamField>
-    <ParamField body="scene" type="string">
-      Сцена масштабирования: `"aigc"`, `"short_series"`, `"ugc"` или `"old_film"`.
-    </ParamField>
-    <ParamField body="tool_version" type="string">
-      Режим масштабирования: `"standard"` (по умолчанию) или `"professional"`.
-    </ParamField>
-    <ParamField body="fps" type="integer">
-      Частота кадров выходного видео от 1 до 120. Значения выше частоты кадров источника включают интерполяцию кадров.
-    </ParamField>
-  </Expandable>
-</ParamField>
-
-<Warning>
-  `camera_fixed`, `frames`, `callback_url` и `return_last_frame` принимаются для совместимости, но в настоящее время не оказывают никакого эффекта.
-</Warning>
+<Note>
+  Seedance не принимает напрямую изображения или видео с реальными человеческими лицами. Загрузите их как [ассеты реального человека](/ru/guides/seedance#ассеты-реального-человека) и ссылайтесь на них через `asset://`.
+</Note>
 
 ## Примеры запросов
 
@@ -200,11 +186,12 @@ curl https://router.flatkey.ai/v1/videos \
   ],
   "resolution": "720p",
   "ratio": "16:9",
-  "duration": 5
+  "duration": 5,
+  "generate_audio": false
 }
 ```
 
-### Мультимодальный референс с масштабированием разрешения
+### Мультимодальный референс
 
 ```json
 {
@@ -220,13 +207,7 @@ curl https://router.flatkey.ai/v1/videos \
   "resolution": "1080p",
   "ratio": "16:9",
   "duration": 5,
-  "watermark": false,
-  "super_resolution_config": {
-    "resolution": "4k",
-    "scene": "aigc",
-    "tool_version": "professional",
-    "fps": 60
-  }
+  "watermark": false
 }
 ```
 
@@ -300,7 +281,8 @@ curl https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2 \
     "total_tokens": 120
   },
   "metadata": {
-    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content"
+    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content",
+    "last_frame_url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/last-frame"
   },
   "created_at": 1780306574,
   "completed_at": 1780306750
@@ -316,7 +298,7 @@ curl https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2 \
   "status": "failed",
   "error": {
     "message": "The video generation task failed.",
-    "code": "video_generation_failed"
+    "code": ""
   }
 }
 ```
@@ -368,6 +350,7 @@ curl -L "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000
 | Пустой `content` | Запрос отклоняется. Включите непустой текст, изображение или видео. |
 | Недоступная модель | Запрошенная `model` не включена для данного маршрута. |
 | Недостаточный баланс | Задача не создаётся. |
+| Недопустимые входные данные для модели | Запрос возвращает `400` с `fail_to_fetch_task`, а для запросов со ссылками `asset://` задача завершается с ошибкой `task preparation failed`. Проверьте разрешение, длительность, ограничения на входные данные и правила режимов ввода, описанные выше. Оплата не списывается. |
 | Временный сбой сервиса | Повторите попытку позже, используя вашу стандартную политику повторных запросов. |
 
 ## Сквозной пример

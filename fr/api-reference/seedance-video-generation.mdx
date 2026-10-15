@@ -6,7 +6,7 @@ description: "Créez des tâches de génération de vidéos Seedance avec des en
 
 Utilisez `POST /v1/videos` pour créer une tâche asynchrone de génération de vidéos Seedance. Interrogez la tâche jusqu'à ce qu'elle se termine, puis téléchargez la vidéo depuis l'URL Flatkey retournée.
 
-Les modèles pris en charge incluent `seedance-2.0` et `seedance-2.0-fast`. La disponibilité dépend de votre compte ; utilisez [`GET /v1/models`](/fr/api-reference/models) pour récupérer la liste des modèles actuels.
+Les modèles pris en charge sont `seedance-2.0`, `seedance-2.0-fast`, `seedance-2.0-mini` et `seedance-2.5`. La disponibilité dépend de votre compte ; utilisez [`GET /v1/models`](/fr/api-reference/models) pour récupérer la liste des modèles actuels.
 
 ## Point de terminaison
 
@@ -30,83 +30,69 @@ POST https://router.flatkey.ai/v1/videos
 ### Paramètres du corps
 
 <ParamField body="model" type="string" required>
-  Identifiant du modèle Seedance. Utilisez `"seedance-2.0"` ou `"seedance-2.0-fast"`.
+  Identifiant du modèle Seedance : `"seedance-2.0"`, `"seedance-2.0-fast"`, `"seedance-2.0-mini"` ou `"seedance-2.5"`.
 </ParamField>
 
 <ParamField body="content" type="array" required>
-  Éléments d'entrée multimodaux. Incluez au moins un élément textuel non vide, une URL d'image ou une URL de vidéo.
+  Éléments d'entrée multimodaux. Incluez au moins un élément non vide de type texte, image, vidéo ou audio. Consultez [Éléments `content`](#éléments-content).
 </ParamField>
 
 <ParamField body="resolution" type="string">
-  Résolution de sortie : `"480p"`, `"720p"` ou `"1080p"`.
+  Résolution de sortie. Par défaut : `"720p"`.
+
+  | Modèle | Valeurs prises en charge |
+  |---|---|
+  | `seedance-2.0` | `"480p"`, `"720p"`, `"1080p"`, `"4k"` |
+  | `seedance-2.0-fast`, `seedance-2.0-mini` | `"480p"`, `"720p"` |
+  | `seedance-2.5` | `"480p"`, `"720p"`, `"1080p"` |
 </ParamField>
 
 <ParamField body="ratio" type="string">
-  Format d'image de sortie : `"16:9"`, `"4:3"`, `"1:1"`, `"3:4"`, `"9:16"`, `"21:9"` ou `"adaptive"`.
+  Format d'image de sortie : `"16:9"`, `"4:3"`, `"1:1"`, `"3:4"`, `"9:16"`, `"21:9"` ou `"adaptive"`. Par défaut : `"adaptive"`. Avec `"adaptive"`, le modèle choisit le format à partir de vos images ou vidéos d'entrée. Pour `seedance-2.5`, les tâches avec première image et avec première et dernière images ne prennent en charge que `"adaptive"`.
 </ParamField>
 
 <ParamField body="duration" type="integer">
-  Durée de la vidéo de 4 à 15 secondes. Utilisez `-1` pour laisser le modèle choisir.
+  Durée de la vidéo en secondes. Par défaut : `5`. Les modèles Seedance 2.0 acceptent de 4 à 15 ; `seedance-2.5` accepte de 4 à 30.
 </ParamField>
 
-<ParamField body="seed" type="integer">
-  Graine aléatoire. Omettez-la pour utiliser une graine aléatoire.
-</ParamField>
+<Warning>
+  Envoyez toujours une valeur `duration` positive. Flatkey facture Seedance à la seconde : `-1` (laisser le modèle choisir la durée) est donc rejeté avec `video_price_not_configured`.
+</Warning>
 
 <ParamField body="watermark" type="boolean">
-  Indique si un filigrane doit être ajouté. Par défaut : `false`.
+  Ajoute un filigrane « AI generated » dans le coin inférieur droit. Par défaut : `false`.
 </ParamField>
 
 <ParamField body="generate_audio" type="boolean">
-  Indique si un audio synchronisé doit être généré.
+  Génère une piste audio mono synchronisée. Par défaut : `true`. Définissez-le sur `false` si vous n'avez besoin que de la vidéo ; l'audio généré peut parfois échouer aux contrôles de droits d'auteur.
+</ParamField>
+
+<ParamField body="return_last_frame" type="boolean">
+  Renvoie la dernière image de la vidéo générée sous forme d'image. Par défaut : `false`. Avec `true`, la tâche terminée inclut `metadata.last_frame_url`, qui permet de télécharger un JPEG aux mêmes dimensions que la vidéo, sans filigrane. Utilisez-le comme `first_frame` de la tâche suivante pour enchaîner des clips. Comme `metadata.url`, il ne nécessite pas d'en-tête d'autorisation ; traitez-le comme confidentiel.
 </ParamField>
 
 ### Éléments `content`
 
-| `type` | Champ de valeur | `role` pris en charge | Utilisation |
+| `type` | Champ de valeur | `role` pris en charge | Limites |
 |---|---|---|---|
-| `text` | `text` | — | Invite textuelle. Plusieurs éléments textuels sont joints dans l'ordre. |
-| `image_url` | `image_url.url` | `first_frame`, `last_frame`, `reference_image` | Image d'entrée ou de référence. Jusqu'à 9 images. |
-| `video_url` | `video_url.url` | `reference_video` | Vidéo de référence. Jusqu'à 3 vidéos. |
-| `audio_url` | `audio_url.url` | `reference_audio` | Audio de référence. Jusqu'à 3 extraits. |
+| `text` | `text` | — | Texte de l'invite. Limitez-le à environ 1 000 mots en anglais. |
+| `image_url` | `image_url.url` | `first_frame`, `last_frame`, `reference_image` | Jusqu'à 9 images de référence (`seedance-2.5` : 30). JPEG, PNG, WebP, BMP, TIFF, GIF, HEIC ou HEIF ; moins de 30 Mo ; 300 à 6000 px par côté ; format de 0,4 à 2,5. |
+| `video_url` | `video_url.url` | `reference_video` | Jusqu'à 3 vidéos, de 2 à 15 secondes chacune et 15 secondes au total (`seedance-2.5` : 10 vidéos, 30 secondes). MP4 ou MOV ; moins de 200 Mo ; au moins environ 409 600 pixels au total (par exemple 854×480). |
+| `audio_url` | `audio_url.url` | `reference_audio` | Jusqu'à 3 extraits, de 2 à 15 secondes chacun et 15 secondes au total (`seedance-2.5` : 10 extraits, 30 secondes). WAV ou MP3 ; moins de 15 Mo. Les modèles Seedance 2.0 nécessitent au moins une image ou une vidéo en plus de l'audio. |
 
-Si une image utilise le rôle `first_frame` ou `last_frame`, l'API utilise le mode première/dernière image. Les autres images sont traitées comme des références.
+Chaque URL peut être une URL HTTPS publique, un URI de données `data:<mime>;base64,` (images et audio uniquement) ou une référence `asset://` issue de la [bibliothèque de ressources](/fr/guides/seedance#utiliser-la-bibliothèque-de-ressources). Le corps complet de la requête doit rester inférieur à 64 Mo.
 
-### Paramètres avancés
+Choisissez un seul mode d'entrée par tâche. Ces modes ne peuvent pas être combinés :
 
-<ParamField body="input_type" type="string">
-  Mode d'entrée explicite : `"reference"` ou `"first_last_frame"`. Omettez-le pour déduire le mode depuis `content`.
-</ParamField>
+| Mode | Construction de `content` |
+|---|---|
+| Première image | Une image avec `role: "first_frame"`. |
+| Première et dernière images | Deux images, l'une avec `role: "first_frame"` et l'autre avec `role: "last_frame"`. `last_frame` nécessite toujours un `first_frame`, et aucune des deux ne peut être combinée avec des éléments de référence. |
+| Référence | Toute combinaison d'éléments `reference_image`, `reference_video` et `reference_audio`. |
 
-<ParamField body="web_search" type="boolean">
-  Active l'augmentation par recherche web pour la tâche.
-</ParamField>
-
-<ParamField body="super_resolution_config" type="object">
-  Agrandit la vidéo générée tout en conservant le même identifiant de tâche public.
-
-  <Expandable title="Champs de super_resolution_config">
-    <ParamField body="resolution" type="string">
-      Résolution cible : `"720p"`, `"1080p"`, `"2k"` ou `"4k"`. Elle doit dépasser la résolution d'origine et ne peut pas être combinée avec `resolution_limit`.
-    </ParamField>
-    <ParamField body="resolution_limit" type="integer">
-      Limite personnalisée en pixels pour le petit côté, de 64 à 2160. Ne peut pas être combinée avec `resolution`.
-    </ParamField>
-    <ParamField body="scene" type="string">
-      Scène d'agrandissement : `"aigc"`, `"short_series"`, `"ugc"` ou `"old_film"`.
-    </ParamField>
-    <ParamField body="tool_version" type="string">
-      Mode d'agrandissement : `"standard"` (par défaut) ou `"professional"`.
-    </ParamField>
-    <ParamField body="fps" type="integer">
-      Fréquence d'images de sortie de 1 à 120. Les valeurs supérieures à la fréquence d'images source activent l'interpolation d'images.
-    </ParamField>
-  </Expandable>
-</ParamField>
-
-<Warning>
-  `camera_fixed`, `frames`, `callback_url` et `return_last_frame` sont acceptés pour la compatibilité mais n'ont actuellement aucun effet.
-</Warning>
+<Note>
+  Seedance n'accepte pas directement les images ou vidéos montrant de vrais visages humains. Téléversez-les en tant que [ressources de personne réelle](/fr/guides/seedance#ressources-de-personne-réelle) et référencez-les avec `asset://`.
+</Note>
 
 ## Exemples de requêtes
 
@@ -200,11 +186,12 @@ curl https://router.flatkey.ai/v1/videos \
   ],
   "resolution": "720p",
   "ratio": "16:9",
-  "duration": 5
+  "duration": 5,
+  "generate_audio": false
 }
 ```
 
-### Référence multimodale avec agrandissement
+### Référence multimodale
 
 ```json
 {
@@ -220,13 +207,7 @@ curl https://router.flatkey.ai/v1/videos \
   "resolution": "1080p",
   "ratio": "16:9",
   "duration": 5,
-  "watermark": false,
-  "super_resolution_config": {
-    "resolution": "4k",
-    "scene": "aigc",
-    "tool_version": "professional",
-    "fps": 60
-  }
+  "watermark": false
 }
 ```
 
@@ -300,7 +281,8 @@ Lorsque la tâche se termine, la réponse inclut l'URL de la vidéo et l'utilisa
     "total_tokens": 120
   },
   "metadata": {
-    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content"
+    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content",
+    "last_frame_url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/last-frame"
   },
   "created_at": 1780306574,
   "completed_at": 1780306750
@@ -316,7 +298,7 @@ Les tâches échouées retournent les détails de l'erreur avec la réponse de l
   "status": "failed",
   "error": {
     "message": "The video generation task failed.",
-    "code": "video_generation_failed"
+    "code": ""
   }
 }
 ```
@@ -368,6 +350,7 @@ Les erreurs survenant au moment de la requête utilisent l'enveloppe d'erreur st
 | `content` vide | La requête est rejetée. Incluez du texte non vide, une image ou une vidéo. |
 | Modèle indisponible | Le `model` demandé n'est pas activé pour la route. |
 | Solde insuffisant | La tâche n'est pas créée. |
+| Entrée non valide pour le modèle | La requête renvoie `400` avec `fail_to_fetch_task` ou, pour les requêtes qui utilisent des références `asset://`, la tâche échoue avec `task preparation failed`. Vérifiez la résolution, la durée, les limites de contenu et les règles de mode d'entrée ci-dessus. Aucuns frais ne vous sont facturés. |
 | Défaillance temporaire du service | Réessayez plus tard en utilisant votre politique de délai exponentiel habituelle. |
 
 ## Exemple de bout en bout

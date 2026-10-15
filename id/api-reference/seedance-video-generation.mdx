@@ -6,7 +6,7 @@ description: "Buat tugas video Seedance dengan teks dan input multimodal, pantau
 
 Gunakan `POST /v1/videos` untuk membuat tugas pembuatan video Seedance secara asinkron. Pantau tugas hingga selesai, lalu unduh video dari URL Flatkey yang dikembalikan.
 
-Model yang didukung meliputi `seedance-2.0` dan `seedance-2.0-fast`. Ketersediaan bergantung pada akun Anda; gunakan [`GET /v1/models`](/id/api-reference/models) untuk mengambil daftar model terkini.
+Model yang didukung adalah `seedance-2.0`, `seedance-2.0-fast`, `seedance-2.0-mini`, dan `seedance-2.5`. Ketersediaan bergantung pada akun Anda; gunakan [`GET /v1/models`](/id/api-reference/models) untuk mengambil daftar model terkini.
 
 ## Endpoint
 
@@ -30,83 +30,69 @@ POST https://router.flatkey.ai/v1/videos
 ### Parameter body
 
 <ParamField body="model" type="string" required>
-  ID model Seedance. Gunakan `"seedance-2.0"` atau `"seedance-2.0-fast"`.
+  ID model Seedance: `"seedance-2.0"`, `"seedance-2.0-fast"`, `"seedance-2.0-mini"`, atau `"seedance-2.5"`.
 </ParamField>
 
 <ParamField body="content" type="array" required>
-  Item input multimodal. Sertakan setidaknya satu item teks yang tidak kosong, URL gambar, atau URL video.
+  Item input multimodal. Sertakan setidaknya satu item teks yang tidak kosong, gambar, video, atau audio. Lihat [item `content`](#item-content).
 </ParamField>
 
 <ParamField body="resolution" type="string">
-  Resolusi output: `"480p"`, `"720p"`, atau `"1080p"`.
+  Resolusi output. Default: `"720p"`.
+
+  | Model | Nilai yang didukung |
+  |---|---|
+  | `seedance-2.0` | `"480p"`, `"720p"`, `"1080p"`, `"4k"` |
+  | `seedance-2.0-fast`, `seedance-2.0-mini` | `"480p"`, `"720p"` |
+  | `seedance-2.5` | `"480p"`, `"720p"`, `"1080p"` |
 </ParamField>
 
 <ParamField body="ratio" type="string">
-  Rasio aspek output: `"16:9"`, `"4:3"`, `"1:1"`, `"3:4"`, `"9:16"`, `"21:9"`, atau `"adaptive"`.
+  Rasio aspek output: `"16:9"`, `"4:3"`, `"1:1"`, `"3:4"`, `"9:16"`, `"21:9"`, atau `"adaptive"`. Default: `"adaptive"`. Dengan `"adaptive"`, model memilih rasio berdasarkan gambar atau video input Anda. Untuk `seedance-2.5`, tugas frame pertama dan frame pertama/terakhir hanya mendukung `"adaptive"`.
 </ParamField>
 
 <ParamField body="duration" type="integer">
-  Durasi video dari 4 hingga 15 detik. Gunakan `-1` untuk membiarkan model memilih.
+  Durasi video dalam detik. Default: `5`. Model Seedance 2.0 menerima 4 hingga 15; `seedance-2.5` menerima 4 hingga 30.
 </ParamField>
 
-<ParamField body="seed" type="integer">
-  Seed acak. Hilangkan untuk menggunakan seed acak.
-</ParamField>
+<Warning>
+  Selalu kirim `duration` bernilai positif. Flatkey menagih Seedance per detik, sehingga `-1` (membiarkan model memilih durasi) ditolak dengan `video_price_not_configured`.
+</Warning>
 
 <ParamField body="watermark" type="boolean">
-  Apakah akan menambahkan tanda air. Default: `false`.
+  Menambahkan tanda air "AI generated" di pojok kanan bawah. Default: `false`.
 </ParamField>
 
 <ParamField body="generate_audio" type="boolean">
-  Apakah akan menghasilkan audio yang tersinkronisasi.
+  Menghasilkan trek audio mono yang tersinkronisasi. Default: `true`. Atur ke `false` jika Anda hanya membutuhkan video; audio yang dihasilkan sesekali dapat gagal dalam pemeriksaan hak cipta.
+</ParamField>
+
+<ParamField body="return_last_frame" type="boolean">
+  Mengembalikan frame terakhir dari video yang dihasilkan sebagai gambar. Default: `false`. Jika `true`, tugas yang telah selesai menyertakan `metadata.last_frame_url`, yang mengunduh JPEG berdimensi sama dengan video dan tanpa tanda air. Gunakan gambar ini sebagai `first_frame` untuk tugas berikutnya guna menyambung klip. Seperti `metadata.url`, URL ini tidak memerlukan header otorisasi; perlakukan sebagai privat.
 </ParamField>
 
 ### Item `content`
 
-| `type` | Kolom nilai | `role` yang didukung | Tujuan |
+| `type` | Kolom nilai | `role` yang didukung | Batasan |
 |---|---|---|---|
-| `text` | `text` | — | Prompt teks. Beberapa item teks digabungkan secara berurutan. |
-| `image_url` | `image_url.url` | `first_frame`, `last_frame`, `reference_image` | Gambar input atau referensi. Hingga 9 gambar. |
-| `video_url` | `video_url.url` | `reference_video` | Video referensi. Hingga 3 video. |
-| `audio_url` | `audio_url.url` | `reference_audio` | Audio referensi. Hingga 3 klip. |
+| `text` | `text` | — | Teks prompt. Usahakan di bawah sekitar 1.000 kata bahasa Inggris. |
+| `image_url` | `image_url.url` | `first_frame`, `last_frame`, `reference_image` | Hingga 9 gambar referensi (`seedance-2.5`: 30). JPEG, PNG, WebP, BMP, TIFF, GIF, HEIC, atau HEIF; di bawah 30 MB; 300–6000 px per sisi; rasio aspek 0,4–2,5. |
+| `video_url` | `video_url.url` | `reference_video` | Hingga 3 video, masing-masing 2–15 detik dan total 15 detik (`seedance-2.5`: 10 video, 30 detik). MP4 atau MOV; di bawah 200 MB; total piksel minimal sekitar 409.600 (misalnya 854×480). |
+| `audio_url` | `audio_url.url` | `reference_audio` | Hingga 3 klip, masing-masing 2–15 detik dan total 15 detik (`seedance-2.5`: 10 klip, 30 detik). WAV atau MP3; di bawah 15 MB. Model Seedance 2.0 memerlukan setidaknya satu gambar atau video yang menyertai audio. |
 
-Jika sebuah gambar menggunakan peran `first_frame` atau `last_frame`, API menggunakan mode frame pertama/terakhir. Gambar lainnya diperlakukan sebagai referensi.
+Setiap URL dapat berupa URL HTTPS publik, data URI `data:<mime>;base64,` (hanya untuk gambar dan audio), atau referensi `asset://` dari [pustaka aset](/id/guides/seedance#menggunakan-pustaka-aset). Seluruh body permintaan harus di bawah 64 MB.
 
-### Parameter lanjutan
+Pilih satu mode input per tugas. Mode-mode ini tidak dapat dicampur:
 
-<ParamField body="input_type" type="string">
-  Mode input eksplisit: `"reference"` atau `"first_last_frame"`. Hilangkan untuk menyimpulkan mode dari `content`.
-</ParamField>
+| Mode | Cara menyusun `content` |
+|---|---|
+| Frame pertama | Satu gambar dengan `role: "first_frame"`. |
+| Frame pertama dan terakhir | Dua gambar, satu dengan `role: "first_frame"` dan satu dengan `role: "last_frame"`. `last_frame` selalu memerlukan `first_frame`, dan keduanya tidak dapat digabungkan dengan item referensi. |
+| Referensi | Kombinasi apa pun dari item `reference_image`, `reference_video`, dan `reference_audio`. |
 
-<ParamField body="web_search" type="boolean">
-  Aktifkan augmentasi pencarian web untuk tugas tersebut.
-</ParamField>
-
-<ParamField body="super_resolution_config" type="object">
-  Tingkatkan resolusi video yang dihasilkan sambil mempertahankan ID tugas publik yang sama.
-
-  <Expandable title="kolom super_resolution_config">
-    <ParamField body="resolution" type="string">
-      Resolusi target: `"720p"`, `"1080p"`, `"2k"`, atau `"4k"`. Harus melebihi resolusi asli dan tidak dapat digabungkan dengan `resolution_limit`.
-    </ParamField>
-    <ParamField body="resolution_limit" type="integer">
-      Batas piksel sisi pendek kustom dari 64 hingga 2160. Tidak dapat digabungkan dengan `resolution`.
-    </ParamField>
-    <ParamField body="scene" type="string">
-      Skenario peningkatan resolusi: `"aigc"`, `"short_series"`, `"ugc"`, atau `"old_film"`.
-    </ParamField>
-    <ParamField body="tool_version" type="string">
-      Mode peningkatan resolusi: `"standard"` (default) atau `"professional"`.
-    </ParamField>
-    <ParamField body="fps" type="integer">
-      Frame rate output dari 1 hingga 120. Nilai di atas frame rate sumber mengaktifkan interpolasi frame.
-    </ParamField>
-  </Expandable>
-</ParamField>
-
-<Warning>
-  `camera_fixed`, `frames`, `callback_url`, dan `return_last_frame` diterima untuk kompatibilitas tetapi saat ini tidak memiliki efek.
-</Warning>
+<Note>
+  Seedance tidak menerima secara langsung gambar atau video yang menampilkan wajah manusia asli. Unggah sebagai [aset orang-nyata](/id/guides/seedance#aset-orang-nyata) lalu rujuk dengan `asset://`.
+</Note>
 
 ## Contoh permintaan
 
@@ -200,11 +186,12 @@ curl https://router.flatkey.ai/v1/videos \
   ],
   "resolution": "720p",
   "ratio": "16:9",
-  "duration": 5
+  "duration": 5,
+  "generate_audio": false
 }
 ```
 
-### Referensi multimodal dengan peningkatan resolusi
+### Referensi multimodal
 
 ```json
 {
@@ -220,13 +207,7 @@ curl https://router.flatkey.ai/v1/videos \
   "resolution": "1080p",
   "ratio": "16:9",
   "duration": 5,
-  "watermark": false,
-  "super_resolution_config": {
-    "resolution": "4k",
-    "scene": "aigc",
-    "tool_version": "professional",
-    "fps": 60
-  }
+  "watermark": false
 }
 ```
 
@@ -300,7 +281,8 @@ Ketika tugas selesai, respons menyertakan URL video dan penggunaan token:
     "total_tokens": 120
   },
   "metadata": {
-    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content"
+    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content",
+    "last_frame_url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/last-frame"
   },
   "created_at": 1780306574,
   "completed_at": 1780306750
@@ -316,7 +298,7 @@ Tugas yang gagal mengembalikan detail kesalahan beserta respons tugas:
   "status": "failed",
   "error": {
     "message": "The video generation task failed.",
-    "code": "video_generation_failed"
+    "code": ""
   }
 }
 ```
@@ -368,6 +350,7 @@ Kesalahan pada saat permintaan menggunakan amplop kesalahan standar Flatkey:
 | `content` kosong | Permintaan ditolak. Sertakan teks yang tidak kosong, gambar, atau video. |
 | Model tidak tersedia | `model` yang diminta tidak diaktifkan untuk rute tersebut. |
 | Saldo tidak mencukupi | Tugas tidak dibuat. |
+| Input tidak valid untuk model | Permintaan mengembalikan `400` dengan `fail_to_fetch_task`, atau, untuk permintaan yang menggunakan referensi `asset://`, tugas gagal dengan `task preparation failed`. Periksa resolusi, durasi, batasan konten, dan aturan mode input di atas. Anda tidak dikenai biaya. |
 | Kegagalan layanan sementara | Coba lagi nanti menggunakan kebijakan backoff normal Anda. |
 
 ## Contoh menyeluruh
