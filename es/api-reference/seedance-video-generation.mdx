@@ -135,6 +135,33 @@ Elige un único modo de entrada por tarea. Estos modos no se pueden mezclar:
 
 Al igual que cualquier solicitud de `seedance-2.5` con un vídeo de referencia, una edición se factura con la tarifa con vídeo de la resolución correspondiente por 30 segundos fijos, independientemente de la duración de entrada o de salida.
 
+### Modo borrador
+
+`seedance-2.5` puede generar primero un borrador económico en 480p para que compruebes la escena, los planos y el movimiento antes de pagar por el vídeo final. Se necesitan dos solicitudes:
+
+1. **Crea el borrador.** Envía una solicitud normal con `"draft": true` y `"resolution": "480p"`. Se factura como un vídeo estándar de 480p.
+2. **Genera el vídeo final.** Cuando el borrador se complete, envía una solicitud cuyo único elemento de `content` sea un `draft_task` que apunte al ID de la tarea del borrador, con `"resolution": "1080p"`.
+
+```json
+{
+  "model": "seedance-2.5",
+  "resolution": "1080p",
+  "content": [
+    { "type": "draft_task", "draft_task": { "id": "task_3f9a00000000000000000000000000e2" } }
+  ]
+}
+```
+
+El vídeo final reutiliza el prompt, los archivos multimedia, la duración, la relación de aspecto, la semilla, el ajuste de audio y el tipo de tarea del borrador. No envíes `duration`, `ratio`, `frames`, `seed`, `generate_audio`, `omni_reference_task_type`, `draft` ni ningún otro elemento de `content` junto con un `draft_task`; la solicitud se rechaza con `400`. Puedes seguir configurando `return_last_frame`, `output_format`, `watermark`, `priority`, `execution_expires_after` y `callback_url`.
+
+| Regla | Detalle |
+|---|---|
+| Modelo | `model` debe coincidir con el del borrador. |
+| ID de la tarea del borrador | Usa el ID `task_…` que Flatkey devolvió para el borrador. Debe ser una tarea tuya y debe haberse completado. |
+| Resolución | Borrador: solo `480p`. Vídeo final: solo `1080p`. |
+| Caducidad | Un borrador se puede usar durante 7 días desde su creación. |
+| Facturación | El vídeo final se factura con la tarifa de 1080p por la duración del borrador. Si el borrador usó un vídeo de referencia, se aplica la tarifa con vídeo por 30 segundos fijos. |
+
 <Note>
   Seedance no acepta directamente imágenes ni vídeos que muestren rostros humanos reales. Súbelos como [activos de persona real](/es/guides/seedance#activos-de-persona-real) y haz referencia a ellos con `asset://`.
 </Note>

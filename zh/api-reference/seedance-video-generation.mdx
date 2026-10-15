@@ -135,6 +135,33 @@ POST https://router.flatkey.ai/v1/videos
 
 和所有带参考视频的 `seedance-2.5` 请求一样，编辑按对应分辨率的带视频单价、固定 30 秒计费，与输入、输出视频的实际时长无关。
 
+### 样片模式
+
+`seedance-2.5` 可以先生成一个便宜的 480p 样片，确认场景、镜头和动作没问题后，再花钱出正式视频。共需两次请求：
+
+1. **生成样片。** 按正常请求发送，加上 `"draft": true` 和 `"resolution": "480p"`，按普通 480p 视频计费。
+2. **生成正片。** 样片完成后再发一次请求，`content` 中只放一个指向样片任务 ID 的 `draft_task`，并设置 `"resolution": "1080p"`。
+
+```json
+{
+  "model": "seedance-2.5",
+  "resolution": "1080p",
+  "content": [
+    { "type": "draft_task", "draft_task": { "id": "task_3f9a00000000000000000000000000e2" } }
+  ]
+}
+```
+
+正片会沿用样片的提示词、素材、时长、宽高比、seed、音频设置和任务类型。带 `draft_task` 时不能再传 `duration`、`ratio`、`frames`、`seed`、`generate_audio`、`omni_reference_task_type`、`draft`，也不能有其他 `content` 元素，否则返回 `400`。`return_last_frame`、`output_format`、`watermark`、`priority`、`execution_expires_after` 和 `callback_url` 仍可设置。
+
+| 规则 | 说明 |
+|---|---|
+| 模型 | `model` 必须与样片一致。 |
+| 样片任务 ID | 使用 Flatkey 为样片返回的 `task_…` ID，必须是你自己的、且已成功完成的任务。 |
+| 分辨率 | 样片只能 `480p`，正片只能 `1080p`。 |
+| 有效期 | 样片创建后 7 天内可用于生成正片。 |
+| 计费 | 正片按 1080p 单价、样片的时长计费。样片使用了参考视频时，按带视频单价固定 30 秒计费。 |
+
 <Note>
   Seedance 不接受直接上传含真人人脸的图片或视频。请先上传为[真人素材](/zh/guides/seedance#真人素材)，再用 `asset://` 引用。
 </Note>

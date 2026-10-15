@@ -135,6 +135,33 @@ Wähle pro Aufgabe einen Eingabemodus. Diese Modi lassen sich nicht kombinieren:
 
 Wie jede `seedance-2.5`-Anfrage mit Referenzvideo wird eine Bearbeitung zum Mit-Video-Tarif der jeweiligen Auflösung für pauschal 30 Sekunden abgerechnet, unabhängig von der Eingabe- oder Ausgabelänge.
 
+### Entwurfsmodus
+
+`seedance-2.5` kann zuerst einen günstigen Entwurf in 480p rendern, damit du Szene, Kameraeinstellungen und Bewegung prüfen kannst, bevor du für das finale Video bezahlst. Dafür sind zwei Anfragen nötig:
+
+1. **Entwurf erstellen.** Sende eine normale Anfrage mit `"draft": true` und `"resolution": "480p"`. Sie wird wie ein reguläres 480p-Video abgerechnet.
+2. **Finales Video rendern.** Sobald der Entwurf abgeschlossen ist, sende eine Anfrage mit `"resolution": "1080p"`, deren einziges `content`-Element ein `draft_task` ist, der auf die Aufgaben-ID des Entwurfs verweist.
+
+```json
+{
+  "model": "seedance-2.5",
+  "resolution": "1080p",
+  "content": [
+    { "type": "draft_task", "draft_task": { "id": "task_3f9a00000000000000000000000000e2" } }
+  ]
+}
+```
+
+Das finale Video übernimmt Prompt, Medien, Länge, Seitenverhältnis, Seed, Audioeinstellung und Aufgabentyp des Entwurfs. Sende zusammen mit einem `draft_task` weder `duration`, `ratio`, `frames`, `seed`, `generate_audio`, `omni_reference_task_type`, `draft` noch weitere `content`-Elemente; sonst wird die Anfrage mit `400` abgelehnt. `return_last_frame`, `output_format`, `watermark`, `priority`, `execution_expires_after` und `callback_url` kannst du weiterhin setzen.
+
+| Regel | Details |
+|---|---|
+| Modell | `model` muss mit dem Entwurf übereinstimmen. |
+| Aufgaben-ID des Entwurfs | Verwende die `task_…`-ID, die Flatkey für den Entwurf zurückgegeben hat. Es muss deine eigene Aufgabe sein, und sie muss abgeschlossen sein. |
+| Auflösung | Entwurf: nur `480p`. Finales Video: nur `1080p`. |
+| Gültigkeit | Ein Entwurf kann bis zu 7 Tage nach seiner Erstellung verwendet werden. |
+| Abrechnung | Das finale Video wird zum 1080p-Tarif für die Länge des Entwurfs abgerechnet. Hat der Entwurf ein Referenzvideo verwendet, gilt der Mit-Video-Tarif für pauschal 30 Sekunden. |
+
 <Note>
   Seedance akzeptiert keine Bilder oder Videos, die echte menschliche Gesichter direkt zeigen. Lade sie als [personenbezogene Assets](/de/guides/seedance#personenbezogene-assets) hoch und referenziere sie mit `asset://`.
 </Note>
