@@ -56,7 +56,7 @@ POST https://router.flatkey.ai/v1/videos
 </ParamField>
 
 <Warning>
-  Always send a positive `duration`. Flatkey bills Seedance per second, so `-1` (let the model choose the length) is rejected with `video_price_not_configured`.
+  Always send a positive `duration`. Flatkey bills Seedance per second, so `-1` (let the model choose the length) is rejected with `video_price_not_configured`. The only exception is a [`seedance-2.5` video edit](#video-editing), which requires `-1`.
 </Warning>
 
 <ParamField body="watermark" type="boolean">
@@ -69,6 +69,26 @@ POST https://router.flatkey.ai/v1/videos
 
 <ParamField body="return_last_frame" type="boolean">
   Return the last frame of the generated video as an image. Default: `false`. When `true`, the completed task includes `metadata.last_frame_url`, which downloads a JPEG with the same dimensions as the video and no watermark. Use it as the `first_frame` of the next task to chain clips. Like `metadata.url`, it needs no authorization header; treat it as private.
+</ParamField>
+
+<ParamField body="output_format" type="string">
+  `seedance-2.5` only. Container of the generated video: `"mp4"` or `"mov"`. Default: `"mp4"`. MOV keeps more color precision for grading and compositing (H.264, YUV 4:4:4, PCM audio), but some players cannot open it. The [content endpoint](#download-the-video) returns `video/quicktime` for MOV results.
+</ParamField>
+
+<ParamField body="omni_reference_task_type" type="string">
+  `seedance-2.5` only, for reference-mode tasks. Tells the model which task you intend: `"auto"` (default), `"reference"`, `"edit"`, or `"extend"`. Setting it explicitly moves the task-type checks to submission, so an invalid combination fails immediately instead of after the task starts. `"reference"`, `"edit"`, and `"extend"` all need reference items in `content`; a text-only request with `"reference"` is rejected. See [video editing and extension](#video-editing).
+</ParamField>
+
+<ParamField body="priority" type="integer">
+  Queue priority from `0` through `9`. Default: `0`. Higher values move the task ahead of lower-priority tasks waiting on the same model. Supported on all Seedance 2.0 models and `seedance-2.5`. Values outside 0–9 are rejected with `400`.
+</ParamField>
+
+<ParamField body="execution_expires_after" type="integer">
+  Seconds the task may wait and run before it expires. Default: `172800` (48 hours). Use a shorter value when a late result is useless to you.
+</ParamField>
+
+<ParamField body="callback_url" type="string">
+  Public HTTPS URL that receives a `POST` whenever the task changes status. See [Task callbacks](#task-callbacks). Must use `https`, contain no user credentials, be at most 2,048 characters, and resolve to a public address; otherwise the request is rejected with `400`.
 </ParamField>
 
 ### `content` items
@@ -89,6 +109,31 @@ Choose one input mode per task. These modes cannot be mixed:
 | First frame | One image with `role: "first_frame"`. |
 | First and last frames | Two images, one with `role: "first_frame"` and one with `role: "last_frame"`. `last_frame` always needs a `first_frame`, and neither can be combined with reference items. |
 | Reference | Any combination of `reference_image`, `reference_video`, and `reference_audio` items. |
+
+### Video editing
+
+`seedance-2.5` can edit or extend an existing video in reference mode. Describe the change in the prompt and refer to the video as `@Video1`.
+
+| Task | Required settings | Output length |
+|---|---|---|
+| Edit (replace a subject, add or remove objects, change audio) | At least one `reference_video` 4–30 seconds long, `ratio: "adaptive"`, `duration: -1`. Recommended: `omni_reference_task_type: "edit"`. | Same as the edited input video |
+| Extend (continue a video forward or backward) | At least one `reference_video`, `ratio: "adaptive"`, a positive `duration`. Recommended: `omni_reference_task_type: "extend"`. | `duration` |
+
+```json
+{
+  "model": "seedance-2.5",
+  "resolution": "720p",
+  "ratio": "adaptive",
+  "duration": -1,
+  "omni_reference_task_type": "edit",
+  "content": [
+    { "type": "text", "text": "Edit @Video1: make the ball bright green and keep everything else unchanged." },
+    { "type": "video_url", "video_url": { "url": "https://example.com/input.mp4" }, "role": "reference_video" }
+  ]
+}
+```
+
+Like every `seedance-2.5` request with a reference video, an edit is billed at the resolution's with-video rate for a fixed 30 seconds, regardless of the input or output length.
 
 <Note>
   Seedance does not accept images or videos that show real human faces directly. Upload them as [real-person assets](/guides/seedance#real-person-assets) and reference them with `asset://`.
@@ -314,6 +359,35 @@ Any pre-consumed balance is refunded automatically.
 | `completed` | The video is ready at `metadata.url`, and token usage is available in `usage`. |
 | `failed` | Generation failed. Details are available in `error.message`, and any pre-consumed balance is refunded. |
 
+## Task callbacks
+
+Set `callback_url` to receive status changes instead of, or in addition to, polling. Flatkey sends a `POST` with `Content-Type: application/json` when the task moves to `in_progress`, `completed`, or `failed`. The body is exactly what [`GET /v1/videos/{task_id}`](#poll-task-status) returns at that moment, including `metadata.url` and `metadata.last_frame_url` for completed tasks.
+
+```json
+{
+  "id": "task_3f9a00000000000000000000000000e2",
+  "object": "video",
+  "status": "completed",
+  "progress": 100,
+  "model": "seedance-2.0",
+  "usage": {
+    "completion_tokens": 120,
+    "total_tokens": 120
+  },
+  "metadata": {
+    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content"
+  },
+  "created_at": 1780306574,
+  "completed_at": 1780306750
+}
+```
+
+| Header | Value |
+|---|---|
+| `X-Flatkey-Event-Id` | `<task_id>:<status>`, for example `task_3f9a…e2:completed`. The same event can be delivered more than once; use this header to ignore duplicates. |
+
+Respond with any `2xx` status within 5 seconds. Otherwise Flatkey retries twice, after 2 and 8 seconds, and then gives up. Redirects are not followed. Callbacks are not signed, so verify a result by polling the task before acting on it, and keep polling as the source of truth in case a callback is lost.
+
 ## Download the video
 
 ```http
@@ -325,7 +399,7 @@ curl -L "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000
   -o output.mp4
 ```
 
-The content endpoint streams `video/mp4` data. It does not require a Bearer token and can be used directly as a `<video>` source.
+The content endpoint streams `video/mp4` data, or `video/quicktime` when the task used `output_format: "mov"`. It does not require a Bearer token and can be used directly as a `<video>` source.
 
 <Warning>
   The content endpoint works only after the task completes and is rate-limited by client IP. Treat the URL as sensitive because anyone with it can download the video.
@@ -350,6 +424,9 @@ Request-time errors use Flatkey's standard error envelope:
 | Empty `content` | The request is rejected. Include non-empty text, an image, or a video. |
 | Unavailable model | The requested `model` is not enabled for the route. |
 | Insufficient balance | The task is not created. |
+| `priority` outside 0–9 | The request returns `400` with `invalid_request`. |
+| Invalid `callback_url` | The request returns `400` with `invalid_request` when the URL is not HTTPS, contains credentials, is longer than 2,048 characters, or points to a private or local address. |
+| `duration: -1` outside a `seedance-2.5` video edit | The request returns `400` with `video_price_not_configured`. |
 | Invalid input for the model | The request returns `400` with `fail_to_fetch_task`, or, for requests that use `asset://` references, the task fails with `task preparation failed`. Check resolution, duration, content limits, and input-mode rules above. You are not charged. |
 | Temporary service failure | Retry later using your normal backoff policy. |
 

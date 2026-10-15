@@ -117,6 +117,85 @@ curl.exe -L "$videoUrl" -o output.mp4
 
 Nachdem der Task abgeschlossen ist, lädt `metadata.url` die MP4-Datei ohne Autorisierungsheader herunter. Behandle diese URL als privat und veröffentliche sie nicht.
 
+## Aus erstem und letztem Frame generieren
+
+Gib Seedance das Anfangs- und das Endbild, und es generiert die Bewegung dazwischen. Füge ein `image_url`-Element mit `role: "first_frame"` und eines mit `role: "last_frame"` hinzu. Der Textprompt beschreibt den Übergang.
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "The red ball rolls smoothly across the table from left to right and turns blue"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/first.png" },
+        "role": "first_frame"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/last.png" },
+        "role": "last_frame"
+      }
+    ],
+    "resolution": "720p",
+    "ratio": "16:9",
+    "duration": 5,
+    "generate_audio": false
+  }'
+```
+```python Python
+import base64
+import requests
+
+def data_uri(path):
+    with open(path, "rb") as f:
+        return "data:image/png;base64," + base64.b64encode(f.read()).decode()
+
+response = requests.post(
+    "https://router.flatkey.ai/v1/videos",
+    headers={"Authorization": "Bearer YOUR_FLATKEY_API_KEY"},
+    json={
+        "model": "seedance-2.0",
+        "content": [
+            {"type": "text", "text": "The red ball rolls smoothly across the table from left to right and turns blue"},
+            {"type": "image_url", "image_url": {"url": data_uri("first.png")}, "role": "first_frame"},
+            {"type": "image_url", "image_url": {"url": data_uri("last.png")}, "role": "last_frame"},
+        ],
+        "resolution": "720p",
+        "ratio": "16:9",
+        "duration": 5,
+        "generate_audio": False,
+    },
+)
+print(response.json()["id"])
+```
+</CodeGroup>
+
+Jedes Bild kann eine öffentliche HTTPS-URL oder eine `data:image/...;base64,`-Data-URI sein. Verwende Bilder mit demselben Seitenverhältnis wie `ratio`. Frage das Ergebnis genauso ab und lade es herunter wie in Schritt 2 von [Seedance aufrufen](#seedance-aufrufen).
+
+<Note>
+  Um Clips aneinanderzureihen, füge `"return_last_frame": true` hinzu. Der abgeschlossene Task enthält dann `metadata.last_frame_url`; lade dieses Bild herunter und übergib es als `first_frame` des nächsten Tasks.
+</Note>
+
+## Weitere Optionen
+
+Diese Anfragefelder sind optional. Details findest du in der [API-Referenz](/de/api-reference/seedance-video-generation).
+
+| Ziel | Feld |
+|---|---|
+| Benachrichtigt werden statt abzufragen | `callback_url`: Flatkey sendet den Task per `POST` an deinen HTTPS-Endpunkt, wenn sich sein Status ändert. Siehe [Aufgaben-Callbacks](/de/api-reference/seedance-video-generation#aufgaben-callbacks). |
+| Einen Task in der Warteschlange vorziehen | `priority`: `0`–`9`, höhere Werte laufen zuerst. |
+| Eine MOV-Datei für die Postproduktion erhalten | `output_format: "mov"` (nur `seedance-2.5`). |
+| Ein vorhandenes Video bearbeiten oder verlängern | `seedance-2.5` mit einem `reference_video` und `omni_reference_task_type`. Siehe [Videobearbeitung](/de/api-reference/seedance-video-generation#videobearbeitung). |
+| Einen Task verwerfen, der zu lange wartet | `execution_expires_after`: Sekunden, bis der Task abläuft. Standard: 48 Stunden. |
+
 ## Die Asset-Bibliothek nutzen
 
 Verwende die Asset-Bibliothek, wenn du eine Referenz einmal registrieren, warten möchtest, bis sie bereit ist, und sie dann in Seedance-Anfragen wiederverwenden möchtest. Es gibt zwei Asset-Typen:

@@ -6,7 +6,7 @@ description: "Tạo tác vụ video Seedance với đầu vào văn bản và đ
 
 Dùng `POST /v1/videos` để tạo một tác vụ tạo video Seedance bất đồng bộ. Theo dõi tác vụ cho đến khi hoàn thành, sau đó tải video từ URL Flatkey được trả về.
 
-Các mô hình được hỗ trợ bao gồm `seedance-2.0` và `seedance-2.0-fast`. Tính khả dụng phụ thuộc vào tài khoản của bạn; dùng [`GET /v1/models`](/vi/api-reference/models) để lấy danh sách mô hình hiện tại.
+Các mô hình được hỗ trợ gồm `seedance-2.0`, `seedance-2.0-fast`, `seedance-2.0-mini` và `seedance-2.5`. Tính khả dụng phụ thuộc vào tài khoản của bạn; dùng [`GET /v1/models`](/vi/api-reference/models) để lấy danh sách mô hình hiện tại.
 
 ## Endpoint
 
@@ -30,83 +30,114 @@ POST https://router.flatkey.ai/v1/videos
 ### Tham số body
 
 <ParamField body="model" type="string" required>
-  ID mô hình Seedance. Dùng `"seedance-2.0"` hoặc `"seedance-2.0-fast"`.
+  ID mô hình Seedance: `"seedance-2.0"`, `"seedance-2.0-fast"`, `"seedance-2.0-mini"` hoặc `"seedance-2.5"`.
 </ParamField>
 
 <ParamField body="content" type="array" required>
-  Các mục đầu vào đa phương thức. Bao gồm ít nhất một mục văn bản không rỗng, URL hình ảnh, hoặc URL video.
+  Các mục đầu vào đa phương thức. Bao gồm ít nhất một mục văn bản không rỗng, hình ảnh, video hoặc âm thanh. Xem [các mục `content`](#các-mục-content).
 </ParamField>
 
 <ParamField body="resolution" type="string">
-  Độ phân giải đầu ra: `"480p"`, `"720p"`, hoặc `"1080p"`.
+  Độ phân giải đầu ra. Mặc định: `"720p"`.
+
+  | Mô hình | Giá trị được hỗ trợ |
+  |---|---|
+  | `seedance-2.0` | `"480p"`, `"720p"`, `"1080p"`, `"4k"` |
+  | `seedance-2.0-fast`, `seedance-2.0-mini` | `"480p"`, `"720p"` |
+  | `seedance-2.5` | `"480p"`, `"720p"`, `"1080p"` |
 </ParamField>
 
 <ParamField body="ratio" type="string">
-  Tỷ lệ khung hình đầu ra: `"16:9"`, `"4:3"`, `"1:1"`, `"3:4"`, `"9:16"`, `"21:9"`, hoặc `"adaptive"`.
+  Tỷ lệ khung hình đầu ra: `"16:9"`, `"4:3"`, `"1:1"`, `"3:4"`, `"9:16"`, `"21:9"` hoặc `"adaptive"`. Mặc định: `"adaptive"`. Với `"adaptive"`, mô hình tự chọn tỷ lệ dựa trên hình ảnh hoặc video đầu vào. Với `seedance-2.5`, các tác vụ khung đầu và khung đầu/cuối chỉ hỗ trợ `"adaptive"`.
 </ParamField>
 
 <ParamField body="duration" type="integer">
-  Thời lượng video từ 4 đến 15 giây. Dùng `-1` để để mô hình tự chọn.
+  Thời lượng video tính bằng giây. Mặc định: `5`. Các mô hình Seedance 2.0 chấp nhận từ 4 đến 15; `seedance-2.5` chấp nhận từ 4 đến 30.
 </ParamField>
 
-<ParamField body="seed" type="integer">
-  Seed ngẫu nhiên. Bỏ qua để dùng seed ngẫu nhiên.
-</ParamField>
+<Warning>
+  Luôn gửi `duration` là số dương. Flatkey tính phí Seedance theo giây, nên `-1` (để mô hình tự chọn thời lượng) sẽ bị từ chối với `video_price_not_configured`. Ngoại lệ duy nhất là [chỉnh sửa video với `seedance-2.5`](#chỉnh-sửa-video), vốn bắt buộc dùng `-1`.
+</Warning>
 
 <ParamField body="watermark" type="boolean">
-  Có thêm hình mờ hay không. Mặc định: `false`.
+  Thêm hình mờ "AI generated" vào góc dưới bên phải. Mặc định: `false`.
 </ParamField>
 
 <ParamField body="generate_audio" type="boolean">
-  Có tạo âm thanh đồng bộ hay không.
+  Tạo một bản âm thanh mono đồng bộ. Mặc định: `true`. Đặt thành `false` nếu bạn chỉ cần video; âm thanh được tạo đôi khi có thể không vượt qua kiểm tra bản quyền.
+</ParamField>
+
+<ParamField body="return_last_frame" type="boolean">
+  Trả về khung hình cuối cùng của video đã tạo dưới dạng hình ảnh. Mặc định: `false`. Khi là `true`, tác vụ đã hoàn thành sẽ có `metadata.last_frame_url`, dùng để tải một ảnh JPEG cùng kích thước với video và không có hình mờ. Dùng ảnh này làm `first_frame` cho tác vụ tiếp theo để nối các clip. Giống như `metadata.url`, URL này không cần header xác thực; hãy giữ nó ở chế độ riêng tư.
+</ParamField>
+
+<ParamField body="output_format" type="string">
+  Chỉ dành cho `seedance-2.5`. Định dạng container của video được tạo: `"mp4"` hoặc `"mov"`. Mặc định: `"mp4"`. MOV giữ độ chính xác màu cao hơn cho chỉnh màu và ghép hình (H.264, YUV 4:4:4, âm thanh PCM), nhưng một số trình phát không mở được. [Endpoint nội dung](#tải-video) trả về `video/quicktime` cho kết quả MOV.
+</ParamField>
+
+<ParamField body="omni_reference_task_type" type="string">
+  Chỉ dành cho `seedance-2.5`, áp dụng cho tác vụ ở chế độ tham chiếu. Cho mô hình biết bạn muốn thực hiện tác vụ nào: `"auto"` (mặc định), `"reference"`, `"edit"` hoặc `"extend"`. Khi đặt rõ giá trị này, các bước kiểm tra loại tác vụ được chuyển lên lúc gửi yêu cầu, nên một tổ hợp không hợp lệ sẽ thất bại ngay thay vì sau khi tác vụ đã bắt đầu. `"reference"`, `"edit"` và `"extend"` đều cần các mục tham chiếu trong `content`; yêu cầu chỉ có văn bản mà dùng `"reference"` sẽ bị từ chối. Xem [chỉnh sửa và kéo dài video](#chỉnh-sửa-video).
+</ParamField>
+
+<ParamField body="priority" type="integer">
+  Mức ưu tiên trong hàng đợi, từ `0` đến `9`. Mặc định: `0`. Giá trị cao hơn đưa tác vụ lên trước các tác vụ có mức ưu tiên thấp hơn đang chờ cùng mô hình. Được hỗ trợ trên tất cả các mô hình Seedance 2.0 và `seedance-2.5`. Giá trị ngoài khoảng 0–9 sẽ bị từ chối với `400`.
+</ParamField>
+
+<ParamField body="execution_expires_after" type="integer">
+  Số giây tác vụ được phép chờ và chạy trước khi hết hạn. Mặc định: `172800` (48 giờ). Hãy dùng giá trị ngắn hơn khi kết quả đến muộn không còn hữu ích với bạn.
+</ParamField>
+
+<ParamField body="callback_url" type="string">
+  URL HTTPS công khai nhận một yêu cầu `POST` mỗi khi trạng thái tác vụ thay đổi. Xem [Callback tác vụ](#callback-tác-vụ). URL phải dùng `https`, không chứa thông tin đăng nhập của người dùng, dài tối đa 2.048 ký tự và phân giải tới một địa chỉ công khai; nếu không, yêu cầu sẽ bị từ chối với `400`.
 </ParamField>
 
 ### Các mục `content`
 
-| `type` | Trường giá trị | `role` được hỗ trợ | Mục đích |
+| `type` | Trường giá trị | `role` được hỗ trợ | Giới hạn |
 |---|---|---|---|
-| `text` | `text` | — | Prompt văn bản. Nhiều mục văn bản được ghép theo thứ tự. |
-| `image_url` | `image_url.url` | `first_frame`, `last_frame`, `reference_image` | Hình ảnh đầu vào hoặc tham chiếu. Tối đa 9 hình ảnh. |
-| `video_url` | `video_url.url` | `reference_video` | Video tham chiếu. Tối đa 3 video. |
-| `audio_url` | `audio_url.url` | `reference_audio` | Âm thanh tham chiếu. Tối đa 3 đoạn. |
+| `text` | `text` | — | Văn bản prompt. Nên giữ dưới khoảng 1.000 từ tiếng Anh. |
+| `image_url` | `image_url.url` | `first_frame`, `last_frame`, `reference_image` | Tối đa 9 hình ảnh tham chiếu (`seedance-2.5`: 30). JPEG, PNG, WebP, BMP, TIFF, GIF, HEIC hoặc HEIF; dưới 30 MB; mỗi cạnh 300–6000 px; tỷ lệ khung hình 0,4–2,5. |
+| `video_url` | `video_url.url` | `reference_video` | Tối đa 3 video, mỗi video 2–15 giây và tổng cộng 15 giây (`seedance-2.5`: 10 video, 30 giây). MP4 hoặc MOV; dưới 200 MB; tổng số pixel tối thiểu khoảng 409.600 (ví dụ 854×480). |
+| `audio_url` | `audio_url.url` | `reference_audio` | Tối đa 3 đoạn, mỗi đoạn 2–15 giây và tổng cộng 15 giây (`seedance-2.5`: 10 đoạn, 30 giây). WAV hoặc MP3; dưới 15 MB. Các mô hình Seedance 2.0 cần ít nhất một hình ảnh hoặc video đi kèm với âm thanh. |
 
-Nếu một hình ảnh dùng role `first_frame` hoặc `last_frame`, API sẽ sử dụng chế độ khung đầu/cuối. Các hình ảnh khác được coi là tham chiếu.
+Mỗi URL có thể là một URL HTTPS công khai, một data URI dạng `data:<mime>;base64,` (chỉ áp dụng cho hình ảnh và âm thanh), hoặc một tham chiếu `asset://` từ [thư viện tài sản](/vi/guides/seedance#sử-dụng-thư-viện-tài-sản). Toàn bộ body của yêu cầu phải nhỏ hơn 64 MB.
 
-### Tham số nâng cao
+Chọn một chế độ đầu vào cho mỗi tác vụ. Không thể kết hợp các chế độ này:
 
-<ParamField body="input_type" type="string">
-  Chế độ đầu vào tường minh: `"reference"` hoặc `"first_last_frame"`. Bỏ qua để suy ra chế độ từ `content`.
-</ParamField>
+| Chế độ | Cách tạo `content` |
+|---|---|
+| Khung đầu | Một hình ảnh với `role: "first_frame"`. |
+| Khung đầu và khung cuối | Hai hình ảnh, một với `role: "first_frame"` và một với `role: "last_frame"`. `last_frame` luôn cần có `first_frame`, và cả hai đều không thể kết hợp với các mục tham chiếu. |
+| Tham chiếu | Bất kỳ tổ hợp nào của các mục `reference_image`, `reference_video` và `reference_audio`. |
 
-<ParamField body="web_search" type="boolean">
-  Bật tính năng tăng cường tìm kiếm web cho tác vụ.
-</ParamField>
+### Chỉnh sửa video
 
-<ParamField body="super_resolution_config" type="object">
-  Nâng cấp độ phân giải video đã tạo trong khi vẫn giữ nguyên ID tác vụ công khai.
+`seedance-2.5` có thể chỉnh sửa hoặc kéo dài một video có sẵn ở chế độ tham chiếu. Mô tả thay đổi trong prompt và gọi video đó là `@Video1`.
 
-  <Expandable title="Các trường super_resolution_config">
-    <ParamField body="resolution" type="string">
-      Độ phân giải đích: `"720p"`, `"1080p"`, `"2k"`, hoặc `"4k"`. Phải cao hơn độ phân giải gốc và không thể kết hợp với `resolution_limit`.
-    </ParamField>
-    <ParamField body="resolution_limit" type="integer">
-      Giới hạn pixel cạnh ngắn tùy chỉnh từ 64 đến 2160. Không thể kết hợp với `resolution`.
-    </ParamField>
-    <ParamField body="scene" type="string">
-      Cảnh nâng cấp: `"aigc"`, `"short_series"`, `"ugc"`, hoặc `"old_film"`.
-    </ParamField>
-    <ParamField body="tool_version" type="string">
-      Chế độ nâng cấp: `"standard"` (mặc định) hoặc `"professional"`.
-    </ParamField>
-    <ParamField body="fps" type="integer">
-      Tốc độ khung hình đầu ra từ 1 đến 120. Các giá trị cao hơn tốc độ khung hình nguồn sẽ bật nội suy khung hình.
-    </ParamField>
-  </Expandable>
-</ParamField>
+| Tác vụ | Thiết lập bắt buộc | Thời lượng đầu ra |
+|---|---|---|
+| Chỉnh sửa (thay thế chủ thể, thêm hoặc xóa đối tượng, thay đổi âm thanh) | Ít nhất một `reference_video` dài 4–30 giây, `ratio: "adaptive"`, `duration: -1`. Khuyến nghị: `omni_reference_task_type: "edit"`. | Bằng thời lượng của video đầu vào được chỉnh sửa |
+| Kéo dài (nối tiếp video về phía trước hoặc phía sau) | Ít nhất một `reference_video`, `ratio: "adaptive"`, `duration` là số dương. Khuyến nghị: `omni_reference_task_type: "extend"`. | `duration` |
 
-<Warning>
-  `camera_fixed`, `frames`, `callback_url`, và `return_last_frame` được chấp nhận để tương thích nhưng hiện tại không có tác dụng.
-</Warning>
+```json
+{
+  "model": "seedance-2.5",
+  "resolution": "720p",
+  "ratio": "adaptive",
+  "duration": -1,
+  "omni_reference_task_type": "edit",
+  "content": [
+    { "type": "text", "text": "Edit @Video1: make the ball bright green and keep everything else unchanged." },
+    { "type": "video_url", "video_url": { "url": "https://example.com/input.mp4" }, "role": "reference_video" }
+  ]
+}
+```
+
+Giống như mọi yêu cầu `seedance-2.5` có video tham chiếu, một tác vụ chỉnh sửa được tính phí theo đơn giá có video của độ phân giải tương ứng cho cố định 30 giây, bất kể thời lượng đầu vào hay đầu ra.
+
+<Note>
+  Seedance không chấp nhận trực tiếp hình ảnh hoặc video có khuôn mặt người thật. Hãy tải chúng lên dưới dạng [tài sản người thật](/vi/guides/seedance#tài-sản-người-thật) và tham chiếu bằng `asset://`.
+</Note>
 
 ## Ví dụ yêu cầu
 
@@ -200,11 +231,12 @@ curl https://router.flatkey.ai/v1/videos \
   ],
   "resolution": "720p",
   "ratio": "16:9",
-  "duration": 5
+  "duration": 5,
+  "generate_audio": false
 }
 ```
 
-### Tham chiếu đa phương thức với nâng cấp độ phân giải
+### Tham chiếu đa phương thức
 
 ```json
 {
@@ -220,13 +252,7 @@ curl https://router.flatkey.ai/v1/videos \
   "resolution": "1080p",
   "ratio": "16:9",
   "duration": 5,
-  "watermark": false,
-  "super_resolution_config": {
-    "resolution": "4k",
-    "scene": "aigc",
-    "tool_version": "professional",
-    "fps": 60
-  }
+  "watermark": false
 }
 ```
 
@@ -300,7 +326,8 @@ Khi tác vụ hoàn thành, phản hồi bao gồm URL video và thông tin sử
     "total_tokens": 120
   },
   "metadata": {
-    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content"
+    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content",
+    "last_frame_url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/last-frame"
   },
   "created_at": 1780306574,
   "completed_at": 1780306750
@@ -316,7 +343,7 @@ Các tác vụ thất bại trả về chi tiết lỗi kèm theo phản hồi t
   "status": "failed",
   "error": {
     "message": "The video generation task failed.",
-    "code": "video_generation_failed"
+    "code": ""
   }
 }
 ```
@@ -332,6 +359,35 @@ Bất kỳ số dư đã tiêu trước nào sẽ được hoàn lại tự đ�
 | `completed` | Video đã sẵn sàng tại `metadata.url`, và thông tin sử dụng token có trong `usage`. |
 | `failed` | Quá trình tạo thất bại. Chi tiết có trong `error.message`, và bất kỳ số dư đã tiêu trước nào sẽ được hoàn lại. |
 
+## Callback tác vụ
+
+Đặt `callback_url` để nhận các thay đổi trạng thái thay cho việc theo dõi tác vụ, hoặc song song với việc đó. Flatkey gửi một yêu cầu `POST` với `Content-Type: application/json` khi tác vụ chuyển sang `in_progress`, `completed` hoặc `failed`. Body chính là nội dung mà [`GET /v1/videos/{task_id}`](#theo-dõi-trạng-thái-tác-vụ) trả về tại thời điểm đó, bao gồm `metadata.url` và `metadata.last_frame_url` với các tác vụ đã hoàn thành.
+
+```json
+{
+  "id": "task_3f9a00000000000000000000000000e2",
+  "object": "video",
+  "status": "completed",
+  "progress": 100,
+  "model": "seedance-2.0",
+  "usage": {
+    "completion_tokens": 120,
+    "total_tokens": 120
+  },
+  "metadata": {
+    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content"
+  },
+  "created_at": 1780306574,
+  "completed_at": 1780306750
+}
+```
+
+| Header | Giá trị |
+|---|---|
+| `X-Flatkey-Event-Id` | `<task_id>:<status>`, ví dụ `task_3f9a…e2:completed`. Cùng một sự kiện có thể được gửi nhiều lần; hãy dùng header này để bỏ qua các bản trùng lặp. |
+
+Hãy phản hồi bằng bất kỳ mã trạng thái `2xx` nào trong vòng 5 giây. Nếu không, Flatkey sẽ thử lại hai lần, sau 2 và 8 giây, rồi dừng hẳn. Flatkey không đi theo chuyển hướng (redirect). Callback không được ký, vì vậy hãy xác minh kết quả bằng cách truy vấn tác vụ trước khi xử lý, và luôn lấy việc theo dõi tác vụ làm nguồn dữ liệu chuẩn phòng khi một callback bị mất.
+
 ## Tải video
 
 ```http
@@ -343,7 +399,7 @@ curl -L "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000
   -o output.mp4
 ```
 
-Endpoint nội dung truyền dữ liệu `video/mp4`. Nó không yêu cầu Bearer token và có thể dùng trực tiếp làm nguồn cho thẻ `<video>`.
+Endpoint nội dung truyền dữ liệu `video/mp4`, hoặc `video/quicktime` khi tác vụ dùng `output_format: "mov"`. Nó không yêu cầu Bearer token và có thể dùng trực tiếp làm nguồn cho thẻ `<video>`.
 
 <Warning>
   Endpoint nội dung chỉ hoạt động sau khi tác vụ hoàn thành và bị giới hạn tốc độ theo IP client. Hãy coi URL là thông tin nhạy cảm vì bất kỳ ai có URL đó đều có thể tải video.
@@ -368,6 +424,10 @@ Các lỗi tại thời điểm yêu cầu dùng phong bì lỗi chuẩn của F
 | `content` rỗng | Yêu cầu bị từ chối. Hãy bao gồm văn bản không rỗng, hình ảnh, hoặc video. |
 | Mô hình không khả dụng | `model` được yêu cầu không được bật cho route này. |
 | Số dư không đủ | Tác vụ không được tạo. |
+| `priority` ngoài khoảng 0–9 | Yêu cầu trả về `400` với `invalid_request`. |
+| `callback_url` không hợp lệ | Yêu cầu trả về `400` với `invalid_request` khi URL không phải HTTPS, chứa thông tin đăng nhập, dài hơn 2.048 ký tự, hoặc trỏ tới một địa chỉ riêng tư hay cục bộ. |
+| `duration: -1` ngoài tác vụ chỉnh sửa video với `seedance-2.5` | Yêu cầu trả về `400` với `video_price_not_configured`. |
+| Đầu vào không hợp lệ cho mô hình | Yêu cầu trả về `400` với `fail_to_fetch_task`, hoặc với các yêu cầu dùng tham chiếu `asset://`, tác vụ thất bại với `task preparation failed`. Hãy kiểm tra độ phân giải, thời lượng, giới hạn nội dung và các quy tắc chế độ đầu vào ở trên. Bạn không bị tính phí. |
 | Lỗi dịch vụ tạm thời | Thử lại sau theo chính sách backoff thông thường của bạn. |
 
 ## Ví dụ đầu-cuối

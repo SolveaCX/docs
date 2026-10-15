@@ -175,6 +175,18 @@ print(response.json()["id"])
   如果要做多段视频续接，请加上 `"return_last_frame": true`。任务完成后响应里会带 `metadata.last_frame_url`，下载这张图并作为下一个任务的 `first_frame` 即可。
 </Note>
 
+## 更多选项
+
+以下字段都是可选的，详见 [API 参考](/zh/api-reference/seedance-video-generation)。
+
+| 目的 | 字段 |
+|---|---|
+| 不想轮询，等通知 | `callback_url`：任务状态变化时，Flatkey 会把任务 `POST` 到你的 HTTPS 地址。见[任务回调](/zh/api-reference/seedance-video-generation#任务回调)。 |
+| 让任务优先排队 | `priority`：`0`–`9`，越大越先执行。 |
+| 要 MOV 文件做后期 | `output_format: "mov"`（仅 `seedance-2.5`）。 |
+| 编辑或延长已有视频 | `seedance-2.5` 加 `reference_video` 和 `omni_reference_task_type`。见[视频编辑](/zh/api-reference/seedance-video-generation#视频编辑)。 |
+| 等太久就放弃 | `execution_expires_after`：任务过期前的秒数，默认 48 小时。 |
+
 ## 使用素材库
 
 当你想先登记一个参考素材、等待它可用、然后在 Seedance 请求里反复使用时，用素材库。素材库分两类：

@@ -117,6 +117,85 @@ curl.exe -L "$videoUrl" -o output.mp4
 
 タスクが完了すると、`metadata.url` は認証ヘッダーなしでMP4ファイルをダウンロードできます。このURLは非公開として扱い、公開しないでください。
 
+## 最初と最後のフレームから生成する
+
+Seedanceに開始画像と終了画像を渡すと、その間の動きを生成します。`role: "first_frame"` の `image_url` アイテムと `role: "last_frame"` の `image_url` アイテムを1つずつ追加してください。テキストプロンプトでは、2つのフレーム間の変化を記述します。
+
+<CodeGroup>
+```bash Bash
+curl -sS https://router.flatkey.ai/v1/videos \
+  -H "Authorization: Bearer YOUR_FLATKEY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "content": [
+      {
+        "type": "text",
+        "text": "The red ball rolls smoothly across the table from left to right and turns blue"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/first.png" },
+        "role": "first_frame"
+      },
+      {
+        "type": "image_url",
+        "image_url": { "url": "https://example.com/last.png" },
+        "role": "last_frame"
+      }
+    ],
+    "resolution": "720p",
+    "ratio": "16:9",
+    "duration": 5,
+    "generate_audio": false
+  }'
+```
+```python Python
+import base64
+import requests
+
+def data_uri(path):
+    with open(path, "rb") as f:
+        return "data:image/png;base64," + base64.b64encode(f.read()).decode()
+
+response = requests.post(
+    "https://router.flatkey.ai/v1/videos",
+    headers={"Authorization": "Bearer YOUR_FLATKEY_API_KEY"},
+    json={
+        "model": "seedance-2.0",
+        "content": [
+            {"type": "text", "text": "The red ball rolls smoothly across the table from left to right and turns blue"},
+            {"type": "image_url", "image_url": {"url": data_uri("first.png")}, "role": "first_frame"},
+            {"type": "image_url", "image_url": {"url": data_uri("last.png")}, "role": "last_frame"},
+        ],
+        "resolution": "720p",
+        "ratio": "16:9",
+        "duration": 5,
+        "generate_audio": False,
+    },
+)
+print(response.json()["id"])
+```
+</CodeGroup>
+
+各画像には、公開HTTPS URLまたは `data:image/...;base64,` 形式のデータURIを指定できます。画像のアスペクト比は `ratio` と揃えてください。結果のポーリングとダウンロードは、[Seedanceを呼び出す](#seedanceを呼び出す)のステップ2と同じ方法で行います。
+
+<Note>
+  クリップをつなげるには、`"return_last_frame": true` を追加します。完了したタスクには `metadata.last_frame_url` が含まれるので、その画像をダウンロードして次のタスクの `first_frame` として渡してください。
+</Note>
+
+## その他のオプション
+
+以下のリクエストフィールドはすべて省略可能です。詳細は[APIリファレンス](/ja/api-reference/seedance-video-generation)を参照してください。
+
+| 目的 | フィールド |
+|---|---|
+| ポーリングせずに通知を受け取る | `callback_url`: タスクのステータスが変わると、FlatkeyがタスクをHTTPSエンドポイントに `POST` します。[タスクコールバック](/ja/api-reference/seedance-video-generation#タスクコールバック)を参照してください。 |
+| キュー内で他のタスクより先に実行する | `priority`: `0`〜`9`。値が大きいほど先に実行されます。 |
+| ポストプロダクション用にMOVファイルを取得する | `output_format: "mov"`（`seedance-2.5` のみ）。 |
+| 既存の動画を編集または延長する | `seedance-2.5` で `reference_video` と `omni_reference_task_type` を使用します。[動画編集](/ja/api-reference/seedance-video-generation#動画編集)を参照してください。 |
+| 待ち時間が長すぎるタスクを破棄する | `execution_expires_after`: タスクが期限切れになるまでの秒数。デフォルト: 48時間。 |
+
 ## アセットライブラリを使用する
 
 参照を一度登録し、準備が完了するまで待ってから、Seedanceのリクエストで再利用したい場合は、アセットライブラリを使用します。アセットタイプには2種類あります。

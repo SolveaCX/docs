@@ -6,7 +6,7 @@ description: "テキストおよびマルチモーダル入力で Seedance 動�
 
 `POST /v1/videos` を使用して、非同期の Seedance 動画生成タスクを作成します。タスクが完了するまでポーリングし、返された Flatkey URL から動画をダウンロードします。
 
-対応モデルには `seedance-2.0` および `seedance-2.0-fast` が含まれます。利用可否はアカウントによって異なります。現在のモデル一覧を取得するには [`GET /v1/models`](/ja/api-reference/models) を使用してください。
+対応モデルは `seedance-2.0`、`seedance-2.0-fast`、`seedance-2.0-mini`、`seedance-2.5` です。利用可否はアカウントによって異なります。現在のモデル一覧を取得するには [`GET /v1/models`](/ja/api-reference/models) を使用してください。
 
 ## エンドポイント
 
@@ -30,83 +30,114 @@ POST https://router.flatkey.ai/v1/videos
 ### ボディパラメーター
 
 <ParamField body="model" type="string" required>
-  Seedance モデル ID。`"seedance-2.0"` または `"seedance-2.0-fast"` を使用してください。
+  Seedance モデル ID: `"seedance-2.0"`、`"seedance-2.0-fast"`、`"seedance-2.0-mini"`、または `"seedance-2.5"`。
 </ParamField>
 
 <ParamField body="content" type="array" required>
-  マルチモーダル入力アイテム。空でないテキストアイテム、画像 URL、または動画 URL を少なくとも 1 つ含めてください。
+  マルチモーダル入力アイテム。空でないテキスト、画像、動画、または音声のアイテムを少なくとも 1 つ含めてください。[`content` アイテム](#content-アイテム)を参照してください。
 </ParamField>
 
 <ParamField body="resolution" type="string">
-  出力解像度: `"480p"`、`"720p"`、または `"1080p"`。
+  出力解像度。デフォルト: `"720p"`。
+
+  | モデル | 対応する値 |
+  |---|---|
+  | `seedance-2.0` | `"480p"`、`"720p"`、`"1080p"`、`"4k"` |
+  | `seedance-2.0-fast`、`seedance-2.0-mini` | `"480p"`、`"720p"` |
+  | `seedance-2.5` | `"480p"`、`"720p"`、`"1080p"` |
 </ParamField>
 
 <ParamField body="ratio" type="string">
-  出力アスペクト比: `"16:9"`、`"4:3"`、`"1:1"`、`"3:4"`、`"9:16"`、`"21:9"`、または `"adaptive"`。
+  出力アスペクト比: `"16:9"`、`"4:3"`、`"1:1"`、`"3:4"`、`"9:16"`、`"21:9"`、または `"adaptive"`。デフォルト: `"adaptive"`。`"adaptive"` の場合、モデルは入力した画像または動画に基づいてアスペクト比を選択します。`seedance-2.5` では、最初のフレームを指定するタスクと、最初と最後のフレームを指定するタスクは `"adaptive"` のみに対応しています。
 </ParamField>
 
 <ParamField body="duration" type="integer">
-  動画の長さ（4〜15 秒）。`-1` を指定するとモデルが自動的に選択します。
+  動画の長さ（秒）。デフォルト: `5`。Seedance 2.0 系モデルは 4〜15、`seedance-2.5` は 4〜30 を受け付けます。
 </ParamField>
 
-<ParamField body="seed" type="integer">
-  ランダムシード。省略するとランダムなシードが使用されます。
-</ParamField>
+<Warning>
+  `duration` には必ず正の値を指定してください。Flatkey は Seedance を秒単位で課金するため、`-1`（長さをモデルに任せる）は `video_price_not_configured` で拒否されます。唯一の例外は [`seedance-2.5` の動画編集](#動画編集)で、この場合は `-1` が必須です。
+</Warning>
 
 <ParamField body="watermark" type="boolean">
-  ウォーターマークを追加するかどうか。デフォルト: `false`。
+  右下隅に「AI generated」のウォーターマークを追加します。デフォルト: `false`。
 </ParamField>
 
 <ParamField body="generate_audio" type="boolean">
-  同期されたオーディオを生成するかどうか。
+  同期されたモノラル音声トラックを生成します。デフォルト: `true`。動画だけが必要な場合は `false` に設定してください。生成された音声は、まれに著作権チェックに通らないことがあります。
+</ParamField>
+
+<ParamField body="return_last_frame" type="boolean">
+  生成された動画の最後のフレームを画像として返します。デフォルト: `false`。`true` の場合、完了したタスクに `metadata.last_frame_url` が含まれます。この URL からは、動画と同じサイズでウォーターマークのない JPEG をダウンロードできます。次のタスクの `first_frame` として使用すると、クリップをつなげられます。`metadata.url` と同様に認証ヘッダーは不要なため、非公開として扱ってください。
+</ParamField>
+
+<ParamField body="output_format" type="string">
+  `seedance-2.5` のみ。生成される動画のコンテナ形式: `"mp4"` または `"mov"`。デフォルト: `"mp4"`。MOV はカラーグレーディングや合成に向けてより高い色精度を保持します（H.264、YUV 4:4:4、PCM 音声）が、一部のプレーヤーでは開けません。MOV の結果に対しては、[コンテンツエンドポイント](#動画のダウンロード)が `video/quicktime` を返します。
+</ParamField>
+
+<ParamField body="omni_reference_task_type" type="string">
+  `seedance-2.5` の参照モードのタスクのみ。意図するタスクの種類をモデルに伝えます: `"auto"`（デフォルト）、`"reference"`、`"edit"`、または `"extend"`。明示的に指定すると、タスク種類のチェックが送信時に行われるため、無効な組み合わせはタスクの開始後ではなく即座にエラーになります。`"reference"`、`"edit"`、`"extend"` はいずれも `content` に参照アイテムが必要で、テキストのみのリクエストで `"reference"` を指定すると拒否されます。[動画の編集と延長](#動画編集)を参照してください。
+</ParamField>
+
+<ParamField body="priority" type="integer">
+  キューの優先度（`0`〜`9`）。デフォルト: `0`。値が大きいほど、同じモデルで待機している優先度の低いタスクより先に処理されます。すべての Seedance 2.0 系モデルと `seedance-2.5` で対応しています。0〜9 の範囲外の値は `400` で拒否されます。
+</ParamField>
+
+<ParamField body="execution_expires_after" type="integer">
+  タスクが期限切れになるまでに待機および実行できる秒数。デフォルト: `172800`（48 時間）。遅れて届いた結果が役に立たない場合は、より短い値を指定してください。
+</ParamField>
+
+<ParamField body="callback_url" type="string">
+  タスクのステータスが変わるたびに `POST` を受け取る公開 HTTPS URL。[タスクコールバック](#タスクコールバック)を参照してください。`https` を使用し、ユーザー認証情報を含まず、2,048 文字以内で、公開アドレスに解決される必要があります。条件を満たさない場合、リクエストは `400` で拒否されます。
 </ParamField>
 
 ### `content` アイテム
 
-| `type` | 値フィールド | 対応 `role` | 用途 |
+| `type` | 値フィールド | 対応 `role` | 制限 |
 |---|---|---|---|
-| `text` | `text` | — | テキストプロンプト。複数のテキストアイテムは順番に結合されます。 |
-| `image_url` | `image_url.url` | `first_frame`, `last_frame`, `reference_image` | 入力または参照画像。最大 9 枚。 |
-| `video_url` | `video_url.url` | `reference_video` | 参照動画。最大 3 本。 |
-| `audio_url` | `audio_url.url` | `reference_audio` | 参照オーディオ。最大 3 クリップ。 |
+| `text` | `text` | — | プロンプトテキスト。英語で約 1,000 語以内に収めてください。 |
+| `image_url` | `image_url.url` | `first_frame`、`last_frame`、`reference_image` | 参照画像は最大 9 枚（`seedance-2.5` は 30 枚）。JPEG、PNG、WebP、BMP、TIFF、GIF、HEIC、または HEIF。30 MB 未満。各辺 300〜6000 px。アスペクト比 0.4〜2.5。 |
+| `video_url` | `video_url.url` | `reference_video` | 最大 3 本、各 2〜15 秒、合計 15 秒まで（`seedance-2.5` は 10 本、合計 30 秒まで）。MP4 または MOV。200 MB 未満。総ピクセル数は約 409,600 以上（例: 854×480）。 |
+| `audio_url` | `audio_url.url` | `reference_audio` | 最大 3 クリップ、各 2〜15 秒、合計 15 秒まで（`seedance-2.5` は 10 クリップ、合計 30 秒まで）。WAV または MP3。15 MB 未満。Seedance 2.0 系モデルでは、音声と一緒に画像または動画が少なくとも 1 つ必要です。 |
 
-画像に `first_frame` または `last_frame` ロールを使用した場合、API はファースト/ラストフレームモードを使用します。それ以外の画像は参照として扱われます。
+各 URL には、公開 HTTPS URL、`data:<mime>;base64,` 形式のデータ URI（画像と音声のみ）、または[アセットライブラリ](/ja/guides/seedance#アセットライブラリを使用する)の `asset://` 参照を指定できます。リクエストボディ全体は 64 MB 未満に収める必要があります。
 
-### 高度なパラメーター
+タスクごとに入力モードを 1 つ選択してください。これらのモードは混在できません:
 
-<ParamField body="input_type" type="string">
-  明示的な入力モード: `"reference"` または `"first_last_frame"`。省略すると `content` からモードが推定されます。
-</ParamField>
+| モード | `content` の構成方法 |
+|---|---|
+| 最初のフレーム | `role: "first_frame"` の画像 1 枚。 |
+| 最初と最後のフレーム | 画像 2 枚（`role: "first_frame"` と `role: "last_frame"` を 1 枚ずつ）。`last_frame` には必ず `first_frame` が必要で、どちらも参照アイテムと組み合わせることはできません。 |
+| 参照 | `reference_image`、`reference_video`、`reference_audio` アイテムの任意の組み合わせ。 |
 
-<ParamField body="web_search" type="boolean">
-  タスクのウェブ検索拡張を有効にします。
-</ParamField>
+### 動画編集
 
-<ParamField body="super_resolution_config" type="object">
-  同じパブリックタスク ID を保持したまま生成された動画をアップスケールします。
+`seedance-2.5` は、参照モードで既存の動画を編集または延長できます。プロンプトで変更内容を説明し、動画を `@Video1` として参照してください。
 
-  <Expandable title="super_resolution_config のフィールド">
-    <ParamField body="resolution" type="string">
-      ターゲット解像度: `"720p"`、`"1080p"`、`"2k"`、または `"4k"`。元の解像度を超える必要があり、`resolution_limit` と同時に使用できません。
-    </ParamField>
-    <ParamField body="resolution_limit" type="integer">
-      カスタムの短辺ピクセル上限（64〜2160）。`resolution` と同時に使用できません。
-    </ParamField>
-    <ParamField body="scene" type="string">
-      アップスケールシーン: `"aigc"`、`"short_series"`、`"ugc"`、または `"old_film"`。
-    </ParamField>
-    <ParamField body="tool_version" type="string">
-      アップスケールモード: `"standard"`（デフォルト）または `"professional"`。
-    </ParamField>
-    <ParamField body="fps" type="integer">
-      出力フレームレート（1〜120）。ソースのフレームレートを超える値を指定するとフレーム補間が有効になります。
-    </ParamField>
-  </Expandable>
-</ParamField>
+| タスク | 必須の設定 | 出力の長さ |
+|---|---|---|
+| 編集（被写体の置き換え、オブジェクトの追加・削除、音声の変更） | 長さ 4〜30 秒の `reference_video` を少なくとも 1 つ、`ratio: "adaptive"`、`duration: -1`。推奨: `omni_reference_task_type: "edit"`。 | 編集元の入力動画と同じ |
+| 延長（動画を前方または後方に続ける） | `reference_video` を少なくとも 1 つ、`ratio: "adaptive"`、正の `duration`。推奨: `omni_reference_task_type: "extend"`。 | `duration` |
 
-<Warning>
-  `camera_fixed`、`frames`、`callback_url`、および `return_last_frame` は互換性のために受け付けられますが、現在は効果がありません。
-</Warning>
+```json
+{
+  "model": "seedance-2.5",
+  "resolution": "720p",
+  "ratio": "adaptive",
+  "duration": -1,
+  "omni_reference_task_type": "edit",
+  "content": [
+    { "type": "text", "text": "Edit @Video1: make the ball bright green and keep everything else unchanged." },
+    { "type": "video_url", "video_url": { "url": "https://example.com/input.mp4" }, "role": "reference_video" }
+  ]
+}
+```
+
+参照動画を含むすべての `seedance-2.5` リクエストと同様に、編集は入力や出力の長さに関係なく、その解像度の動画入力ありの料金で一律 30 秒分として課金されます。
+
+<Note>
+  Seedance は、実在の人物の顔が写った画像や動画を直接受け付けません。[実在人物アセット](/ja/guides/seedance#実在人物アセット)としてアップロードし、`asset://` で参照してください。
+</Note>
 
 ## リクエスト例
 
@@ -180,7 +211,7 @@ curl https://router.flatkey.ai/v1/videos \
 ```
 </CodeGroup>
 
-### ファースト・ラストフレーム入力
+### 最初と最後のフレームの入力
 
 ```json
 {
@@ -200,11 +231,12 @@ curl https://router.flatkey.ai/v1/videos \
   ],
   "resolution": "720p",
   "ratio": "16:9",
-  "duration": 5
+  "duration": 5,
+  "generate_audio": false
 }
 ```
 
-### アップスケール付きマルチモーダル参照
+### マルチモーダル参照
 
 ```json
 {
@@ -220,13 +252,7 @@ curl https://router.flatkey.ai/v1/videos \
   "resolution": "1080p",
   "ratio": "16:9",
   "duration": 5,
-  "watermark": false,
-  "super_resolution_config": {
-    "resolution": "4k",
-    "scene": "aigc",
-    "tool_version": "professional",
-    "fps": 60
-  }
+  "watermark": false
 }
 ```
 
@@ -300,7 +326,8 @@ curl https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2 \
     "total_tokens": 120
   },
   "metadata": {
-    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content"
+    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content",
+    "last_frame_url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/last-frame"
   },
   "created_at": 1780306574,
   "completed_at": 1780306750
@@ -316,7 +343,7 @@ curl https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2 \
   "status": "failed",
   "error": {
     "message": "The video generation task failed.",
-    "code": "video_generation_failed"
+    "code": ""
   }
 }
 ```
@@ -332,6 +359,35 @@ curl https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2 \
 | `completed` | 動画は `metadata.url` で準備完了です。トークン使用量は `usage` で確認できます。 |
 | `failed` | 生成に失敗しました。詳細は `error.message` で確認でき、事前に消費された残高は返金されます。 |
 
+## タスクコールバック
+
+`callback_url` を設定すると、ポーリングの代わりに、またはポーリングと併用して、ステータスの変化を受け取れます。タスクが `in_progress`、`completed`、または `failed` に移行すると、Flatkey は `Content-Type: application/json` で `POST` を送信します。ボディは、その時点で [`GET /v1/videos/{task_id}`](#タスクステータスのポーリング) が返す内容とまったく同じで、完了したタスクでは `metadata.url` と `metadata.last_frame_url` を含みます。
+
+```json
+{
+  "id": "task_3f9a00000000000000000000000000e2",
+  "object": "video",
+  "status": "completed",
+  "progress": 100,
+  "model": "seedance-2.0",
+  "usage": {
+    "completion_tokens": 120,
+    "total_tokens": 120
+  },
+  "metadata": {
+    "url": "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000e2/content"
+  },
+  "created_at": 1780306574,
+  "completed_at": 1780306750
+}
+```
+
+| ヘッダー | 値 |
+|---|---|
+| `X-Flatkey-Event-Id` | `<task_id>:<status>`（例: `task_3f9a…e2:completed`）。同じイベントが複数回配信されることがあるため、このヘッダーを使って重複を無視してください。 |
+
+5 秒以内に任意の `2xx` ステータスで応答してください。そうでない場合、Flatkey は 2 秒後と 8 秒後の計 2 回リトライし、その後は送信を停止します。リダイレクトには従いません。コールバックには署名がないため、結果に基づいて処理する前にタスクをポーリングして確認してください。コールバックが失われる場合に備えて、ポーリングを信頼できる情報源として使い続けてください。
+
 ## 動画のダウンロード
 
 ```http
@@ -343,7 +399,7 @@ curl -L "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000
   -o output.mp4
 ```
 
-コンテンツエンドポイントは `video/mp4` データをストリーミングします。Bearer トークンは不要で、`<video>` ソースとして直接使用できます。
+コンテンツエンドポイントは `video/mp4` データをストリーミングします（タスクで `output_format: "mov"` を使用した場合は `video/quicktime`）。Bearer トークンは不要で、`<video>` ソースとして直接使用できます。
 
 <Warning>
   コンテンツエンドポイントはタスクの完了後にのみ機能し、クライアント IP によるレート制限があります。URL を持つ誰もが動画をダウンロードできるため、URL を機密情報として扱ってください。
@@ -368,6 +424,10 @@ curl -L "https://router.flatkey.ai/v1/videos/task_3f9a00000000000000000000000000
 | `content` が空 | リクエストは拒否されます。空でないテキスト、画像、または動画を含めてください。 |
 | 利用不可のモデル | 要求された `model` はこのルートで有効になっていません。 |
 | 残高不足 | タスクは作成されません。 |
+| `priority` が 0〜9 の範囲外 | リクエストは `400` と `invalid_request` を返します。 |
+| 無効な `callback_url` | URL が HTTPS でない、認証情報を含む、2,048 文字を超える、またはプライベートアドレスやローカルアドレスを指している場合、リクエストは `400` と `invalid_request` を返します。 |
+| `seedance-2.5` の動画編集以外での `duration: -1` | リクエストは `400` と `video_price_not_configured` を返します。 |
+| モデルに対して無効な入力 | リクエストは `400` と `fail_to_fetch_task` を返します。`asset://` 参照を使用するリクエストでは、タスクが `task preparation failed` で失敗します。上記の解像度、長さ、コンテンツの制限、入力モードのルールを確認してください。料金は発生しません。 |
 | 一時的なサービス障害 | 通常のバックオフポリシーを使用して後でリトライしてください。 |
 
 ## エンドツーエンドの例
