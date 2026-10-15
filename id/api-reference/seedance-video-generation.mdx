@@ -135,6 +135,33 @@ Pilih satu mode input per tugas. Mode-mode ini tidak dapat dicampur:
 
 Seperti setiap permintaan `seedance-2.5` dengan video referensi, pengeditan ditagih dengan tarif dengan video untuk resolusi tersebut selama 30 detik tetap, berapa pun durasi input maupun output-nya.
 
+### Mode draf
+
+`seedance-2.5` dapat merender draf 480p yang murah terlebih dahulu, sehingga Anda dapat memeriksa adegan, pengambilan gambar, dan gerakan sebelum membayar video final. Diperlukan dua permintaan:
+
+1. **Buat draf.** Kirim permintaan biasa dengan `"draft": true` dan `"resolution": "480p"`. Draf ditagih sebagai video 480p biasa.
+2. **Hasilkan video final.** Setelah draf selesai, kirim permintaan yang satu-satunya item `content`-nya adalah `draft_task` yang merujuk ke ID tugas draf, dengan `"resolution": "1080p"`.
+
+```json
+{
+  "model": "seedance-2.5",
+  "resolution": "1080p",
+  "content": [
+    { "type": "draft_task", "draft_task": { "id": "task_3f9a00000000000000000000000000e2" } }
+  ]
+}
+```
+
+Video final menggunakan kembali prompt, media, durasi, rasio aspek, seed, pengaturan audio, dan jenis tugas dari draf. Jangan kirim `duration`, `ratio`, `frames`, `seed`, `generate_audio`, `omni_reference_task_type`, `draft`, atau item `content` lain bersama `draft_task`; permintaan akan ditolak dengan `400`. Anda tetap dapat mengatur `return_last_frame`, `output_format`, `watermark`, `priority`, `execution_expires_after`, dan `callback_url`.
+
+| Aturan | Detail |
+|---|---|
+| Model | `model` harus sama dengan model draf. |
+| ID tugas draf | Gunakan ID `task_…` yang dikembalikan Flatkey untuk draf. Tugas tersebut harus milik Anda sendiri dan sudah selesai. |
+| Resolusi | Draf: hanya `480p`. Video final: hanya `1080p`. |
+| Masa berlaku | Draf dapat digunakan selama 7 hari sejak dibuat. |
+| Penagihan | Video final ditagih dengan tarif 1080p untuk durasi draf. Jika draf menggunakan video referensi, tarif dengan video berlaku untuk 30 detik tetap. |
+
 <Note>
   Seedance tidak menerima secara langsung gambar atau video yang menampilkan wajah manusia asli. Unggah sebagai [aset orang-nyata](/id/guides/seedance#aset-orang-nyata) lalu rujuk dengan `asset://`.
 </Note>

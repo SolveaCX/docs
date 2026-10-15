@@ -135,6 +135,33 @@ Chọn một chế độ đầu vào cho mỗi tác vụ. Không thể kết h�
 
 Giống như mọi yêu cầu `seedance-2.5` có video tham chiếu, một tác vụ chỉnh sửa được tính phí theo đơn giá có video của độ phân giải tương ứng cho cố định 30 giây, bất kể thời lượng đầu vào hay đầu ra.
 
+### Chế độ bản nháp
+
+`seedance-2.5` có thể tạo trước một bản nháp 480p giá rẻ để bạn kiểm tra bối cảnh, các cảnh quay và chuyển động trước khi trả tiền cho video chính thức. Quy trình gồm hai yêu cầu:
+
+1. **Tạo bản nháp.** Gửi một yêu cầu bình thường với `"draft": true` và `"resolution": "480p"`. Yêu cầu này được tính phí như một video 480p thông thường.
+2. **Tạo video chính thức.** Sau khi bản nháp hoàn thành, gửi một yêu cầu có mục `content` duy nhất là một `draft_task` trỏ tới ID tác vụ của bản nháp, kèm `"resolution": "1080p"`.
+
+```json
+{
+  "model": "seedance-2.5",
+  "resolution": "1080p",
+  "content": [
+    { "type": "draft_task", "draft_task": { "id": "task_3f9a00000000000000000000000000e2" } }
+  ]
+}
+```
+
+Video chính thức dùng lại prompt, nội dung đa phương tiện, thời lượng, tỷ lệ khung hình, seed, thiết lập âm thanh và loại tác vụ của bản nháp. Không gửi `duration`, `ratio`, `frames`, `seed`, `generate_audio`, `omni_reference_task_type`, `draft` hoặc bất kỳ mục `content` nào khác cùng với `draft_task`; yêu cầu sẽ bị từ chối với `400`. Bạn vẫn có thể đặt `return_last_frame`, `output_format`, `watermark`, `priority`, `execution_expires_after` và `callback_url`.
+
+| Quy tắc | Chi tiết |
+|---|---|
+| Mô hình | `model` phải giống với bản nháp. |
+| ID tác vụ bản nháp | Dùng ID `task_…` mà Flatkey trả về cho bản nháp. Tác vụ đó phải thuộc về bạn và đã hoàn thành. |
+| Độ phân giải | Bản nháp: chỉ `480p`. Video chính thức: chỉ `1080p`. |
+| Thời hạn | Bản nháp có thể được dùng trong 7 ngày kể từ khi tạo. |
+| Tính phí | Video chính thức được tính phí theo đơn giá 1080p cho thời lượng của bản nháp. Nếu bản nháp dùng video tham chiếu, áp dụng đơn giá có video cho cố định 30 giây. |
+
 <Note>
   Seedance không chấp nhận trực tiếp hình ảnh hoặc video có khuôn mặt người thật. Hãy tải chúng lên dưới dạng [tài sản người thật](/vi/guides/seedance#tài-sản-người-thật) và tham chiếu bằng `asset://`.
 </Note>

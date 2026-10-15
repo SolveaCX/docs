@@ -135,6 +135,33 @@ O `seedance-2.5` pode editar ou estender um vídeo existente no modo de referên
 
 Como toda requisição do `seedance-2.5` com vídeo de referência, uma edição é cobrada pela tarifa com vídeo da resolução escolhida, por 30 segundos fixos, independentemente da duração da entrada ou da saída.
 
+### Modo rascunho
+
+O `seedance-2.5` pode gerar primeiro um rascunho barato em 480p, para que você confira a cena, os planos e o movimento antes de pagar pelo vídeo final. São necessárias duas requisições:
+
+1. **Crie o rascunho.** Envie uma requisição normal com `"draft": true` e `"resolution": "480p"`. Ela é cobrada como um vídeo 480p comum.
+2. **Gere o vídeo final.** Depois que o rascunho for concluído, envie uma requisição cujo único item de `content` seja um `draft_task` apontando para o ID da tarefa do rascunho, com `"resolution": "1080p"`.
+
+```json
+{
+  "model": "seedance-2.5",
+  "resolution": "1080p",
+  "content": [
+    { "type": "draft_task", "draft_task": { "id": "task_3f9a00000000000000000000000000e2" } }
+  ]
+}
+```
+
+O vídeo final reaproveita o prompt, as mídias, a duração, a proporção, a semente, a configuração de áudio e o tipo de tarefa do rascunho. Não envie `duration`, `ratio`, `frames`, `seed`, `generate_audio`, `omni_reference_task_type`, `draft` nem qualquer outro item de `content` junto com um `draft_task`; a requisição é rejeitada com `400`. Você ainda pode definir `return_last_frame`, `output_format`, `watermark`, `priority`, `execution_expires_after` e `callback_url`.
+
+| Regra | Detalhe |
+|---|---|
+| Modelo | `model` deve ser igual ao do rascunho. |
+| ID da tarefa do rascunho | Use o ID `task_…` que o Flatkey retornou para o rascunho. A tarefa deve ser sua e precisa estar concluída. |
+| Resolução | Rascunho: somente `480p`. Vídeo final: somente `1080p`. |
+| Validade | Um rascunho pode ser usado por 7 dias após a criação. |
+| Cobrança | O vídeo final é cobrado pela tarifa de 1080p, pela duração do rascunho. Se o rascunho usou um vídeo de referência, aplica-se a tarifa com vídeo por 30 segundos fixos. |
+
 <Note>
   O Seedance não aceita diretamente imagens ou vídeos que mostrem rostos humanos reais. Envie-os como [ativos de pessoa real](/pt/guides/seedance#ativos-de-pessoa-real) e referencie-os com `asset://`.
 </Note>

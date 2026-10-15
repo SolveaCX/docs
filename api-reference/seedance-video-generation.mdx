@@ -135,6 +135,33 @@ Choose one input mode per task. These modes cannot be mixed:
 
 Like every `seedance-2.5` request with a reference video, an edit is billed at the resolution's with-video rate for a fixed 30 seconds, regardless of the input or output length.
 
+### Draft mode
+
+`seedance-2.5` can render a cheap 480p draft first, so you can check the scene, shots, and motion before paying for the final video. It takes two requests:
+
+1. **Create the draft.** Send a normal request with `"draft": true` and `"resolution": "480p"`. It is billed as a regular 480p video.
+2. **Render the final video.** After the draft completes, send a request whose only `content` item is a `draft_task` pointing at the draft's task ID, with `"resolution": "1080p"`.
+
+```json
+{
+  "model": "seedance-2.5",
+  "resolution": "1080p",
+  "content": [
+    { "type": "draft_task", "draft_task": { "id": "task_3f9a00000000000000000000000000e2" } }
+  ]
+}
+```
+
+The final video reuses the draft's prompt, media, duration, ratio, seed, audio setting, and task type. Do not send `duration`, `ratio`, `frames`, `seed`, `generate_audio`, `omni_reference_task_type`, `draft`, or any other `content` item with a `draft_task`; the request is rejected with `400`. You can still set `return_last_frame`, `output_format`, `watermark`, `priority`, `execution_expires_after`, and `callback_url`.
+
+| Rule | Detail |
+|---|---|
+| Model | `model` must match the draft. |
+| Draft task ID | Use the `task_…` ID Flatkey returned for the draft. It must be your own task and must have completed. |
+| Resolution | Draft: `480p` only. Final video: `1080p` only. |
+| Expiry | A draft can be used for 7 days after it was created. |
+| Billing | The final video is billed at the 1080p rate for the draft's duration. If the draft used a reference video, the with-video rate applies for a fixed 30 seconds. |
+
 <Note>
   Seedance does not accept images or videos that show real human faces directly. Upload them as [real-person assets](/guides/seedance#real-person-assets) and reference them with `asset://`.
 </Note>

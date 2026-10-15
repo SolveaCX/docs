@@ -135,6 +135,33 @@ Choisissez un seul mode d'entrée par tâche. Ces modes ne peuvent pas être com
 
 Comme toute requête `seedance-2.5` comportant une vidéo de référence, une édition est facturée au tarif avec vidéo de la résolution choisie, pour une durée fixe de 30 secondes, quelle que soit la durée d'entrée ou de sortie.
 
+### Mode brouillon
+
+`seedance-2.5` peut d'abord générer un brouillon peu coûteux en 480p, afin que vous puissiez vérifier la scène, les plans et le mouvement avant de payer la vidéo finale. Deux requêtes sont nécessaires :
+
+1. **Créez le brouillon.** Envoyez une requête normale avec `"draft": true` et `"resolution": "480p"`. Elle est facturée comme une vidéo 480p ordinaire.
+2. **Générez la vidéo finale.** Une fois le brouillon terminé, envoyez une requête dont le seul élément `content` est un `draft_task` pointant vers l'identifiant de tâche du brouillon, avec `"resolution": "1080p"`.
+
+```json
+{
+  "model": "seedance-2.5",
+  "resolution": "1080p",
+  "content": [
+    { "type": "draft_task", "draft_task": { "id": "task_3f9a00000000000000000000000000e2" } }
+  ]
+}
+```
+
+La vidéo finale reprend l'invite, les médias, la durée, le format, la graine, le réglage audio et le type de tâche du brouillon. N'envoyez pas `duration`, `ratio`, `frames`, `seed`, `generate_audio`, `omni_reference_task_type`, `draft` ni aucun autre élément `content` avec un `draft_task` ; la requête est rejetée avec `400`. Vous pouvez toujours définir `return_last_frame`, `output_format`, `watermark`, `priority`, `execution_expires_after` et `callback_url`.
+
+| Règle | Détail |
+|---|---|
+| Modèle | `model` doit correspondre à celui du brouillon. |
+| Identifiant de tâche du brouillon | Utilisez l'identifiant `task_…` renvoyé par Flatkey pour le brouillon. Il doit s'agir de votre propre tâche, et celle-ci doit être terminée. |
+| Résolution | Brouillon : `480p` uniquement. Vidéo finale : `1080p` uniquement. |
+| Expiration | Un brouillon peut être utilisé pendant 7 jours après sa création. |
+| Facturation | La vidéo finale est facturée au tarif 1080p pour la durée du brouillon. Si le brouillon utilisait une vidéo de référence, le tarif avec vidéo s'applique pour une durée fixe de 30 secondes. |
+
 <Note>
   Seedance n'accepte pas directement les images ou vidéos montrant de vrais visages humains. Téléversez-les en tant que [ressources de personne réelle](/fr/guides/seedance#ressources-de-personne-réelle) et référencez-les avec `asset://`.
 </Note>
