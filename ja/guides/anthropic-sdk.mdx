@@ -1,10 +1,10 @@
 ---
 title: "Anthropic SDKを使用してFlatkey経由でClaudeリクエストをルーティングする"
 sidebarTitle: "Anthropic SDK"
-description: "Anthropic SDKのベースURLを設定することで、Flatkey経由でAnthropicのClaudeリクエストをルーティングします。公式価格より最大50%オフでClaudeにアクセスできます。"
+description: "Anthropic SDKのベースURLを設定することで、Flatkey経由でAnthropicのClaudeリクエストをルーティングします。同じモデルの公式API価格より20%以上安い料金でClaudeにアクセスできます。"
 ---
 
-Anthropic Python SDKをFlatkey経由でルーティングすることで、公式Anthropic価格より最大50%オフでClaudeモデルにアクセスできます。`base_url`パラメータを一度設定するだけで、既存のSDKコードはそのまま動作します — 他の変更は不要です。
+Anthropic Python SDKをFlatkey経由でルーティングすることで、同じモデルのAnthropic公式API価格より20%以上安い料金でClaudeモデルにアクセスできます。`base_url`パラメータを一度設定するだけで、既存のSDKコードはそのまま動作します — 他の変更は不要です。
 
 ## インストール
 
@@ -92,9 +92,9 @@ print(response.content[0].text)
 
 | モデル | 最適な用途 | 入力価格（ボーナス適用後） |
 |---|---|---|
-| `claude-opus-4-5` | 複雑な推論、長文執筆 | 約$3 / 100万トークン |
-| `claude-sonnet-4-5` | 品質とスピードのバランス | 約$1.6 / 100万トークン |
-| `claude-haiku-4-5-20251001` | 高速でコスト効率の高いタスク | 約$0.53 / 100万トークン |
+| `claude-opus-4-5` | 複雑な推論、長文執筆 | 約\$3 / 100万トークン |
+| `claude-sonnet-4-5` | 品質とスピードのバランス | 約\$1.6 / 100万トークン |
+| `claude-haiku-4-5-20251001` | 高速でコスト効率の高いタスク | 約\$0.53 / 100万トークン |
 
 すべてのClaudeモデルと現在の価格については[モデルディレクトリ](https://flatkey.ai/models)をご覧ください。
 

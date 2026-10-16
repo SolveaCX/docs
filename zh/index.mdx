@@ -1,11 +1,12 @@
 ---
-title: "Flatkey：300+ 模型与 1000+ 工具的 AI API 网关，一个密钥，低至 5 折"
+title: "Flatkey 开发文档"
 sidebarTitle: "首页"
-description: "Flatkey 用一个兼容 OpenAI 的 API 密钥连接 GPT、Claude、Gemini、DeepSeek 等 300+ 个官方模型，并提供 1000+ 个工具，价格最低可至官方价的 5 折。"
+description: "查阅接入指南、SDK 示例和 API 参考，开始使用 Flatkey。"
 ---
 
-Flatkey 是一个 AI API 网关，通过单个兼容 OpenAI 的端点，连接 OpenAI、Anthropic、Google、DeepSeek、Qwen、GLM 等厂商的 300+ 个官方模型，并提供 1000+ 个工具。将 `base_url` 改为 `https://router.flatkey.ai/v1`，其余代码保持不变，即可立即开始节省成本——模型价格最低可至官方标价的 5 折。
+通过一个兼容 OpenAI 的 API 密钥连接 GPT、Claude、Gemini、DeepSeek 等模型。将客户端的 `base_url` 设为 `https://router.flatkey.ai/v1`，即可开始接入。
 
+<div className="fk-start-links">
 <CardGroup cols={2}>
   <Card title="快速开始" icon="bolt" href="/zh/quickstart">
     在 5 分钟内完成第一次 API 调用
@@ -20,6 +21,7 @@ Flatkey 是一个 AI API 网关，通过单个兼容 OpenAI 的端点，连接 O
     了解订阅套餐、用量计费和账户额度
   </Card>
 </CardGroup>
+</div>
 
 ## Flatkey 如何工作
 
@@ -44,14 +46,14 @@ Flatkey 是一个 AI API 网关，通过单个兼容 OpenAI 的端点，连接 O
   <Card title="一个密钥，全部模型" icon="key">
     使用一个 API 密钥和基础 URL 访问 GPT、Claude、Gemini、DeepSeek、Qwen、GLM 等模型。
   </Card>
-  <Card title="最高节省 50%" icon="piggy-bank">
-    模型价格最低可至官方标价的 5 折。
+  <Card title="至少优惠 20%" icon="piggy-bank">
+    API 价格较同款模型的官方 API 标价至少优惠 20%。
   </Card>
   <Card title="99.9% 成功率" icon="shield-check">
     在多个上游提供商之间自动故障转移，并为每个模型提供实时健康看板。
   </Card>
-  <Card title="请求内容零留存" icon="lock">
-    不存储提示词或模型回复，符合 GDPR，并对齐 SOC 2 和 ISO 27001 控制要求。
+  <Card title="数据处理" icon="lock">
+    请查看 Flatkey 和所选提供商的现行隐私条款；如需确认数据保留期限，请联系支持团队。
   </Card>
   <Card title="直接替换" icon="plug">
     兼容 OpenAI API。只需修改一行代码，无需重写 SDK，也没有迁移负担。

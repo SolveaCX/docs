@@ -8,14 +8,14 @@ Flatkey fonctionne sur un modèle de solde prépayé — vous ajoutez du crédit
 
 ## Paliers de recharge
 
-| Recharge | Bonus | Crédit total | Économie effective |
+| Recharge | Bonus | Crédit total | Taux de crédit bonus |
 |---|---|---|---|
-| $10 | +$3 | $13 | 30 % |
-| $20 | +$8 | $28 | 40 % |
-| $200 | +$100 | $300 | **50 % (meilleure offre)** |
+| \$10 | +\$3 | \$13 | 30 % |
+| \$20 | +\$8 | \$28 | 40 % |
+| \$200 | +\$100 | \$300 | **50 % (meilleure offre)** |
 
 <Tip>
-  Le palier de recharge à $200 offre le meilleur tarif effectif. Combiné aux remises sur les modèles (60–90 % du tarif officiel), cela ramène les coûts à seulement 50 % du tarif officiel des fournisseurs.
+  Le palier de recharge de \$200 inclut \$100 de crédit bonus. L'utilisation des API de modèles via Flatkey coûte au moins 20% de moins que le tarif API officiel du même modèle.
 </Tip>
 
 ## Effectuer une recharge
@@ -25,7 +25,7 @@ Flatkey fonctionne sur un modèle de solde prépayé — vous ajoutez du crédit
     Dans la [console](https://console.flatkey.ai), cliquez sur **Solde** dans la barre latérale gauche.
   </Step>
   <Step title="Sélectionner un montant de recharge">
-    Choisissez $10, $20 ou $200. Le crédit bonus est affiché avant que vous confirmiez.
+    Choisissez \$10, \$20 ou \$200. Le crédit bonus est affiché avant que vous confirmiez.
   </Step>
   <Step title="Finaliser le paiement">
     Saisissez les détails de votre carte et confirmez. Le paiement est traité via Stripe. Le crédit (bonus inclus) est ajouté à votre solde immédiatement.
@@ -37,7 +37,7 @@ Flatkey fonctionne sur un modèle de solde prépayé — vous ajoutez du crédit
 - **Crédit instantané** : Le crédit bonus apparaît sur votre solde dès que le paiement est traité.
 - **Sans expiration** : Le crédit bonus et le crédit payant restent tous deux sur votre solde indéfiniment — il n'y a pas de date d'expiration.
 - **S'utilise comme du crédit normal** : Le crédit bonus est consommé de la même façon que le crédit payant. Il n'y a aucune restriction sur les modèles pour lesquels il peut être utilisé.
-- **S'accumule à chaque recharge** : Chaque recharge génère un nouveau bonus. Rechargez $200 trois fois et obtenez $300 de crédit bonus au total.
+- **S'accumule à chaque recharge** : Chaque recharge génère un nouveau bonus. Rechargez \$200 trois fois et obtenez \$300 de crédit bonus au total.
 
 ## Gestion du solde
 
@@ -49,7 +49,7 @@ Votre solde est affiché dans la section **Solde** de la console. Vous pouvez :
 
 ## Que se passe-t-il quand le solde est épuisé
 
-Si votre solde tombe à $0.00, les requêtes API retourneront une erreur `401 Insufficient Balance` jusqu'à ce que vous rechargiez. Il n'y a ni prélèvement automatique ni découvert — vos requêtes s'arrêtent simplement jusqu'à ce que vous ajoutiez du crédit.
+Si votre solde tombe à \$0.00, les requêtes API retourneront une erreur `401 Insufficient Balance` jusqu'à ce que vous rechargiez. Il n'y a ni prélèvement automatique ni découvert — vos requêtes s'arrêtent simplement jusqu'à ce que vous ajoutiez du crédit.
 
 <Warning>
   Pour les charges de production, configurez une alerte de solde faible afin de recharger avant que le solde soit entièrement consommé. Rendez-vous dans **Paramètres → Notifications** pour configurer le seuil.

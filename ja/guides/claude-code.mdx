@@ -1,7 +1,7 @@
 ---
 title: "FlatKeyとClaude Codeで割引AI コーディングを利用する"
 sidebarTitle: "Claude Code"
-description: "2つの環境変数を変更するだけで、Claude Code CLIのトラフィックをFlatkey経由でルーティングし、Anthropic公式価格より最大50%オフでClaudeモデルを利用できます。"
+description: "2つの環境変数を変更するだけで、Claude Code CLIのトラフィックをFlatkey経由でルーティングし、同じモデルのAnthropic公式API価格より20%以上安い料金でClaudeモデルを利用できます。"
 ---
 
 Anthropicの Claude Code は、ターミナルで動作するエージェント型AIコーディングアシスタントです。`ANTHROPIC_BASE_URL` 環境変数を設定することで、すべての Claude Code リクエストをFlatkey経由でルーティングし、Claudeモデルの利用にFlatKeyの割引料金を適用できます。
@@ -70,17 +70,17 @@ claude
 
 Claude Sonnet（Claude Codeで人気の選択肢）をFlatkey経由で利用した場合:
 
-| | 公式価格 | Flatkey（$200ボーナス適用後） |
+| | 公式価格 | Flatkey（\$200ボーナス適用後） |
 |---|---|---|
-| `claude-sonnet-4-5` 入力 | $3 / 100万トークン | 約$1.6 / 100万トークン |
-| `claude-haiku-4-5-20251001` 入力 | $1 / 100万トークン | 約$0.53 / 100万トークン |
+| `claude-sonnet-4-5` 入力 | \$3 / 100万トークン | 約\$1.6 / 100万トークン |
+| `claude-haiku-4-5-20251001` 入力 | \$1 / 100万トークン | 約\$0.53 / 100万トークン |
 
 Sonnetを使用した典型的なClaude Codeセッション（入力トークン5万件）の場合:
-- 公式: セッションあたり約$0.15
-- Flatkey: セッションあたり約$0.08
+- 公式: セッションあたり約\$0.15
+- Flatkey: セッションあたり約\$0.08
 
 <Tip>
-  Claude Code のヘビーユーザーは$200チャージティアから最も恩恵を受けられます — ボーナスクレジットはモデル割引に加えて、実質的に1ヶ月分の追加利用分を提供します。
+  Claude Code のヘビーユーザーは\$200チャージティアから最も恩恵を受けられます — ボーナスクレジットはモデル割引に加えて、実質的に1ヶ月分の追加利用分を提供します。
 </Tip>
 
 ## トラブルシューティング

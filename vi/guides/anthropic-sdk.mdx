@@ -1,10 +1,10 @@
 ---
 title: "Định tuyến yêu cầu Claude qua Flatkey bằng Anthropic SDK"
 sidebarTitle: "Anthropic SDK"
-description: "Định tuyến các yêu cầu Anthropic Claude qua Flatkey bằng cách đặt base URL trong Anthropic SDK. Truy cập Claude với mức giá giảm đến 50% so với giá chính thức."
+description: "Định tuyến các yêu cầu Anthropic Claude qua Flatkey bằng cách đặt base URL trong Anthropic SDK. Truy cập Claude với mức giá giảm ít nhất 20% so với giá API chính thức của cùng mô hình."
 ---
 
-Bạn có thể truy cập các mô hình Claude với mức giá giảm đến 50% so với giá chính thức của Anthropic bằng cách định tuyến Anthropic Python SDK qua Flatkey. Chỉ cần đặt tham số `base_url` một lần và code SDK hiện có của bạn hoạt động ngay — không cần thay đổi gì khác.
+Bạn có thể truy cập các mô hình Claude với mức giá giảm ít nhất 20% so với giá API chính thức của cùng mô hình Anthropic bằng cách định tuyến Anthropic Python SDK qua Flatkey. Chỉ cần đặt tham số `base_url` một lần và code SDK hiện có của bạn hoạt động ngay — không cần thay đổi gì khác.
 
 ## Cài đặt
 
@@ -92,9 +92,9 @@ print(response.content[0].text)
 
 | Mô hình | Phù hợp nhất cho | Giá đầu vào (sau ưu đãi) |
 |---|---|---|
-| `claude-opus-4-5` | Lập luận phức tạp, viết dài | ~$3 / 1M token |
-| `claude-sonnet-4-5` | Cân bằng chất lượng và tốc độ | ~$1.6 / 1M token |
-| `claude-haiku-4-5-20251001` | Tác vụ nhanh, tiết kiệm chi phí | ~$0.53 / 1M token |
+| `claude-opus-4-5` | Lập luận phức tạp, viết dài | ~\$3 / 1M token |
+| `claude-sonnet-4-5` | Cân bằng chất lượng và tốc độ | ~\$1.6 / 1M token |
+| `claude-haiku-4-5-20251001` | Tác vụ nhanh, tiết kiệm chi phí | ~\$0.53 / 1M token |
 
 Xem [Danh mục Mô hình](https://flatkey.ai/models) để biết tất cả các mô hình Claude và giá hiện tại.
 

@@ -1,7 +1,7 @@
 ---
 title: "Use Flatkey with Claude Code for Discounted AI Coding"
 sidebarTitle: "Claude Code"
-description: "Route Claude Code CLI traffic through Flatkey to access Claude models at up to 50% off official Anthropic pricing with two environment variable changes."
+description: "Route Claude Code CLI traffic through Flatkey to access Claude models at least 20% below the same model's official Anthropic API price with two environment variable changes."
 ---
 
 Anthropic's Claude Code is an agentic AI coding assistant that runs in your terminal. By setting the `ANTHROPIC_BASE_URL` environment variable, you can route all Claude Code requests through Flatkey and pay Flatkey's discounted rates on Claude model usage.
@@ -70,17 +70,17 @@ Run a simple request and then check **Usage Logs** in your [Flatkey Console](htt
 
 Using Claude Sonnet (a popular choice for Claude Code) through Flatkey:
 
-| | Official price | Flatkey (after $200 bonus) |
+| | Official price | Flatkey (after \$200 bonus) |
 |---|---|---|
-| `claude-sonnet-4-5` input | $3 / 1M tokens | ~$1.6 / 1M tokens |
-| `claude-haiku-4-5-20251001` input | $1 / 1M tokens | ~$0.53 / 1M tokens |
+| `claude-sonnet-4-5` input | \$3 / 1M tokens | ~\$1.6 / 1M tokens |
+| `claude-haiku-4-5-20251001` input | \$1 / 1M tokens | ~\$0.53 / 1M tokens |
 
 On a typical Claude Code session of 50K input tokens, using Sonnet, that is:
-- Official: ~$0.15 per session
-- Flatkey: ~$0.08 per session
+- Official: ~\$0.15 per session
+- Flatkey: ~\$0.08 per session
 
 <Tip>
-  Heavy Claude Code users benefit most from the $200 top-up tier — the bonus credit effectively gives you an extra month of usage on top of the model discount.
+  Heavy Claude Code users benefit most from the \$200 top-up tier — the bonus credit effectively gives you an extra month of usage on top of the model discount.
 </Tip>
 
 ## Troubleshooting

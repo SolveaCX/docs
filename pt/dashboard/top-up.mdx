@@ -8,14 +8,14 @@ O Flatkey usa um modelo de saldo pré-pago — você adiciona crédito à sua co
 
 ## Planos de recarga
 
-| Recarga | Bônus | Crédito total | Economia efetiva |
+| Recarga | Bônus | Crédito total | Percentual de crédito bônus |
 |---|---|---|---|
-| $10 | +$3 | $13 | 30% |
-| $20 | +$8 | $28 | 40% |
-| $200 | +$100 | $300 | **50% (melhor custo-benefício)** |
+| \$10 | +\$3 | \$13 | 30% |
+| \$20 | +\$8 | \$28 | 40% |
+| \$200 | +\$100 | \$300 | **50% (melhor custo-benefício)** |
 
 <Tip>
-  O plano de recarga de $200 oferece a melhor taxa efetiva. Combinado com os descontos nos modelos (60–90% do preço de tabela oficial), isso reduz os custos a até 50% do preço oficial do provedor.
+  O nível de recarga de \$200 inclui \$100 em crédito bônus. O uso de APIs de modelos pelo Flatkey custa pelo menos 20% menos que o preço oficial da API do mesmo modelo.
 </Tip>
 
 ## Como adicionar saldo
@@ -25,7 +25,7 @@ O Flatkey usa um modelo de saldo pré-pago — você adiciona crédito à sua co
     No [console](https://console.flatkey.ai), clique em **Saldo** na barra lateral esquerda.
   </Step>
   <Step title="Selecionar um valor de recarga">
-    Escolha $10, $20 ou $200. O crédito bônus é exibido antes de você confirmar.
+    Escolha \$10, \$20 ou \$200. O crédito bônus é exibido antes de você confirmar.
   </Step>
   <Step title="Concluir o pagamento">
     Insira os dados do seu cartão e confirme. O pagamento é processado via Stripe. O crédito (incluindo o bônus) é adicionado ao seu saldo imediatamente.
@@ -37,7 +37,7 @@ O Flatkey usa um modelo de saldo pré-pago — você adiciona crédito à sua co
 - **Crédito imediato**: O crédito bônus aparece no seu saldo assim que o pagamento é processado.
 - **Nunca expira**: O crédito bônus e o crédito pago permanecem no seu saldo por tempo indeterminado — não há data de validade.
 - **Funciona como crédito normal**: O crédito bônus é consumido da mesma forma que o crédito pago. Não há restrições sobre quais modelos ele pode ser usado.
-- **Acumula a cada recarga**: Cada recarga rende um novo bônus. Recarregue $200 três vezes e ganhe $300 em crédito bônus no total.
+- **Acumula a cada recarga**: Cada recarga rende um novo bônus. Recarregue \$200 três vezes e ganhe \$300 em crédito bônus no total.
 
 ## Gerenciamento de saldo
 
@@ -49,7 +49,7 @@ Seu saldo é exibido na seção **Saldo** do console. Você pode:
 
 ## O que acontece quando o saldo acaba
 
-Se o seu saldo chegar a $0,00, as requisições à API retornarão um erro `401 Insufficient Balance` até que você recarregue. Não há cobranças automáticas nem saldo negativo — suas requisições simplesmente param até você adicionar mais crédito.
+Se o seu saldo chegar a \$0,00, as requisições à API retornarão um erro `401 Insufficient Balance` até que você recarregue. Não há cobranças automáticas nem saldo negativo — suas requisições simplesmente param até você adicionar mais crédito.
 
 <Warning>
   Para cargas de trabalho em produção, configure um alerta de saldo baixo para garantir que você recarregue antes que o saldo seja totalmente consumido. Acesse **Configurações → Notificações** para configurar o limite.

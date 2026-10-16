@@ -8,14 +8,14 @@ Flatkey uses a prepaid balance model — you add credit to your account and it i
 
 ## Top-up tiers
 
-| Top-up | Bonus | Total credit | Effective saving |
+| Top-up | Bonus | Total credit | Bonus credit rate |
 |---|---|---|---|
-| $10 | +$3 | $13 | 30% |
-| $20 | +$8 | $28 | 40% |
-| $200 | +$100 | $300 | **50% (best value)** |
+| \$10 | +\$3 | \$13 | 30% |
+| \$20 | +\$8 | \$28 | 40% |
+| \$200 | +\$100 | \$300 | **50% (best value)** |
 
 <Tip>
-  The $200 top-up tier offers the best effective rate. Combined with model discounts (60–90% of official list), this brings costs to as low as 50% of official provider pricing.
+  The \$200 top-up tier includes \$100 in bonus credit. Model API usage through Flatkey costs at least 20% less than the same model's official API price.
 </Tip>
 
 ## Adding a top-up
@@ -25,7 +25,7 @@ Flatkey uses a prepaid balance model — you add credit to your account and it i
     In the [console](https://console.flatkey.ai), click **Balance** in the left sidebar.
   </Step>
   <Step title="Select a top-up amount">
-    Choose $10, $20, or $200. The bonus credit is displayed before you confirm.
+    Choose \$10, \$20, or \$200. The bonus credit is displayed before you confirm.
   </Step>
   <Step title="Complete payment">
     Enter your card details and confirm. Payment is processed via Stripe. The credit (including bonus) is added to your balance immediately.
@@ -37,7 +37,7 @@ Flatkey uses a prepaid balance model — you add credit to your account and it i
 - **Instant credit**: Bonus credit appears in your balance as soon as payment is processed.
 - **Never expires**: Bonus credit and paid credit both remain in your balance indefinitely — there is no expiry date.
 - **Spends like normal credit**: Bonus credit is consumed the same way as paid credit. There is no restriction on which models it can be used for.
-- **Stacks every time**: Each top-up earns a new bonus. Top up $200 three times and earn $300 in bonus credit total.
+- **Stacks every time**: Each top-up earns a new bonus. Top up \$200 three times and earn \$300 in bonus credit total.
 
 ## Balance management
 
@@ -49,7 +49,7 @@ Your balance is displayed in the **Balance** section of the console. You can:
 
 ## What happens when balance runs out
 
-If your balance drops to $0.00, API requests will return a `401 Insufficient Balance` error until you top up. There are no automatic charges or overdraft — your requests simply stop until you add more credit.
+If your balance drops to \$0.00, API requests will return a `401 Insufficient Balance` error until you top up. There are no automatic charges or overdraft — your requests simply stop until you add more credit.
 
 <Warning>
   For production workloads, set up a low-balance alert to ensure you top up before the balance is fully consumed. Go to **Settings → Notifications** to configure the threshold.

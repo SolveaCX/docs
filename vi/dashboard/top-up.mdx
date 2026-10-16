@@ -8,14 +8,14 @@ Flatkey sử dụng mô hình số dư trả trước — bạn thêm tín dụn
 
 ## Các mức nạp tiền
 
-| Nạp tiền | Thưởng | Tổng tín dụng | Tiết kiệm hiệu quả |
+| Nạp tiền | Thưởng | Tổng tín dụng | Tỷ lệ tín dụng thưởng |
 |---|---|---|---|
-| $10 | +$3 | $13 | 30% |
-| $20 | +$8 | $28 | 40% |
-| $200 | +$100 | $300 | **50% (tiết kiệm nhất)** |
+| \$10 | +\$3 | \$13 | 30% |
+| \$20 | +\$8 | \$28 | 40% |
+| \$200 | +\$100 | \$300 | **50% (tiết kiệm nhất)** |
 
 <Tip>
-  Mức nạp tiền $200 mang lại tỷ lệ hiệu quả tốt nhất. Kết hợp với chiết khấu mô hình (60–90% so với giá niêm yết chính thức), mức này giúp giảm chi phí xuống còn 50% so với giá của nhà cung cấp chính thức.
+  Mức nạp \$200 bao gồm \$100 tín dụng thưởng. Việc sử dụng API mô hình qua Flatkey có chi phí thấp hơn ít nhất 20% so với giá API chính thức của cùng mô hình.
 </Tip>
 
 ## Thực hiện nạp tiền
@@ -25,7 +25,7 @@ Flatkey sử dụng mô hình số dư trả trước — bạn thêm tín dụn
     Trong [bảng điều khiển](https://console.flatkey.ai), nhấp vào **Số Dư** ở thanh bên trái.
   </Step>
   <Step title="Chọn số tiền nạp">
-    Chọn $10, $20 hoặc $200. Tín dụng thưởng sẽ được hiển thị trước khi bạn xác nhận.
+    Chọn \$10, \$20 hoặc \$200. Tín dụng thưởng sẽ được hiển thị trước khi bạn xác nhận.
   </Step>
   <Step title="Hoàn tất thanh toán">
     Nhập thông tin thẻ của bạn và xác nhận. Thanh toán được xử lý qua Stripe. Tín dụng (bao gồm cả thưởng) được cộng vào số dư của bạn ngay lập tức.
@@ -37,7 +37,7 @@ Flatkey sử dụng mô hình số dư trả trước — bạn thêm tín dụn
 - **Cộng ngay lập tức**: Tín dụng thưởng xuất hiện trong số dư của bạn ngay khi thanh toán được xử lý.
 - **Không bao giờ hết hạn**: Tín dụng thưởng và tín dụng đã thanh toán đều tồn tại vô thời hạn trong số dư của bạn — không có ngày hết hạn.
 - **Sử dụng như tín dụng thông thường**: Tín dụng thưởng được tiêu thụ theo cách tương tự như tín dụng đã thanh toán. Không có hạn chế nào về việc sử dụng cho mô hình nào.
-- **Cộng dồn mỗi lần**: Mỗi lần nạp tiền đều nhận được thưởng mới. Nạp $200 ba lần và nhận tổng cộng $300 tín dụng thưởng.
+- **Cộng dồn mỗi lần**: Mỗi lần nạp tiền đều nhận được thưởng mới. Nạp \$200 ba lần và nhận tổng cộng \$300 tín dụng thưởng.
 
 ## Quản lý số dư
 
@@ -49,7 +49,7 @@ Số dư của bạn được hiển thị trong phần **Số Dư** của bản
 
 ## Điều gì xảy ra khi số dư hết
 
-Nếu số dư của bạn giảm xuống $0.00, các yêu cầu API sẽ trả về lỗi `401 Insufficient Balance` cho đến khi bạn nạp tiền. Không có khoản phí tự động hay thấu chi — các yêu cầu của bạn sẽ đơn giản là dừng lại cho đến khi bạn thêm tín dụng.
+Nếu số dư của bạn giảm xuống \$0.00, các yêu cầu API sẽ trả về lỗi `401 Insufficient Balance` cho đến khi bạn nạp tiền. Không có khoản phí tự động hay thấu chi — các yêu cầu của bạn sẽ đơn giản là dừng lại cho đến khi bạn thêm tín dụng.
 
 <Warning>
   Đối với các khối lượng công việc sản xuất, hãy thiết lập cảnh báo số dư thấp để đảm bảo bạn nạp tiền trước khi số dư bị tiêu hết hoàn toàn. Vào **Cài đặt → Thông báo** để cấu hình ngưỡng.

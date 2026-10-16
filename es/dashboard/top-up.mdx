@@ -8,14 +8,14 @@ Flatkey utiliza un modelo de saldo prepago: añades crédito a tu cuenta y este 
 
 ## Niveles de recarga
 
-| Recarga | Adicional | Crédito total | Ahorro efectivo |
+| Recarga | Adicional | Crédito total | Porcentaje de crédito adicional |
 |---|---|---|---|
-| $10 | +$3 | $13 | 30% |
-| $20 | +$8 | $28 | 40% |
-| $200 | +$100 | $300 | **50% (mejor valor)** |
+| \$10 | +\$3 | \$13 | 30% |
+| \$20 | +\$8 | \$28 | 40% |
+| \$200 | +\$100 | \$300 | **50% (mejor valor)** |
 
 <Tip>
-  El nivel de recarga de $200 ofrece la tarifa efectiva más conveniente. Combinado con los descuentos por modelo (60–90% del precio oficial de lista), los costes pueden llegar a ser tan bajos como el 50% del precio oficial del proveedor.
+  El nivel de recarga de \$200 incluye \$100 de crédito adicional. El uso de la API de modelos a través de Flatkey cuesta al menos un 20% menos que el precio oficial de la API del mismo modelo.
 </Tip>
 
 ## Cómo realizar una recarga
@@ -25,7 +25,7 @@ Flatkey utiliza un modelo de saldo prepago: añades crédito a tu cuenta y este 
     En la [consola](https://console.flatkey.ai), haz clic en **Saldo** en la barra lateral izquierda.
   </Step>
   <Step title="Seleccionar un importe de recarga">
-    Elige $10, $20 o $200. El crédito adicional se muestra antes de que confirmes.
+    Elige \$10, \$20 o \$200. El crédito adicional se muestra antes de que confirmes.
   </Step>
   <Step title="Completar el pago">
     Introduce los datos de tu tarjeta y confirma. El pago se procesa a través de Stripe. El crédito (incluido el adicional) se añade a tu saldo de inmediato.
@@ -37,7 +37,7 @@ Flatkey utiliza un modelo de saldo prepago: añades crédito a tu cuenta y este 
 - **Crédito instantáneo**: El crédito adicional aparece en tu saldo en cuanto se procesa el pago.
 - **Sin caducidad**: Tanto el crédito adicional como el crédito pagado permanecen en tu saldo indefinidamente; no tienen fecha de vencimiento.
 - **Se gasta como crédito normal**: El crédito adicional se consume de la misma manera que el crédito pagado. No hay restricciones sobre qué modelos se pueden utilizar con él.
-- **Se acumula en cada recarga**: Cada recarga genera un nuevo adicional. Recarga $200 tres veces y obtén $300 en crédito adicional en total.
+- **Se acumula en cada recarga**: Cada recarga genera un nuevo adicional. Recarga \$200 tres veces y obtén \$300 en crédito adicional en total.
 
 ## Gestión del saldo
 
@@ -49,7 +49,7 @@ Tu saldo se muestra en la sección **Saldo** de la consola. Puedes:
 
 ## Qué ocurre cuando se agota el saldo
 
-Si tu saldo cae a $0.00, las solicitudes a la API devolverán un error `401 Insufficient Balance` hasta que recargues. No hay cargos automáticos ni descubierto: las solicitudes simplemente se detienen hasta que añadas más crédito.
+Si tu saldo cae a \$0.00, las solicitudes a la API devolverán un error `401 Insufficient Balance` hasta que recargues. No hay cargos automáticos ni descubierto: las solicitudes simplemente se detienen hasta que añadas más crédito.
 
 <Warning>
   Para cargas de trabajo en producción, configura una alerta de saldo bajo para asegurarte de recargar antes de que el saldo se agote por completo. Ve a **Configuración → Notificaciones** para configurar el umbral.

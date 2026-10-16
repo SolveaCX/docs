@@ -78,8 +78,8 @@ a:hover {
 
 /* Top navigation */
 #navbar {
-  min-height: 72px;
-  padding-inline: 14px;
+  min-height: 64px;
+  padding-inline: 24px;
   background: rgba(255, 255, 255, 0.95);
   border-bottom: 1px solid var(--fk-border);
   box-shadow: none;
@@ -88,6 +88,11 @@ a:hover {
 
 .dark #navbar {
   background: rgba(10, 10, 16, 0.95);
+}
+
+#navbar > div:first-child {
+  inset-inline: 0;
+  width: auto;
 }
 
 nav-logo {
@@ -105,9 +110,38 @@ nav-logo svg {
 }
 
 .nav-logo {
-  width: 136px;
-  height: 44px;
+  width: 124px;
+  height: 36px;
   max-width: none;
+}
+
+/* Keep Luma's native controls, but group the tabs with the brand. */
+#navbar > div:has(nav[aria-label="Main"]) {
+  padding-inline: 0;
+}
+
+#navbar div:has(> nav[aria-label="Main"]) {
+  height: 64px;
+  padding: 0;
+  gap: 28px;
+}
+
+#navbar div:has(> nav[aria-label="Main"]) > div:first-child {
+  flex: 0 0 auto;
+  gap: 16px;
+  padding-right: 0;
+}
+
+#navbar nav[aria-label="Main"] {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  padding-inline: 0;
+}
+
+#navbar .topbar-right-container {
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: flex-end;
 }
 
 nav-tabs-item,
@@ -122,6 +156,8 @@ nav-tabs-item,
 nav-tabs-item:hover,
 nav-tabs-item[data-active],
 nav-tabs-item[aria-current="page"],
+#navbar nav[aria-label="Main"] a[aria-current="location"],
+#navbar nav[aria-label="Main"] a[aria-current="page"],
 #navbar nav[aria-label="Main"] a:hover {
   background: var(--fk-violet-tint);
   color: var(--fk-violet-deep);
@@ -130,6 +166,8 @@ nav-tabs-item[aria-current="page"],
 .dark nav-tabs-item:hover,
 .dark nav-tabs-item[data-active],
 .dark nav-tabs-item[aria-current="page"],
+.dark #navbar nav[aria-label="Main"] a[aria-current="location"],
+.dark #navbar nav[aria-label="Main"] a[aria-current="page"],
 .dark #navbar nav[aria-label="Main"] a:hover {
   color: #DDD6FE;
 }
@@ -269,23 +307,35 @@ toc-item[aria-current="true"] {
 }
 
 #content-area {
-  padding: 44px 52px 90px;
+  padding: 36px 44px 80px;
 }
 
 #content {
   width: 100%;
   max-width: 780px;
+  min-width: 0;
   color: var(--fk-ink-2);
+  font-size: 16px;
+  line-height: 1.75;
+  overflow-wrap: break-word;
 }
 
 #page-title {
   max-width: 800px;
   margin-bottom: 14px;
   color: var(--fk-ink);
-  font-size: clamp(2.25rem, 3.25vw, 2.75rem);
-  font-weight: 750;
-  letter-spacing: -0.045em;
-  line-height: 1.08;
+  font-size: clamp(2rem, 2.6vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.18;
+}
+
+#content-area header p,
+#content-area #description {
+  max-width: 65ch;
+  color: var(--fk-ink-2);
+  font-size: 17px;
+  line-height: 1.65;
 }
 
 #content h2,
@@ -298,13 +348,15 @@ toc-item[aria-current="true"] {
 }
 
 #content h2 {
-  margin-top: 2.3em;
-  font-size: 1.65rem;
+  margin-top: 2.2em;
+  margin-bottom: 0.8em;
+  font-size: 1.5rem;
 }
 
 #content h3 {
-  margin-top: 1.9em;
-  font-size: 1.25rem;
+  margin-top: 1.6em;
+  margin-bottom: 0.7em;
+  font-size: 1.2rem;
 }
 
 #content p,
@@ -361,6 +413,57 @@ card {
   border-radius: var(--fk-radius-lg);
   background: var(--fk-surface);
   transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+/* Native cards contain headings too; prose spacing must not create blank rows. */
+#content .card {
+  min-width: 0;
+  padding: 0;
+  color: var(--fk-ink);
+  text-decoration: none;
+}
+
+#content [data-component-part="card-content-container"] {
+  padding: 22px;
+}
+
+#content .card h2,
+#content .card h3,
+#content .card h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.4;
+}
+
+#content .card [data-component-part="card-title"] {
+  margin-top: 12px;
+}
+
+#content .card p {
+  margin-block: 0;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.65;
+}
+
+#content .card svg {
+  flex-shrink: 0;
+}
+
+#content .fk-start-links {
+  margin-block: 28px 40px;
+}
+
+#content .fk-start-links .card {
+  border-color: color-mix(in srgb, var(--fk-violet) 12%, var(--fk-border));
+}
+
+#content .card:focus-visible {
+  outline: 3px solid var(--fk-focus);
+  outline-offset: 3px;
 }
 
 .card:hover,
@@ -494,6 +597,7 @@ code-block *,
   background: var(--fk-violet-tint);
   color: var(--fk-violet-deep);
   font-size: 0.84em;
+  overflow-wrap: anywhere;
 }
 
 .dark #content :not(pre) > code,
@@ -527,6 +631,14 @@ code-block pre,
   font-size: 13px;
   line-height: 1.75;
   scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+#content pre code {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  overflow-wrap: normal;
+  white-space: pre;
 }
 
 code-block button,
@@ -685,8 +797,18 @@ a.pagination-next:hover > div > div {
 
 @media (max-width: 1023px) {
   #navbar {
-    min-height: 64px;
+    min-height: 60px;
     padding-inline: 16px;
+  }
+
+  #navbar div:has(> div > div > #search-bar-entry-mobile) {
+    height: 48px;
+    padding-inline: 0;
+  }
+
+  #navbar div:has(> div > nav[aria-label="Main"]) > button {
+    height: 44px;
+    padding: 10px 0;
   }
 
   nav-logo img,
@@ -697,7 +819,7 @@ a.pagination-next:hover > div > div {
 
   .nav-logo {
     width: 108px;
-    height: 44px;
+    height: 32px;
   }
 
   #sidebar-content {
@@ -713,6 +835,7 @@ a.pagination-next:hover > div > div {
 
   #content {
     max-width: none;
+    margin-top: 24px;
   }
 
   #navbar button,
@@ -741,6 +864,19 @@ a.pagination-next:hover > div > div {
   #page-title {
     font-size: 2rem;
     letter-spacing: -0.035em;
+  }
+
+  #content-area header p,
+  #content-area #description {
+    font-size: 16px;
+  }
+
+  #content [data-component-part="card-content-container"] {
+    padding: 20px;
+  }
+
+  #content .fk-start-links {
+    margin-block: 24px 32px;
   }
 
   #content h2 {

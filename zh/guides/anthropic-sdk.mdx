@@ -1,10 +1,10 @@
 ---
 title: "通过 Anthropic SDK 将 Claude 请求路由到 Flatkey"
 sidebarTitle: "Anthropic SDK"
-description: "在 Anthropic SDK 中设置基础 URL，将 Anthropic Claude 请求路由到 Flatkey，低至官方价格的 5 折使用 Claude。"
+description: "在 Anthropic SDK 中设置基础 URL，将 Anthropic Claude 请求路由到 Flatkey。Claude 模型 API 价格较同款模型官方 API 价格至少优惠 20%。"
 ---
 
-将 Anthropic Python SDK 的请求路由到 Flatkey，即可低至 Anthropic 官方价格的 5 折使用 Claude 模型。只需设置一次 `base_url` 参数，现有 SDK 代码便可原样工作，无需其他改动。
+将 Anthropic Python SDK 的请求路由到 Flatkey，即可调用 Claude 模型，价格较同款模型官方 API 价格至少优惠 20%。只需设置一次 `base_url` 参数，现有 SDK 代码便可原样工作，无需其他改动。
 
 ## 安装
 
@@ -92,9 +92,9 @@ print(response.content[0].text)
 
 | 模型 | 适用场景 | 输入价格（奖励后） |
 |---|---|---|
-| `claude-opus-4-5` | 复杂推理、长篇写作 | 约 $3 / 100 万 tokens |
-| `claude-sonnet-4-5` | 质量与速度均衡 | 约 $1.6 / 100 万 tokens |
-| `claude-haiku-4-5-20251001` | 快速、经济高效的任务 | 约 $0.53 / 100 万 tokens |
+| `claude-opus-4-5` | 复杂推理、长篇写作 | 约 \$3 / 100 万 tokens |
+| `claude-sonnet-4-5` | 质量与速度均衡 | 约 \$1.6 / 100 万 tokens |
+| `claude-haiku-4-5-20251001` | 快速、经济高效的任务 | 约 \$0.53 / 100 万 tokens |
 
 所有 Claude 模型和最新价格请参阅[模型目录](https://flatkey.ai/models)。
 

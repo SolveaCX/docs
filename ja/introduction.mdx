@@ -1,10 +1,10 @@
 ---
-title: "Flatkey: 1つのキーで300以上の公式AIモデルと1000以上のツール、最大50%オフ"
+title: "Flatkey について"
 sidebarTitle: "はじめに"
-description: "Flatkeyは、GPT、Claude、Gemini、DeepSeek、その他300以上のモデルと1000以上のツールに、1つのOpenAI互換キーでアクセスできるAI APIゲートウェイです。公式モデルに最大50%オフでアクセスできます。"
+description: "Flatkey の導入ガイド、SDK の例、API リファレンスをご覧ください。"
 ---
 
-Flatkeyは、OpenAI、Anthropic、Google、DeepSeek、Qwen、GLMなど300以上の公式モデルと1000以上のツールに、単一のOpenAI互換APIキーでアクセスできるAI APIゲートウェイです。あらゆるOpenAI互換クライアントのドロップイン代替として機能します。コード1行（`base_url`）を変更するだけで、リクエストが公式価格の最大50%オフでFlatkey経由でルーティングされます。
+1 つの OpenAI 互換 API キーで GPT、Claude、Gemini、DeepSeek などに接続できます。クライアントの `base_url` を `https://router.flatkey.ai/v1` に設定して始めましょう。
 
 ## Flatkeyが提供するもの
 
@@ -12,14 +12,14 @@ Flatkeyは、OpenAI、Anthropic、Google、DeepSeek、Qwen、GLMなど300以上�
   <Card title="1つのキーで全モデル対応" icon="key">
     単一のAPIキーとベースURLで、GPT、Claude、Gemini、DeepSeek、Qwen、GLMなどにルーティングされます。プロバイダーごとにキーを管理する必要はありません。
   </Card>
-  <Card title="最大50%の節約" icon="piggy-bank">
-    モデルの価格は公式定価の60〜90%。200ドルのチャージで100ドルのボーナスクレジットが付与され、重ねると公式価格の半額以下になります。
+  <Card title="20%以上の割引" icon="piggy-bank">
+    API 料金は、同じモデルの公式 API 定価より20%以上お得です。 \$200 をチャージすると \$100 のボーナスクレジットを受け取れます。
   </Card>
   <Card title="99.9%の信頼性" icon="shield-check">
     上流プロバイダー間での自動フェイルオーバー。ライブヘルスダッシュボードに本番トラフィックからのリアルタイム成功率が表示されます。
   </Card>
-  <Card title="データ保持なし" icon="lock">
-    プロンプトと補完結果は一切保存されません。GDPRに準拠し、SOC 2およびISO 27001に沿ったコントロールを採用しています。
+  <Card title="データの取り扱い" icon="lock">
+    Flatkeyと選択したプロバイダーの現行のプライバシー規約をご確認ください。保持期間はサポートにお問い合わせください。
   </Card>
   <Card title="プリペイド残高" icon="receipt">
     一度チャージするだけで使った分だけ消費されます。サブスクリプションも予期しない請求もありません。
@@ -54,7 +54,7 @@ FlatkeyはアプリケーションとAIプロバイダーの間に位置しま�
 3. リクエストが公式プロバイダーAPI（OpenAI、Anthropicなど）に転送されます。
 4. レスポンスがコンテンツを変換することなく直接クライアントに返されます。
 
-プロンプトと補完結果は一切保存されません。Flatkeyは課金と分析のためにメタデータ（モデル、トークン数、タイムスタンプ）のみを記録します。
+データの取り扱い要件については、Flatkeyと選択したプロバイダーの現行のプライバシー規約をご確認ください。保持期間の確認やセキュリティ評価については、[support@flatkey.ai](mailto:support@flatkey.ai) にお問い合わせください。
 
 ## 次のステップ
 

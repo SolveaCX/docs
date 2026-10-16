@@ -348,6 +348,7 @@
               {
                 "group": "Quick Start",
                 "pages": [
+                  "index",
                   "introduction",
                   "quickstart"
                 ]
@@ -451,6 +452,7 @@
               {
                 "group": "快速入门",
                 "pages": [
+                  "zh/index",
                   "zh/introduction",
                   "zh/quickstart"
                 ]
@@ -547,6 +549,7 @@
               {
                 "group": "Inicio rápido",
                 "pages": [
+                  "es/index",
                   "es/introduction",
                   "es/quickstart"
                 ]
@@ -643,6 +646,7 @@
               {
                 "group": "Démarrage rapide",
                 "pages": [
+                  "fr/index",
                   "fr/introduction",
                   "fr/quickstart"
                 ]
@@ -739,6 +743,7 @@
               {
                 "group": "Início rápido",
                 "pages": [
+                  "pt/index",
                   "pt/introduction",
                   "pt/quickstart"
                 ]
@@ -835,6 +840,7 @@
               {
                 "group": "Быстрый старт",
                 "pages": [
+                  "ru/index",
                   "ru/introduction",
                   "ru/quickstart"
                 ]
@@ -931,6 +937,7 @@
               {
                 "group": "クイックスタート",
                 "pages": [
+                  "ja/index",
                   "ja/introduction",
                   "ja/quickstart"
                 ]
@@ -1027,6 +1034,7 @@
               {
                 "group": "Bắt đầu nhanh",
                 "pages": [
+                  "vi/index",
                   "vi/introduction",
                   "vi/quickstart"
                 ]
@@ -1123,6 +1131,7 @@
               {
                 "group": "Schnellstart",
                 "pages": [
+                  "de/index",
                   "de/introduction",
                   "de/quickstart"
                 ]
@@ -1219,6 +1228,7 @@
               {
                 "group": "Mulai Cepat",
                 "pages": [
+                  "id/index",
                   "id/introduction",
                   "id/quickstart"
                 ]
