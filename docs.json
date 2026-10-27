@@ -2,6 +2,11 @@
   "$schema": "https://mintlify.com/docs.json",
   "name": "Flatkey",
   "theme": "luma",
+  "seo": {
+    "metatags": {
+      "robots": "noindex, nofollow"
+    }
+  },
   "colors": {
     "primary": "#5B21B6",
     "light": "#7C3AED",
