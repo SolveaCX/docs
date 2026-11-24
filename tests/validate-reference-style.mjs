@@ -40,11 +40,13 @@ const navigationPages = config.navigation.languages.flatMap((language) =>
 );
 const languageCodes = config.navigation.languages.map((language) => language.language);
 assert.deepEqual(languageCodes, ["en", "zh", "es", "fr", "pt", "ru", "ja", "vi", "de", "id"]);
-// Every locale carries the same 31 navigation pages plus an unlisted index.
-assert.equal(navigationPages.length, languageCodes.length * 31);
+// Every locale carries the same 33 navigation pages, its index included.
+assert.equal(navigationPages.length, languageCodes.length * 33);
 const indexPages = languageCodes.map((code) => (code === "en" ? "index" : `${code}/index`));
-const pages = [...indexPages, ...navigationPages];
-assert.equal(pages.length, languageCodes.length * 32);
+for (const page of indexPages) {
+  assert.ok(navigationPages.includes(page), `${page} is missing from navigation`);
+}
+const pages = navigationPages;
 assert.equal(new Set(pages).size, pages.length);
 for (const page of pages) {
   assert.ok(existsSync(resolve(root, `${page}.mdx`)), page);
