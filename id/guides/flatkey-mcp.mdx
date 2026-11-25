@@ -1,0 +1,191 @@
+---
+title: "Buat gambar dan video dari Claude, Cursor, atau Codex dengan server MCP Flatkey"
+sidebarTitle: "Server MCP Flatkey"
+description: "Tambahkan server MCP Flatkey ke Claude Code, Claude Desktop, Cursor, atau Codex, lalu buat gambar dan video cukup dengan meminta, dengan satu API key Flatkey."
+---
+
+Server MCP Flatkey memberi setiap klien MCP lima alat untuk membuat gambar dan video. Anda menambahkannya sekali, lalu meminta gambar atau klip kepada asisten dengan bahasa sehari-hari. Server ini berjalan di komputer Anda dan memanggil Flatkey dengan API key Anda sendiri.
+
+<CardGroup cols={2}>
+  <Card title="Tanpa terminal" icon="plug">
+    Berfungsi di klien yang tidak dapat menjalankan perintah terminal, seperti Claude Desktop.
+  </Card>
+  <Card title="Satu key, satu saldo" icon="key">
+    Memakai API key dan kredit yang sama dengan API dan Flatkey CLI.
+  </Card>
+</CardGroup>
+
+## Prasyarat
+
+- Node.js 20 atau lebih baru
+- API key Flatkey (`sk-fk-...`). Buat di [Konsol Flatkey](https://console.flatkey.ai/keys)
+
+## Tambahkan server ke klien Anda
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add flatkey -e FLATKEY_API_KEY=sk-fk-your-flatkey-key -- npx -y @flatkey-ai/mcp
+    ```
+  </Tab>
+  <Tab title="Claude Desktop">
+    Buka **Settings**, lalu **Developer**, lalu **Edit Config**. Tambahkan server dan mulai ulang aplikasinya.
+
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        "flatkey": {
+          "command": "npx",
+          "args": ["-y", "@flatkey-ai/mcp"],
+          "env": { "FLATKEY_API_KEY": "sk-fk-your-flatkey-key" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Cursor">
+    ```json .cursor/mcp.json
+    {
+      "mcpServers": {
+        "flatkey": {
+          "command": "npx",
+          "args": ["-y", "@flatkey-ai/mcp"],
+          "env": { "FLATKEY_API_KEY": "sk-fk-your-flatkey-key" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Codex">
+    ```toml ~/.codex/config.toml
+    [mcp_servers.flatkey]
+    command = "npx"
+    args = ["-y", "@flatkey-ai/mcp"]
+    env = { FLATKEY_API_KEY = "sk-fk-your-flatkey-key" }
+    ```
+  </Tab>
+</Tabs>
+
+## Buat gambar pertama Anda
+
+Minta kepada asisten Anda:
+
+```text
+Buat foto produk 16:9 berupa botol minum hitam doff di atas batu basah
+dan simpan ke ~/Pictures/bottle.png
+```
+
+Asisten memanggil `generate_image` dan membalas dengan lokasi file yang disimpan. Untuk memastikan koneksi tanpa memakai kredit, minta asisten menampilkan daftar model video Flatkey Anda atau saldo kredit Anda.
+
+## Alat
+
+| Alat | Fungsi | Memakai kredit |
+| --- | --- | --- |
+| `generate_image` | Teks ke gambar. Sertakan `reference_images` untuk mengedit atau mengubah gaya | Ya |
+| `generate_video` | Teks ke video, gambar ke video, frame pertama dan terakhir, video referensi | Ya |
+| `get_video` | Memeriksa video yang masih dirender dan mengembalikan hasilnya | Tidak |
+| `list_models` | Menampilkan id model yang dapat dipakai key Anda, disaring menurut `image`, `video`, `audio`, atau `text` | Tidak |
+| `get_credits` | Menampilkan sisa saldo Anda | Tidak |
+
+### Opsi gambar
+
+| Parameter | Arti |
+| --- | --- |
+| `prompt` | Apa yang harus ditampilkan gambar. Wajib |
+| `model` | Id model gambar. Bawaannya `gpt-image-2` |
+| `reference_images` | URL atau lokasi file lokal dari gambar yang akan diedit atau diikuti |
+| `size`, `n`, `quality` | Hanya `gpt-image-2` |
+| `output_format` | `png`, `jpeg`, `webp`, atau `gif`. Hanya model gambar GPT |
+| `save_to` | File atau folder tempat menyimpan hasil |
+
+Untuk model dan API-nya, lihat [Pembuatan gambar](/id/guides/image-generation).
+
+### Opsi video
+
+| Parameter | Arti |
+| --- | --- |
+| `prompt` | Apa yang terjadi di dalam video. Wajib |
+| `model` | Id model video. Bawaannya `seedance-2.0-pro` |
+| `duration` | Durasi dalam detik |
+| `ratio` | `16:9`, `9:16`, `4:3`, `3:4`, `21:9`, `1:1`, atau `adaptive` |
+| `resolution` | Nilai yang diterima berbeda per model |
+| `first_frame`, `last_frame` | Gambar awal dan gambar akhir |
+| `reference_images` | Gambar yang harus diikuti video |
+| `reference_videos` | Video yang diikuti untuk gerakan. Hanya model Seedance |
+| `wait_seconds` | Berapa lama menunggu video selesai. Bawaannya 45 |
+| `save_to` | File atau folder tempat menyimpan MP4 |
+
+<Warning>
+  Nilai resolusi tidak berlaku sama untuk semua model. `seedance-2.5` menolak `1080p`, dan `MiniMax-H3` hanya menerima `768P` dan `2K`. Lihat [Pembuatan video](/id/guides/video-generation).
+</Warning>
+
+## Cara kerja pembuatan video
+
+Video bersifat asinkron, dan klip lima detik biasanya memakan waktu dua sampai empat menit. `generate_video` mengirim tugas dan menunggu hingga `wait_seconds` detik. Jika klip masih dirender, alat ini mengembalikan id tugas:
+
+```json
+{
+  "status": "processing",
+  "task_id": "task_aaaaaaaaaaaaaaaa",
+  "model": "seedance-2.0-pro",
+  "next": "The video is still rendering. Call get_video with task_id \"task_aaaaaaaaaaaaaaaa\" in about 30 seconds."
+}
+```
+
+Asisten Anda kemudian memanggil `get_video` sampai statusnya `completed`:
+
+```json
+{
+  "status": "completed",
+  "task_id": "task_aaaaaaaaaaaaaaaa",
+  "videos": [
+    {
+      "url": "https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa/content",
+      "path": "/Users/you/flatkey-output/flatkey-video-20261124T091500.mp4"
+    }
+  ]
+}
+```
+
+Jika asisten berhenti setelah panggilan pertama, minta asisten memeriksa videonya lagi. Pemeriksaan tidak memakai kredit.
+
+## Ke mana file disimpan
+
+- **Video** selalu disimpan, karena URL unduhannya hanya terbuka dengan API key Anda. Video masuk ke `save_to`, ke `FLATKEY_OUTPUT_DIR`, atau ke `~/flatkey-output`.
+- **Gambar** dikembalikan sebagai URL sementara. Sertakan `save_to` untuk menyimpan salinan, atau atur `FLATKEY_OUTPUT_DIR` agar semua hasil disimpan di satu folder.
+- **File referensi lokal** diunggah ke penyimpanan sementara Flatkey sebelum pembuatan. Gambar dapat berupa `png`, `jpg`, `webp`, atau `gif`. Video dapat berupa `mp4` atau `mov`.
+
+Atur `FLATKEY_OUTPUT_DIR` di blok `env` yang sama dengan API key Anda:
+
+```json
+"env": {
+  "FLATKEY_API_KEY": "sk-fk-your-flatkey-key",
+  "FLATKEY_OUTPUT_DIR": "~/Pictures/flatkey"
+}
+```
+
+## Batas yang diterapkan server
+
+Server menolak media yang tidak dapat dipakai model sebelum mengirim permintaan, sehingga permintaan itu tidak memakai kredit.
+
+| Model | Batas |
+| --- | --- |
+| Model Veo | Satu gambar masukan, dipakai sebagai frame pertama. Tanpa frame terakhir |
+| Model selain Seedance dan `MiniMax-H3` | Tanpa video referensi |
+| Seedance 2.5 | Hingga 30 gambar referensi dan 10 video referensi |
+| Model lain | Hingga 5 gambar referensi |
+
+## Pemecahan masalah
+
+| Masalah | Penanganan |
+| --- | --- |
+| `Missing or invalid Flatkey API key` | Periksa `FLATKEY_API_KEY` di konfigurasi klien, lalu mulai ulang klien |
+| `No available channel for model ...` | Model sedang tidak dapat dirutekan. Minta asisten memanggil `list_models` dan memilih model lain |
+| `unsupported resolution` | Gunakan nilai yang diterima model, atau jangan sertakan `resolution` |
+| Kredit tidak cukup | Lihat saldo dengan `get_credits`, lalu isi ulang di [Konsol Flatkey](https://console.flatkey.ai) |
+| Video tidak kunjung datang | Minta asisten memanggil `get_video` dengan id tugas yang diterimanya |
+| Klien tidak menampilkan alat | Pastikan Node.js 20 atau lebih baru dengan `node --version`, lalu mulai ulang klien |
+
+<Note>
+  Lebih suka terminal? [Flatkey CLI](/id/guides/flatkey-cli) menyediakan pembuatan yang sama dalam bentuk perintah, ditambah audio.
+</Note>

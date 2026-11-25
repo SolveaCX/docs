@@ -1,0 +1,191 @@
+---
+title: "Générer des images et des vidéos depuis Claude, Cursor ou Codex avec le serveur MCP Flatkey"
+sidebarTitle: "Serveur MCP Flatkey"
+description: "Ajoutez le serveur MCP Flatkey à Claude Code, Claude Desktop, Cursor ou Codex et générez des images et des vidéos sur simple demande, avec une seule clé API Flatkey."
+---
+
+Le serveur MCP Flatkey fournit à tout client MCP cinq outils de génération d'images et de vidéos. Vous l'ajoutez une fois, puis vous demandez une image ou un clip à votre assistant en langage courant. Il s'exécute sur votre ordinateur et appelle Flatkey avec votre propre clé API.
+
+<CardGroup cols={2}>
+  <Card title="Sans terminal" icon="plug">
+    Fonctionne dans les clients qui ne peuvent pas exécuter de commandes de terminal, comme Claude Desktop.
+  </Card>
+  <Card title="Une clé, un solde" icon="key">
+    Utilise la même clé API et les mêmes crédits que l'API et la CLI Flatkey.
+  </Card>
+</CardGroup>
+
+## Prérequis
+
+- Node.js 20 ou version ultérieure
+- Une clé API Flatkey (`sk-fk-...`). Créez-la dans la [console Flatkey](https://console.flatkey.ai/keys)
+
+## Ajouter le serveur à votre client
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add flatkey -e FLATKEY_API_KEY=sk-fk-your-flatkey-key -- npx -y @flatkey-ai/mcp
+    ```
+  </Tab>
+  <Tab title="Claude Desktop">
+    Ouvrez **Settings**, puis **Developer**, puis **Edit Config**. Ajoutez le serveur et redémarrez l'application.
+
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        "flatkey": {
+          "command": "npx",
+          "args": ["-y", "@flatkey-ai/mcp"],
+          "env": { "FLATKEY_API_KEY": "sk-fk-your-flatkey-key" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Cursor">
+    ```json .cursor/mcp.json
+    {
+      "mcpServers": {
+        "flatkey": {
+          "command": "npx",
+          "args": ["-y", "@flatkey-ai/mcp"],
+          "env": { "FLATKEY_API_KEY": "sk-fk-your-flatkey-key" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Codex">
+    ```toml ~/.codex/config.toml
+    [mcp_servers.flatkey]
+    command = "npx"
+    args = ["-y", "@flatkey-ai/mcp"]
+    env = { FLATKEY_API_KEY = "sk-fk-your-flatkey-key" }
+    ```
+  </Tab>
+</Tabs>
+
+## Créer votre première image
+
+Demandez à votre assistant :
+
+```text
+Génère une photo produit en 16:9 d'une gourde noir mat posée sur de la pierre mouillée
+et enregistre-la dans ~/Pictures/bottle.png
+```
+
+L'assistant appelle `generate_image` et répond avec le chemin du fichier enregistré. Pour vérifier la connexion sans dépenser de crédits, demandez-lui de lister vos modèles vidéo Flatkey ou d'afficher votre solde de crédits.
+
+## Outils
+
+| Outil | Rôle | Consomme des crédits |
+| --- | --- | --- |
+| `generate_image` | Texte vers image. Passez `reference_images` pour modifier une image ou en changer le style | Oui |
+| `generate_video` | Texte vers vidéo, image vers vidéo, première et dernière image, vidéos de référence | Oui |
+| `get_video` | Vérifie une vidéo encore en cours de rendu et renvoie le résultat | Non |
+| `list_models` | Liste les identifiants de modèles utilisables avec votre clé, filtrés par `image`, `video`, `audio` ou `text` | Non |
+| `get_credits` | Affiche votre solde restant | Non |
+
+### Options d'image
+
+| Paramètre | Signification |
+| --- | --- |
+| `prompt` | Ce que l'image doit montrer. Obligatoire |
+| `model` | Identifiant du modèle d'image. `gpt-image-2` par défaut |
+| `reference_images` | URL ou chemins de fichiers locaux des images à modifier ou à suivre |
+| `size`, `n`, `quality` | `gpt-image-2` uniquement |
+| `output_format` | `png`, `jpeg`, `webp` ou `gif`. Modèles d'image GPT uniquement |
+| `save_to` | Fichier ou dossier où enregistrer le résultat |
+
+Pour les modèles et leurs API, consultez [Génération d'images](/fr/guides/image-generation).
+
+### Options vidéo
+
+| Paramètre | Signification |
+| --- | --- |
+| `prompt` | Ce qui se passe dans la vidéo. Obligatoire |
+| `model` | Identifiant du modèle vidéo. `seedance-2.0-pro` par défaut |
+| `duration` | Durée en secondes |
+| `ratio` | `16:9`, `9:16`, `4:3`, `3:4`, `21:9`, `1:1` ou `adaptive` |
+| `resolution` | Les valeurs acceptées varient selon le modèle |
+| `first_frame`, `last_frame` | Image de départ et image de fin |
+| `reference_images` | Images que la vidéo doit suivre |
+| `reference_videos` | Vidéos à suivre pour le mouvement. Modèles Seedance uniquement |
+| `wait_seconds` | Durée d'attente de la vidéo terminée. 45 par défaut |
+| `save_to` | Fichier ou dossier où enregistrer le MP4 |
+
+<Warning>
+  Les valeurs de résolution ne sont pas communes à tous les modèles. `seedance-2.5` refuse `1080p`, et `MiniMax-H3` n'accepte que `768P` et `2K`. Consultez [Génération de vidéos](/fr/guides/video-generation).
+</Warning>
+
+## Fonctionnement de la génération vidéo
+
+La vidéo est asynchrone, et un clip de cinq secondes prend généralement deux à quatre minutes. `generate_video` envoie la tâche et attend jusqu'à `wait_seconds` secondes. Si le clip est encore en cours de rendu, il renvoie un identifiant de tâche :
+
+```json
+{
+  "status": "processing",
+  "task_id": "task_aaaaaaaaaaaaaaaa",
+  "model": "seedance-2.0-pro",
+  "next": "The video is still rendering. Call get_video with task_id \"task_aaaaaaaaaaaaaaaa\" in about 30 seconds."
+}
+```
+
+Votre assistant appelle ensuite `get_video` jusqu'à ce que le statut soit `completed` :
+
+```json
+{
+  "status": "completed",
+  "task_id": "task_aaaaaaaaaaaaaaaa",
+  "videos": [
+    {
+      "url": "https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa/content",
+      "path": "/Users/you/flatkey-output/flatkey-video-20261124T091500.mp4"
+    }
+  ]
+}
+```
+
+Si votre assistant s'arrête après le premier appel, demandez-lui de vérifier la vidéo à nouveau. La vérification ne consomme pas de crédits.
+
+## Où vont les fichiers
+
+- Les **vidéos** sont toujours enregistrées, car l'URL de téléchargement ne s'ouvre qu'avec votre clé API. Elles vont dans `save_to`, dans `FLATKEY_OUTPUT_DIR` ou dans `~/flatkey-output`.
+- Les **images** sont renvoyées sous forme d'URL temporaire. Passez `save_to` pour en garder une copie, ou définissez `FLATKEY_OUTPUT_DIR` pour enregistrer tous les résultats dans un même dossier.
+- Les **fichiers de référence locaux** sont envoyés vers le stockage temporaire de Flatkey avant la génération. Les images peuvent être en `png`, `jpg`, `webp` ou `gif`. Les vidéos peuvent être en `mp4` ou `mov`.
+
+Définissez `FLATKEY_OUTPUT_DIR` dans le même bloc `env` que votre clé API :
+
+```json
+"env": {
+  "FLATKEY_API_KEY": "sk-fk-your-flatkey-key",
+  "FLATKEY_OUTPUT_DIR": "~/Pictures/flatkey"
+}
+```
+
+## Limites appliquées par le serveur
+
+Le serveur refuse les médias qu'un modèle ne peut pas utiliser avant d'envoyer la requête, qui ne consomme donc aucun crédit.
+
+| Modèle | Limite |
+| --- | --- |
+| Modèles Veo | Une seule image d'entrée, utilisée comme première image. Pas de dernière image |
+| Modèles autres que Seedance et `MiniMax-H3` | Pas de vidéos de référence |
+| Seedance 2.5 | Jusqu'à 30 images de référence et 10 vidéos de référence |
+| Autres modèles | Jusqu'à 5 images de référence |
+
+## Dépannage
+
+| Problème | Solution |
+| --- | --- |
+| `Missing or invalid Flatkey API key` | Vérifiez `FLATKEY_API_KEY` dans la configuration du client, puis redémarrez le client |
+| `No available channel for model ...` | Le modèle n'est pas routable pour le moment. Demandez à l'assistant d'appeler `list_models` et d'en choisir un autre |
+| `unsupported resolution` | Utilisez une valeur acceptée par le modèle, ou omettez `resolution` |
+| Crédits insuffisants | Consultez votre solde avec `get_credits`, puis rechargez dans la [console Flatkey](https://console.flatkey.ai) |
+| La vidéo n'arrive jamais | Demandez à l'assistant d'appeler `get_video` avec l'identifiant de tâche reçu |
+| Le client n'affiche pas les outils | Vérifiez avec `node --version` que vous avez Node.js 20 ou version ultérieure, puis redémarrez le client |
+
+<Note>
+  Vous préférez le terminal ? La [CLI Flatkey](/fr/guides/flatkey-cli) propose la même génération sous forme de commandes, avec l'audio en plus.
+</Note>

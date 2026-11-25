@@ -377,7 +377,8 @@
               {
                 "group": "Media Generation",
                 "pages": [
-                  "guides/flatkey-cli"
+                  "guides/flatkey-cli",
+                  "guides/flatkey-mcp"
                 ]
               },
               {
@@ -481,7 +482,8 @@
               {
                 "group": "媒体生成",
                 "pages": [
-                  "zh/guides/flatkey-cli"
+                  "zh/guides/flatkey-cli",
+                  "zh/guides/flatkey-mcp"
                 ]
               },
               {
@@ -578,7 +580,8 @@
               {
                 "group": "Generación de medios",
                 "pages": [
-                  "es/guides/flatkey-cli"
+                  "es/guides/flatkey-cli",
+                  "es/guides/flatkey-mcp"
                 ]
               },
               {
@@ -675,7 +678,8 @@
               {
                 "group": "Génération de médias",
                 "pages": [
-                  "fr/guides/flatkey-cli"
+                  "fr/guides/flatkey-cli",
+                  "fr/guides/flatkey-mcp"
                 ]
               },
               {
@@ -772,7 +776,8 @@
               {
                 "group": "Geração de mídia",
                 "pages": [
-                  "pt/guides/flatkey-cli"
+                  "pt/guides/flatkey-cli",
+                  "pt/guides/flatkey-mcp"
                 ]
               },
               {
@@ -869,7 +874,8 @@
               {
                 "group": "Генерация медиа",
                 "pages": [
-                  "ru/guides/flatkey-cli"
+                  "ru/guides/flatkey-cli",
+                  "ru/guides/flatkey-mcp"
                 ]
               },
               {
@@ -966,7 +972,8 @@
               {
                 "group": "メディア生成",
                 "pages": [
-                  "ja/guides/flatkey-cli"
+                  "ja/guides/flatkey-cli",
+                  "ja/guides/flatkey-mcp"
                 ]
               },
               {
@@ -1063,7 +1070,8 @@
               {
                 "group": "Tạo nội dung đa phương tiện",
                 "pages": [
-                  "vi/guides/flatkey-cli"
+                  "vi/guides/flatkey-cli",
+                  "vi/guides/flatkey-mcp"
                 ]
               },
               {
@@ -1160,7 +1168,8 @@
               {
                 "group": "Medienerzeugung",
                 "pages": [
-                  "de/guides/flatkey-cli"
+                  "de/guides/flatkey-cli",
+                  "de/guides/flatkey-mcp"
                 ]
               },
               {
@@ -1257,7 +1266,8 @@
               {
                 "group": "Pembuatan Media",
                 "pages": [
-                  "id/guides/flatkey-cli"
+                  "id/guides/flatkey-cli",
+                  "id/guides/flatkey-mcp"
                 ]
               },
               {

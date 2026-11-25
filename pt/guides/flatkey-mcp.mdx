@@ -1,0 +1,191 @@
+---
+title: "Gere imagens e vídeos no Claude, Cursor ou Codex com o servidor MCP da Flatkey"
+sidebarTitle: "Servidor MCP da Flatkey"
+description: "Adicione o servidor MCP da Flatkey ao Claude Code, Claude Desktop, Cursor ou Codex e gere imagens e vídeos apenas pedindo, com uma única chave de API da Flatkey."
+---
+
+O servidor MCP da Flatkey oferece a qualquer cliente MCP cinco ferramentas para gerar imagens e vídeos. Você adiciona uma vez e depois pede uma imagem ou um clipe ao seu assistente com suas próprias palavras. Ele roda no seu computador e chama a Flatkey com a sua própria chave de API.
+
+<CardGroup cols={2}>
+  <Card title="Sem terminal" icon="plug">
+    Funciona em clientes que não executam comandos de terminal, como o Claude Desktop.
+  </Card>
+  <Card title="Uma chave, um saldo" icon="key">
+    Usa a mesma chave de API e os mesmos créditos da API e da CLI da Flatkey.
+  </Card>
+</CardGroup>
+
+## Pré-requisitos
+
+- Node.js 20 ou mais recente
+- Uma chave de API da Flatkey (`sk-fk-...`). Crie uma no [Console da Flatkey](https://console.flatkey.ai/keys)
+
+## Adicione o servidor ao seu cliente
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add flatkey -e FLATKEY_API_KEY=sk-fk-your-flatkey-key -- npx -y @flatkey-ai/mcp
+    ```
+  </Tab>
+  <Tab title="Claude Desktop">
+    Abra **Settings**, depois **Developer** e então **Edit Config**. Adicione o servidor e reinicie o aplicativo.
+
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        "flatkey": {
+          "command": "npx",
+          "args": ["-y", "@flatkey-ai/mcp"],
+          "env": { "FLATKEY_API_KEY": "sk-fk-your-flatkey-key" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Cursor">
+    ```json .cursor/mcp.json
+    {
+      "mcpServers": {
+        "flatkey": {
+          "command": "npx",
+          "args": ["-y", "@flatkey-ai/mcp"],
+          "env": { "FLATKEY_API_KEY": "sk-fk-your-flatkey-key" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Codex">
+    ```toml ~/.codex/config.toml
+    [mcp_servers.flatkey]
+    command = "npx"
+    args = ["-y", "@flatkey-ai/mcp"]
+    env = { FLATKEY_API_KEY = "sk-fk-your-flatkey-key" }
+    ```
+  </Tab>
+</Tabs>
+
+## Crie sua primeira imagem
+
+Peça ao seu assistente:
+
+```text
+Gere uma foto de produto em 16:9 de uma garrafa de água preta fosca sobre pedra molhada
+e salve em ~/Pictures/bottle.png
+```
+
+O assistente chama `generate_image` e responde com o caminho do arquivo salvo. Para confirmar a conexão sem gastar créditos, peça para ele listar seus modelos de vídeo da Flatkey ou mostrar seu saldo de créditos.
+
+## Ferramentas
+
+| Ferramenta | O que faz | Gasta créditos |
+| --- | --- | --- |
+| `generate_image` | Texto para imagem. Passe `reference_images` para editar ou mudar o estilo | Sim |
+| `generate_video` | Texto para vídeo, imagem para vídeo, primeiro e último quadro, vídeos de referência | Sim |
+| `get_video` | Verifica um vídeo que ainda está sendo renderizado e retorna o resultado | Não |
+| `list_models` | Lista os ids de modelo que a sua chave pode usar, filtrados por `image`, `video`, `audio` ou `text` | Não |
+| `get_credits` | Mostra seu saldo restante | Não |
+
+### Opções de imagem
+
+| Parâmetro | Significado |
+| --- | --- |
+| `prompt` | O que a imagem deve mostrar. Obrigatório |
+| `model` | Id do modelo de imagem. O padrão é `gpt-image-2` |
+| `reference_images` | URLs ou caminhos de arquivos locais das imagens a editar ou seguir |
+| `size`, `n`, `quality` | Apenas `gpt-image-2` |
+| `output_format` | `png`, `jpeg`, `webp` ou `gif`. Apenas modelos de imagem GPT |
+| `save_to` | Arquivo ou pasta onde salvar o resultado |
+
+Para os modelos e suas APIs, consulte [Geração de imagens](/pt/guides/image-generation).
+
+### Opções de vídeo
+
+| Parâmetro | Significado |
+| --- | --- |
+| `prompt` | O que acontece no vídeo. Obrigatório |
+| `model` | Id do modelo de vídeo. O padrão é `seedance-2.0-pro` |
+| `duration` | Duração em segundos |
+| `ratio` | `16:9`, `9:16`, `4:3`, `3:4`, `21:9`, `1:1` ou `adaptive` |
+| `resolution` | Os valores aceitos variam por modelo |
+| `first_frame`, `last_frame` | Imagem inicial e imagem final |
+| `reference_images` | Imagens que o vídeo deve seguir |
+| `reference_videos` | Vídeos a seguir para o movimento. Apenas modelos Seedance |
+| `wait_seconds` | Quanto tempo esperar pelo vídeo pronto. O padrão é 45 |
+| `save_to` | Arquivo ou pasta onde salvar o MP4 |
+
+<Warning>
+  Os valores de resolução não são comuns a todos os modelos. `seedance-2.5` rejeita `1080p`, e `MiniMax-H3` aceita apenas `768P` e `2K`. Consulte [Geração de vídeo](/pt/guides/video-generation).
+</Warning>
+
+## Como funciona a geração de vídeo
+
+O vídeo é assíncrono, e um clipe de cinco segundos costuma levar de dois a quatro minutos. `generate_video` envia a tarefa e espera até `wait_seconds` segundos. Se o clipe ainda estiver sendo renderizado, ele retorna um id de tarefa:
+
+```json
+{
+  "status": "processing",
+  "task_id": "task_aaaaaaaaaaaaaaaa",
+  "model": "seedance-2.0-pro",
+  "next": "The video is still rendering. Call get_video with task_id \"task_aaaaaaaaaaaaaaaa\" in about 30 seconds."
+}
+```
+
+Em seguida, seu assistente chama `get_video` até o status ser `completed`:
+
+```json
+{
+  "status": "completed",
+  "task_id": "task_aaaaaaaaaaaaaaaa",
+  "videos": [
+    {
+      "url": "https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa/content",
+      "path": "/Users/you/flatkey-output/flatkey-video-20261124T091500.mp4"
+    }
+  ]
+}
+```
+
+Se o seu assistente parar depois da primeira chamada, peça para ele verificar o vídeo de novo. Verificar não gasta créditos.
+
+## Para onde vão os arquivos
+
+- Os **vídeos** são sempre salvos, porque a URL de download só abre com a sua chave de API. Eles vão para `save_to`, para `FLATKEY_OUTPUT_DIR` ou para `~/flatkey-output`.
+- As **imagens** voltam como uma URL temporária. Passe `save_to` para guardar uma cópia, ou defina `FLATKEY_OUTPUT_DIR` para salvar todos os resultados em uma pasta.
+- Os **arquivos de referência locais** são enviados para o armazenamento temporário da Flatkey antes da geração. Imagens podem ser `png`, `jpg`, `webp` ou `gif`. Vídeos podem ser `mp4` ou `mov`.
+
+Defina `FLATKEY_OUTPUT_DIR` no mesmo bloco `env` da sua chave de API:
+
+```json
+"env": {
+  "FLATKEY_API_KEY": "sk-fk-your-flatkey-key",
+  "FLATKEY_OUTPUT_DIR": "~/Pictures/flatkey"
+}
+```
+
+## Limites que o servidor aplica
+
+O servidor recusa mídias que um modelo não consegue usar antes de enviar a requisição, então a requisição não gasta créditos.
+
+| Modelo | Limite |
+| --- | --- |
+| Modelos Veo | Uma imagem de entrada, usada como primeiro quadro. Sem último quadro |
+| Modelos que não sejam Seedance nem `MiniMax-H3` | Sem vídeos de referência |
+| Seedance 2.5 | Até 30 imagens de referência e 10 vídeos de referência |
+| Outros modelos | Até 5 imagens de referência |
+
+## Solução de problemas
+
+| Falha | Como resolver |
+| --- | --- |
+| `Missing or invalid Flatkey API key` | Confira `FLATKEY_API_KEY` na configuração do cliente e reinicie o cliente |
+| `No available channel for model ...` | O modelo não está roteável no momento. Peça ao assistente para chamar `list_models` e escolher outro |
+| `unsupported resolution` | Use um valor que o modelo aceite, ou deixe `resolution` de fora |
+| Créditos insuficientes | Consulte seu saldo com `get_credits` e recarregue no [Console da Flatkey](https://console.flatkey.ai) |
+| O vídeo nunca chega | Peça ao assistente para chamar `get_video` com o id de tarefa que ele recebeu |
+| O cliente não lista as ferramentas | Confirme com `node --version` que você tem o Node.js 20 ou mais recente e reinicie o cliente |
+
+<Note>
+  Prefere o terminal? A [CLI da Flatkey](/pt/guides/flatkey-cli) oferece a mesma geração em forma de comandos, além de áudio.
+</Note>

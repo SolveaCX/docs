@@ -1,0 +1,191 @@
+---
+title: "Flatkey MCPサーバーでClaude、Cursor、Codexから画像と動画を生成する"
+sidebarTitle: "Flatkey MCPサーバー"
+description: "Flatkey MCPサーバーをClaude Code、Claude Desktop、Cursor、Codexに追加すれば、Flatkey APIキー1つで、頼むだけで画像と動画を生成できます。"
+---
+
+Flatkey MCPサーバーは、あらゆるMCPクライアントに画像・動画生成用の5つのツールを提供します。一度追加すれば、あとはアシスタントに普段の言葉で画像や動画を頼むだけです。サーバーはあなたのコンピューター上で動作し、あなた自身のAPIキーでFlatkeyを呼び出します。
+
+<CardGroup cols={2}>
+  <Card title="シェル不要" icon="plug">
+    Claude Desktopのように、ターミナルコマンドを実行できないクライアントでも使えます。
+  </Card>
+  <Card title="キー1つ、残高1つ" icon="key">
+    APIやFlatkey CLIと同じAPIキーとクレジットを使います。
+  </Card>
+</CardGroup>
+
+## 前提条件
+
+- Node.js 20以降
+- Flatkey APIキー（`sk-fk-...`）。[Flatkeyコンソール](https://console.flatkey.ai/keys)で作成します
+
+## クライアントにサーバーを追加する
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add flatkey -e FLATKEY_API_KEY=sk-fk-your-flatkey-key -- npx -y @flatkey-ai/mcp
+    ```
+  </Tab>
+  <Tab title="Claude Desktop">
+    **Settings**、**Developer**、**Edit Config** の順に開きます。サーバーを追加してアプリを再起動します。
+
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        "flatkey": {
+          "command": "npx",
+          "args": ["-y", "@flatkey-ai/mcp"],
+          "env": { "FLATKEY_API_KEY": "sk-fk-your-flatkey-key" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Cursor">
+    ```json .cursor/mcp.json
+    {
+      "mcpServers": {
+        "flatkey": {
+          "command": "npx",
+          "args": ["-y", "@flatkey-ai/mcp"],
+          "env": { "FLATKEY_API_KEY": "sk-fk-your-flatkey-key" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Codex">
+    ```toml ~/.codex/config.toml
+    [mcp_servers.flatkey]
+    command = "npx"
+    args = ["-y", "@flatkey-ai/mcp"]
+    env = { FLATKEY_API_KEY = "sk-fk-your-flatkey-key" }
+    ```
+  </Tab>
+</Tabs>
+
+## 最初の画像を作る
+
+アシスタントに次のように頼みます。
+
+```text
+濡れた石の上に置いたマットブラックのウォーターボトルの商品写真を16:9で生成して、
+~/Pictures/bottle.png に保存して
+```
+
+アシスタントは `generate_image` を呼び出し、保存先のパスを返します。クレジットを使わずに接続を確認するには、Flatkeyの動画モデルの一覧やクレジット残高を尋ねてください。
+
+## ツール
+
+| ツール | 機能 | クレジット消費 |
+| --- | --- | --- |
+| `generate_image` | テキストから画像を生成。`reference_images` を渡すと編集やスタイル変更ができます | あり |
+| `generate_video` | テキストから動画、画像から動画、最初と最後のフレーム、参照動画 | あり |
+| `get_video` | レンダリング中の動画を確認し、結果を返します | なし |
+| `list_models` | キーで使えるモデルIDを一覧表示。`image`、`video`、`audio`、`text` で絞り込めます | なし |
+| `get_credits` | 残高を表示します | なし |
+
+### 画像のオプション
+
+| パラメーター | 意味 |
+| --- | --- |
+| `prompt` | 画像に描く内容。必須 |
+| `model` | 画像モデルID。デフォルトは `gpt-image-2` |
+| `reference_images` | 編集または参照する画像のURLかローカルファイルパス |
+| `size`, `n`, `quality` | `gpt-image-2` のみ |
+| `output_format` | `png`、`jpeg`、`webp`、`gif` のいずれか。GPT画像モデルのみ |
+| `save_to` | 結果を保存するファイルまたはフォルダー |
+
+モデルとそのAPIについては[画像生成](/ja/guides/image-generation)を参照してください。
+
+### 動画のオプション
+
+| パラメーター | 意味 |
+| --- | --- |
+| `prompt` | 動画の中で起きること。必須 |
+| `model` | 動画モデルID。デフォルトは `seedance-2.0-pro` |
+| `duration` | 長さ（秒） |
+| `ratio` | `16:9`、`9:16`、`4:3`、`3:4`、`21:9`、`1:1`、`adaptive` のいずれか |
+| `resolution` | 指定できる値はモデルによって異なります |
+| `first_frame`, `last_frame` | 最初のフレームにする画像と、最後のフレームにする画像 |
+| `reference_images` | 動画が従うべき画像 |
+| `reference_videos` | 動きの参照にする動画。Seedanceモデルのみ |
+| `wait_seconds` | 動画の完成を待つ秒数。デフォルトは45 |
+| `save_to` | MP4を保存するファイルまたはフォルダー |
+
+<Warning>
+  解像度の値はモデル間で共通ではありません。`seedance-2.5` は `1080p` を拒否し、`MiniMax-H3` は `768P` と `2K` のみ受け付けます。[動画生成](/ja/guides/video-generation)を参照してください。
+</Warning>
+
+## 動画生成の流れ
+
+動画生成は非同期で、5秒のクリップには通常2〜4分かかります。`generate_video` はタスクを送信し、最大で `wait_seconds` 秒待ちます。まだレンダリング中の場合は、タスクIDを返します。
+
+```json
+{
+  "status": "processing",
+  "task_id": "task_aaaaaaaaaaaaaaaa",
+  "model": "seedance-2.0-pro",
+  "next": "The video is still rendering. Call get_video with task_id \"task_aaaaaaaaaaaaaaaa\" in about 30 seconds."
+}
+```
+
+その後、ステータスが `completed` になるまでアシスタントが `get_video` を呼び出します。
+
+```json
+{
+  "status": "completed",
+  "task_id": "task_aaaaaaaaaaaaaaaa",
+  "videos": [
+    {
+      "url": "https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa/content",
+      "path": "/Users/you/flatkey-output/flatkey-video-20261124T091500.mp4"
+    }
+  ]
+}
+```
+
+アシスタントが最初の呼び出しで止まった場合は、動画をもう一度確認するよう頼んでください。確認ではクレジットを消費しません。
+
+## ファイルの保存先
+
+- **動画**は必ず保存されます。ダウンロードURLはAPIキーがないと開けないためです。保存先は `save_to`、`FLATKEY_OUTPUT_DIR`、`~/flatkey-output` の順に決まります。
+- **画像**は一時URLで返されます。`save_to` を渡すとコピーを保存できます。`FLATKEY_OUTPUT_DIR` を設定すると、すべての結果を1つのフォルダーに保存します。
+- **ローカルの参照ファイル**は、生成前にFlatkeyの一時ストレージへアップロードされます。画像は `png`、`jpg`、`webp`、`gif`、動画は `mp4`、`mov` に対応しています。
+
+`FLATKEY_OUTPUT_DIR` は、APIキーと同じ `env` ブロックに設定します。
+
+```json
+"env": {
+  "FLATKEY_API_KEY": "sk-fk-your-flatkey-key",
+  "FLATKEY_OUTPUT_DIR": "~/Pictures/flatkey"
+}
+```
+
+## サーバーが適用する制限
+
+モデルが使えないメディアは、リクエストを送る前にサーバーが拒否します。そのためクレジットは消費されません。
+
+| モデル | 制限 |
+| --- | --- |
+| Veoモデル | 入力画像は1枚で、最初のフレームとして使われます。最後のフレームは指定できません |
+| Seedanceと `MiniMax-H3` 以外のモデル | 参照動画は使えません |
+| Seedance 2.5 | 参照画像は最大30枚、参照動画は最大10本 |
+| その他のモデル | 参照画像は最大5枚 |
+
+## トラブルシューティング
+
+| 問題 | 対処 |
+| --- | --- |
+| `Missing or invalid Flatkey API key` | クライアント設定の `FLATKEY_API_KEY` を確認し、クライアントを再起動します |
+| `No available channel for model ...` | そのモデルは現在ルーティングできません。アシスタントに `list_models` を呼び出させ、別のモデルを選びます |
+| `unsupported resolution` | モデルが受け付ける値を使うか、`resolution` を省略します |
+| クレジット不足 | `get_credits` で残高を確認し、[Flatkeyコンソール](https://console.flatkey.ai)でチャージします |
+| 動画が届かない | 受け取ったタスクIDで `get_video` を呼び出すようアシスタントに頼みます |
+| クライアントにツールが表示されない | `node --version` でNode.js 20以降であることを確認し、クライアントを再起動します |
+
+<Note>
+  ターミナル派ですか？[Flatkey CLI](/ja/guides/flatkey-cli)なら同じ生成をコマンドで実行でき、音声にも対応しています。
+</Note>

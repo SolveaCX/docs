@@ -1,0 +1,191 @@
+---
+title: "Tạo ảnh và video từ Claude, Cursor hoặc Codex bằng máy chủ MCP của Flatkey"
+sidebarTitle: "Máy chủ MCP của Flatkey"
+description: "Thêm máy chủ MCP của Flatkey vào Claude Code, Claude Desktop, Cursor hoặc Codex rồi tạo ảnh và video chỉ bằng một lời yêu cầu, với một API key Flatkey duy nhất."
+---
+
+Máy chủ MCP của Flatkey cung cấp cho mọi MCP client năm công cụ tạo ảnh và video. Bạn thêm một lần, sau đó chỉ cần yêu cầu trợ lý tạo ảnh hoặc clip bằng ngôn ngữ thông thường. Máy chủ chạy trên máy tính của bạn và gọi Flatkey bằng API key của chính bạn.
+
+<CardGroup cols={2}>
+  <Card title="Không cần terminal" icon="plug">
+    Dùng được trong các client không chạy được lệnh terminal, chẳng hạn Claude Desktop.
+  </Card>
+  <Card title="Một key, một số dư" icon="key">
+    Dùng chung API key và credit với API và Flatkey CLI.
+  </Card>
+</CardGroup>
+
+## Điều kiện cần có
+
+- Node.js 20 trở lên
+- Một API key Flatkey (`sk-fk-...`). Tạo key tại [Flatkey Console](https://console.flatkey.ai/keys)
+
+## Thêm máy chủ vào client
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add flatkey -e FLATKEY_API_KEY=sk-fk-your-flatkey-key -- npx -y @flatkey-ai/mcp
+    ```
+  </Tab>
+  <Tab title="Claude Desktop">
+    Mở **Settings**, chọn **Developer**, rồi chọn **Edit Config**. Thêm máy chủ và khởi động lại ứng dụng.
+
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        "flatkey": {
+          "command": "npx",
+          "args": ["-y", "@flatkey-ai/mcp"],
+          "env": { "FLATKEY_API_KEY": "sk-fk-your-flatkey-key" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Cursor">
+    ```json .cursor/mcp.json
+    {
+      "mcpServers": {
+        "flatkey": {
+          "command": "npx",
+          "args": ["-y", "@flatkey-ai/mcp"],
+          "env": { "FLATKEY_API_KEY": "sk-fk-your-flatkey-key" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Codex">
+    ```toml ~/.codex/config.toml
+    [mcp_servers.flatkey]
+    command = "npx"
+    args = ["-y", "@flatkey-ai/mcp"]
+    env = { FLATKEY_API_KEY = "sk-fk-your-flatkey-key" }
+    ```
+  </Tab>
+</Tabs>
+
+## Tạo bức ảnh đầu tiên
+
+Yêu cầu trợ lý của bạn:
+
+```text
+Tạo ảnh sản phẩm tỉ lệ 16:9 về một bình nước màu đen nhám đặt trên đá ướt
+và lưu vào ~/Pictures/bottle.png
+```
+
+Trợ lý sẽ gọi `generate_image` và trả lời kèm đường dẫn đã lưu. Để kiểm tra kết nối mà không tốn credit, hãy yêu cầu trợ lý liệt kê các model video Flatkey của bạn hoặc hiển thị số dư credit.
+
+## Công cụ
+
+| Công cụ | Chức năng | Tốn credit |
+| --- | --- | --- |
+| `generate_image` | Tạo ảnh từ văn bản. Truyền `reference_images` để chỉnh sửa hoặc đổi phong cách | Có |
+| `generate_video` | Văn bản thành video, ảnh thành video, khung hình đầu và cuối, video tham chiếu | Có |
+| `get_video` | Kiểm tra video đang render và trả về kết quả | Không |
+| `list_models` | Liệt kê các model id mà key của bạn dùng được, lọc theo `image`, `video`, `audio` hoặc `text` | Không |
+| `get_credits` | Hiển thị số dư còn lại | Không |
+
+### Tùy chọn cho ảnh
+
+| Tham số | Ý nghĩa |
+| --- | --- |
+| `prompt` | Nội dung ảnh cần thể hiện. Bắt buộc |
+| `model` | Model id tạo ảnh. Mặc định là `gpt-image-2` |
+| `reference_images` | URL hoặc đường dẫn tệp cục bộ của các ảnh cần chỉnh sửa hoặc làm mẫu |
+| `size`, `n`, `quality` | Chỉ dành cho `gpt-image-2` |
+| `output_format` | `png`, `jpeg`, `webp` hoặc `gif`. Chỉ dành cho các model ảnh GPT |
+| `save_to` | Tệp hoặc thư mục để lưu kết quả |
+
+Xem các model và API của chúng tại [Tạo ảnh](/vi/guides/image-generation).
+
+### Tùy chọn cho video
+
+| Tham số | Ý nghĩa |
+| --- | --- |
+| `prompt` | Điều diễn ra trong video. Bắt buộc |
+| `model` | Model id tạo video. Mặc định là `seedance-2.0-pro` |
+| `duration` | Độ dài tính bằng giây |
+| `ratio` | `16:9`, `9:16`, `4:3`, `3:4`, `21:9`, `1:1` hoặc `adaptive` |
+| `resolution` | Giá trị được chấp nhận khác nhau theo model |
+| `first_frame`, `last_frame` | Ảnh mở đầu và ảnh kết thúc |
+| `reference_images` | Các ảnh mà video cần bám theo |
+| `reference_videos` | Video để bám theo chuyển động. Chỉ dành cho các model Seedance |
+| `wait_seconds` | Thời gian chờ video hoàn tất. Mặc định là 45 |
+| `save_to` | Tệp hoặc thư mục để lưu MP4 |
+
+<Warning>
+  Giá trị độ phân giải không dùng chung giữa các model. `seedance-2.5` từ chối `1080p`, còn `MiniMax-H3` chỉ chấp nhận `768P` và `2K`. Xem [Tạo video](/vi/guides/video-generation).
+</Warning>
+
+## Quy trình tạo video
+
+Video được tạo bất đồng bộ, và một clip năm giây thường mất từ hai đến bốn phút. `generate_video` gửi tác vụ và chờ tối đa `wait_seconds` giây. Nếu clip vẫn đang render, công cụ trả về task id:
+
+```json
+{
+  "status": "processing",
+  "task_id": "task_aaaaaaaaaaaaaaaa",
+  "model": "seedance-2.0-pro",
+  "next": "The video is still rendering. Call get_video with task_id \"task_aaaaaaaaaaaaaaaa\" in about 30 seconds."
+}
+```
+
+Sau đó trợ lý gọi `get_video` cho đến khi trạng thái là `completed`:
+
+```json
+{
+  "status": "completed",
+  "task_id": "task_aaaaaaaaaaaaaaaa",
+  "videos": [
+    {
+      "url": "https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa/content",
+      "path": "/Users/you/flatkey-output/flatkey-video-20261124T091500.mp4"
+    }
+  ]
+}
+```
+
+Nếu trợ lý dừng lại sau lần gọi đầu tiên, hãy yêu cầu trợ lý kiểm tra video lần nữa. Việc kiểm tra không tốn credit.
+
+## Tệp được lưu ở đâu
+
+- **Video** luôn được lưu lại, vì URL tải xuống chỉ mở được bằng API key của bạn. Video được lưu vào `save_to`, vào `FLATKEY_OUTPUT_DIR` hoặc vào `~/flatkey-output`.
+- **Ảnh** được trả về dưới dạng URL tạm thời. Truyền `save_to` để giữ một bản sao, hoặc đặt `FLATKEY_OUTPUT_DIR` để lưu mọi kết quả vào một thư mục.
+- **Tệp tham chiếu cục bộ** được tải lên bộ nhớ tạm của Flatkey trước khi tạo. Ảnh có thể là `png`, `jpg`, `webp` hoặc `gif`. Video có thể là `mp4` hoặc `mov`.
+
+Đặt `FLATKEY_OUTPUT_DIR` trong cùng khối `env` với API key của bạn:
+
+```json
+"env": {
+  "FLATKEY_API_KEY": "sk-fk-your-flatkey-key",
+  "FLATKEY_OUTPUT_DIR": "~/Pictures/flatkey"
+}
+```
+
+## Các giới hạn máy chủ áp dụng
+
+Máy chủ từ chối những tệp media mà model không dùng được trước khi gửi yêu cầu, nên yêu cầu đó không tốn credit.
+
+| Model | Giới hạn |
+| --- | --- |
+| Các model Veo | Một ảnh đầu vào, dùng làm khung hình đầu. Không có khung hình cuối |
+| Các model không phải Seedance và `MiniMax-H3` | Không hỗ trợ video tham chiếu |
+| Seedance 2.5 | Tối đa 30 ảnh tham chiếu và 10 video tham chiếu |
+| Các model khác | Tối đa 5 ảnh tham chiếu |
+
+## Khắc phục sự cố
+
+| Lỗi | Cách xử lý |
+| --- | --- |
+| `Missing or invalid Flatkey API key` | Kiểm tra `FLATKEY_API_KEY` trong cấu hình client, rồi khởi động lại client |
+| `No available channel for model ...` | Model hiện không định tuyến được. Yêu cầu trợ lý gọi `list_models` và chọn model khác |
+| `unsupported resolution` | Dùng giá trị mà model chấp nhận, hoặc bỏ `resolution` |
+| Không đủ credit | Xem số dư bằng `get_credits`, rồi nạp thêm tại [Flatkey Console](https://console.flatkey.ai) |
+| Video mãi không về | Yêu cầu trợ lý gọi `get_video` với task id đã nhận |
+| Client không hiện các công cụ | Dùng `node --version` để xác nhận Node.js 20 trở lên, rồi khởi động lại client |
+
+<Note>
+  Bạn thích dùng terminal hơn? [Flatkey CLI](/vi/guides/flatkey-cli) cung cấp cùng khả năng tạo nội dung dưới dạng lệnh, kèm cả âm thanh.
+</Note>

@@ -1,0 +1,191 @@
+---
+title: "用 Flatkey MCP 服务器在 Claude、Cursor 或 Codex 里生成图片和视频"
+sidebarTitle: "Flatkey MCP 服务器"
+description: "把 Flatkey MCP 服务器添加到 Claude Code、Claude Desktop、Cursor 或 Codex，用一个 Flatkey API Key，说一句话就能生成图片和视频。"
+---
+
+Flatkey MCP 服务器为任何 MCP 客户端提供五个图片和视频生成工具。添加一次之后，用自然语言向助手要一张图或一段视频即可。它运行在你的电脑上，用你自己的 API Key 调用 Flatkey。
+
+<CardGroup cols={2}>
+  <Card title="不需要终端" icon="plug">
+    在无法执行终端命令的客户端里也能用，例如 Claude Desktop。
+  </Card>
+  <Card title="一个 Key，一个余额" icon="key">
+    与 API 和 Flatkey CLI 共用同一个 API Key 和额度。
+  </Card>
+</CardGroup>
+
+## 前置条件
+
+- Node.js 20 或更高版本
+- 一个 Flatkey API Key（`sk-fk-...`）。在 [Flatkey 控制台](https://console.flatkey.ai/keys)创建
+
+## 把服务器添加到客户端
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add flatkey -e FLATKEY_API_KEY=sk-fk-your-flatkey-key -- npx -y @flatkey-ai/mcp
+    ```
+  </Tab>
+  <Tab title="Claude Desktop">
+    打开 **Settings**，进入 **Developer**，点击 **Edit Config**。添加服务器后重启应用。
+
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        "flatkey": {
+          "command": "npx",
+          "args": ["-y", "@flatkey-ai/mcp"],
+          "env": { "FLATKEY_API_KEY": "sk-fk-your-flatkey-key" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Cursor">
+    ```json .cursor/mcp.json
+    {
+      "mcpServers": {
+        "flatkey": {
+          "command": "npx",
+          "args": ["-y", "@flatkey-ai/mcp"],
+          "env": { "FLATKEY_API_KEY": "sk-fk-your-flatkey-key" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Codex">
+    ```toml ~/.codex/config.toml
+    [mcp_servers.flatkey]
+    command = "npx"
+    args = ["-y", "@flatkey-ai/mcp"]
+    env = { FLATKEY_API_KEY = "sk-fk-your-flatkey-key" }
+    ```
+  </Tab>
+</Tabs>
+
+## 生成第一张图片
+
+向助手提出请求：
+
+```text
+生成一张 16:9 的产品图：湿润石面上的哑光黑色水瓶，
+并保存到 ~/Pictures/bottle.png
+```
+
+助手会调用 `generate_image`，并回复保存路径。如果想在不消耗额度的情况下确认连接正常，可以让它列出你的 Flatkey 视频模型，或查看额度余额。
+
+## 工具
+
+| 工具 | 作用 | 是否消耗额度 |
+| --- | --- | --- |
+| `generate_image` | 文生图。传入 `reference_images` 可以编辑或改变风格 | 是 |
+| `generate_video` | 文生视频、图生视频、首尾帧、参考视频 | 是 |
+| `get_video` | 查询仍在生成中的视频并返回结果 | 否 |
+| `list_models` | 列出你的 Key 可用的模型 ID，可按 `image`、`video`、`audio`、`text` 筛选 | 否 |
+| `get_credits` | 显示剩余余额 | 否 |
+
+### 图片参数
+
+| 参数 | 含义 |
+| --- | --- |
+| `prompt` | 图片要呈现的内容。必填 |
+| `model` | 图片模型 ID。默认 `gpt-image-2` |
+| `reference_images` | 要编辑或参考的图片，可以是 URL 或本地文件路径 |
+| `size`, `n`, `quality` | 仅 `gpt-image-2` 支持 |
+| `output_format` | `png`、`jpeg`、`webp` 或 `gif`。仅 GPT 图片模型支持 |
+| `save_to` | 保存结果的文件或文件夹 |
+
+模型及其 API 见[图片生成](/zh/guides/image-generation)。
+
+### 视频参数
+
+| 参数 | 含义 |
+| --- | --- |
+| `prompt` | 视频里发生什么。必填 |
+| `model` | 视频模型 ID。默认 `seedance-2.0-pro` |
+| `duration` | 时长，单位为秒 |
+| `ratio` | `16:9`、`9:16`、`4:3`、`3:4`、`21:9`、`1:1` 或 `adaptive` |
+| `resolution` | 可用取值因模型而异 |
+| `first_frame`, `last_frame` | 作为首帧的图片和作为尾帧的图片 |
+| `reference_images` | 视频要参考的图片 |
+| `reference_videos` | 用于参考运动的视频。仅 Seedance 模型支持 |
+| `wait_seconds` | 等待视频完成的时长。默认 45 |
+| `save_to` | 保存 MP4 的文件或文件夹 |
+
+<Warning>
+  各模型的分辨率取值并不通用。`seedance-2.5` 不接受 `1080p`，`MiniMax-H3` 只接受 `768P` 和 `2K`。详见[视频生成](/zh/guides/video-generation)。
+</Warning>
+
+## 视频生成的流程
+
+视频生成是异步的，一段 5 秒的视频通常需要 2 到 4 分钟。`generate_video` 提交任务后最多等待 `wait_seconds` 秒。如果视频仍在生成，它会返回任务 ID：
+
+```json
+{
+  "status": "processing",
+  "task_id": "task_aaaaaaaaaaaaaaaa",
+  "model": "seedance-2.0-pro",
+  "next": "The video is still rendering. Call get_video with task_id \"task_aaaaaaaaaaaaaaaa\" in about 30 seconds."
+}
+```
+
+随后助手会调用 `get_video`，直到状态变为 `completed`：
+
+```json
+{
+  "status": "completed",
+  "task_id": "task_aaaaaaaaaaaaaaaa",
+  "videos": [
+    {
+      "url": "https://router.flatkey.ai/v1/videos/task_aaaaaaaaaaaaaaaa/content",
+      "path": "/Users/you/flatkey-output/flatkey-video-20261124T091500.mp4"
+    }
+  ]
+}
+```
+
+如果助手在第一次调用后就停下了，让它再查询一次视频即可。查询不消耗额度。
+
+## 文件保存位置
+
+- **视频**总是会保存到本地，因为下载地址需要你的 API Key 才能打开。保存位置依次为 `save_to`、`FLATKEY_OUTPUT_DIR`、`~/flatkey-output`。
+- **图片**以临时 URL 返回。传入 `save_to` 可保留一份，或设置 `FLATKEY_OUTPUT_DIR` 把所有结果存到同一个文件夹。
+- **本地参考文件**会在生成前上传到 Flatkey 临时存储。图片支持 `png`、`jpg`、`webp`、`gif`，视频支持 `mp4`、`mov`。
+
+在配置 API Key 的同一个 `env` 块里设置 `FLATKEY_OUTPUT_DIR`：
+
+```json
+"env": {
+  "FLATKEY_API_KEY": "sk-fk-your-flatkey-key",
+  "FLATKEY_OUTPUT_DIR": "~/Pictures/flatkey"
+}
+```
+
+## 服务器会拦截的情况
+
+如果模型用不了某种素材，服务器会在发出请求之前直接拒绝，因此不会消耗额度。
+
+| 模型 | 限制 |
+| --- | --- |
+| Veo 模型 | 只接受一张输入图片，用作首帧。不支持尾帧 |
+| Seedance 和 `MiniMax-H3` 以外的模型 | 不支持参考视频 |
+| Seedance 2.5 | 最多 30 张参考图片和 10 段参考视频 |
+| 其他模型 | 最多 5 张参考图片 |
+
+## 故障排查
+
+| 问题 | 处理方法 |
+| --- | --- |
+| `Missing or invalid Flatkey API key` | 检查客户端配置里的 `FLATKEY_API_KEY`，然后重启客户端 |
+| `No available channel for model ...` | 该模型当前不可路由。让助手调用 `list_models` 换一个模型 |
+| `unsupported resolution` | 改用该模型接受的取值，或不传 `resolution` |
+| 额度不足 | 用 `get_credits` 查看余额，然后在 [Flatkey 控制台](https://console.flatkey.ai)充值 |
+| 视频一直没有返回 | 让助手用拿到的任务 ID 调用 `get_video` |
+| 客户端里看不到这些工具 | 用 `node --version` 确认 Node.js 为 20 或更高版本，然后重启客户端 |
+
+<Note>
+  更习惯用终端？[Flatkey CLI](/zh/guides/flatkey-cli) 以命令的形式提供同样的生成能力，还支持音频。
+</Note>
