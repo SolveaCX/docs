@@ -151,7 +151,7 @@ Flatkey MCPサーバーは、あらゆるMCPクライアントに画像・動画
 
 ## ファイルの保存先
 
-- **動画**は必ず保存されます。ダウンロードURLはAPIキーがないと開けないためです。保存先は `save_to`、`FLATKEY_OUTPUT_DIR`、`~/flatkey-output` の順に決まります。
+- **動画**は必ずディスクに保存され、結果には保存先のパスが含まれます。保存先は `save_to`、`FLATKEY_OUTPUT_DIR`、`~/flatkey-output` の順に決まります。
 - **画像**は一時URLで返されます。`save_to` を渡すとコピーを保存できます。`FLATKEY_OUTPUT_DIR` を設定すると、すべての結果を1つのフォルダーに保存します。
 - **ローカルの参照ファイル**は、生成前にFlatkeyの一時ストレージへアップロードされます。画像は `png`、`jpg`、`webp`、`gif`、動画は `mp4`、`mov` に対応しています。
 

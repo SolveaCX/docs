@@ -151,7 +151,7 @@ Si tu asistente se detiene tras la primera llamada, pídele que vuelva a consult
 
 ## Dónde se guardan los archivos
 
-- Los **videos** siempre se guardan, porque la URL de descarga solo se abre con tu clave de API. Van a `save_to`, a `FLATKEY_OUTPUT_DIR` o a `~/flatkey-output`.
+- Los **videos** siempre se guardan en disco, y el resultado incluye la ruta. Van a `save_to`, a `FLATKEY_OUTPUT_DIR` o a `~/flatkey-output`.
 - Las **imágenes** llegan como una URL temporal. Pasa `save_to` para conservar una copia, o define `FLATKEY_OUTPUT_DIR` para guardar todos los resultados en una carpeta.
 - Los **archivos de referencia locales** se suben al almacenamiento temporal de Flatkey antes de generar. Las imágenes pueden ser `png`, `jpg`, `webp` o `gif`. Los videos pueden ser `mp4` o `mov`.
 

@@ -151,7 +151,7 @@ If your assistant stops after the first call, ask it to check the video again. C
 
 ## Where files go
 
-- **Videos** are always saved, because the download URL only opens with your API key. They go to `save_to`, or to `FLATKEY_OUTPUT_DIR`, or to `~/flatkey-output`.
+- **Videos** are always saved to disk, and the result includes the path. They go to `save_to`, or to `FLATKEY_OUTPUT_DIR`, or to `~/flatkey-output`.
 - **Images** come back as a temporary URL. Pass `save_to` to keep a copy, or set `FLATKEY_OUTPUT_DIR` to save every result in one folder.
 - **Local reference files** are uploaded to Flatkey temporary storage before generation. Images can be `png`, `jpg`, `webp`, or `gif`. Videos can be `mp4` or `mov`.
 
