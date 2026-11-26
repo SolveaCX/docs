@@ -151,7 +151,7 @@ Flatkey MCP 服务器为任何 MCP 客户端提供五个图片和视频生成工
 
 ## 文件保存位置
 
-- **视频**总是会保存到本地，因为下载地址需要你的 API Key 才能打开。保存位置依次为 `save_to`、`FLATKEY_OUTPUT_DIR`、`~/flatkey-output`。
+- **视频**总是会保存到本地，结果里会给出保存路径。保存位置依次为 `save_to`、`FLATKEY_OUTPUT_DIR`、`~/flatkey-output`。
 - **图片**以临时 URL 返回。传入 `save_to` 可保留一份，或设置 `FLATKEY_OUTPUT_DIR` 把所有结果存到同一个文件夹。
 - **本地参考文件**会在生成前上传到 Flatkey 临时存储。图片支持 `png`、`jpg`、`webp`、`gif`，视频支持 `mp4`、`mov`。
 

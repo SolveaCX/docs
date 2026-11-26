@@ -151,7 +151,7 @@ Si votre assistant s'arrête après le premier appel, demandez-lui de vérifier 
 
 ## Où vont les fichiers
 
-- Les **vidéos** sont toujours enregistrées, car l'URL de téléchargement ne s'ouvre qu'avec votre clé API. Elles vont dans `save_to`, dans `FLATKEY_OUTPUT_DIR` ou dans `~/flatkey-output`.
+- Les **vidéos** sont toujours enregistrées sur le disque, et le résultat indique le chemin. Elles vont dans `save_to`, dans `FLATKEY_OUTPUT_DIR` ou dans `~/flatkey-output`.
 - Les **images** sont renvoyées sous forme d'URL temporaire. Passez `save_to` pour en garder une copie, ou définissez `FLATKEY_OUTPUT_DIR` pour enregistrer tous les résultats dans un même dossier.
 - Les **fichiers de référence locaux** sont envoyés vers le stockage temporaire de Flatkey avant la génération. Les images peuvent être en `png`, `jpg`, `webp` ou `gif`. Les vidéos peuvent être en `mp4` ou `mov`.
 
