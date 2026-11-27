@@ -510,18 +510,35 @@ tabs [role="tablist"] {
   border-bottom-color: var(--fk-border);
 }
 
+/* Underline tabs: the theme draws the active underline, so the tab itself
+   carries no pill. A tint with a full radius on a tab that has no side
+   padding rendered as an oval blob behind the label. */
 .tabs [role="tab"],
 tabs [role="tab"] {
-  border-radius: 999px;
+  border-radius: 0;
+  background: transparent;
   color: var(--fk-ink-3);
-  font-size: 12px;
-  font-weight: 650;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tabs [role="tab"]:hover,
+tabs [role="tab"]:hover {
+  background: transparent;
+  color: var(--fk-ink);
 }
 
 .tabs [role="tab"][aria-selected="true"],
 tabs [role="tab"][aria-selected="true"] {
-  background: var(--fk-violet-tint);
-  color: var(--fk-violet-deep);
+  background: transparent;
+  color: var(--fk-violet);
+}
+
+.tabs [role="tab"]:focus-visible,
+tabs [role="tab"]:focus-visible {
+  outline: 2px solid var(--fk-focus);
+  outline-offset: 2px;
+  border-radius: var(--fk-radius-sm);
 }
 
 .dark .tabs [role="tab"][aria-selected="true"],
