@@ -510,28 +510,25 @@ tabs [role="tablist"] {
   border-bottom-color: var(--fk-border);
 }
 
-/* Underline tabs: the theme draws the active underline, so the tab itself
-   carries no pill. A tint with a full radius on a tab that has no side
-   padding rendered as an oval blob behind the label. */
+/* Underline tabs. In Luma the [role="tab"] element is a tall list item with
+   no padding, and the label inside it ([data-component-part="tab-button"])
+   carries the colour and the active underline. A tint with a full radius on
+   the list item rendered as an oval blob behind the label, so the item
+   itself carries no background. */
 .tabs [role="tab"],
-tabs [role="tab"] {
-  border-radius: 0;
-  background: transparent;
-  color: var(--fk-ink-3);
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.tabs [role="tab"]:hover,
-tabs [role="tab"]:hover {
-  background: transparent;
-  color: var(--fk-ink);
-}
-
+tabs [role="tab"],
 .tabs [role="tab"][aria-selected="true"],
 tabs [role="tab"][aria-selected="true"] {
+  border-radius: 0;
   background: transparent;
-  color: var(--fk-violet);
+}
+
+.tabs [role="tab"]:not([aria-selected="true"]) [data-component-part="tab-button"] {
+  color: var(--fk-ink-3);
+}
+
+.tabs [role="tab"]:not([aria-selected="true"]) [data-component-part="tab-button"]:hover {
+  color: var(--fk-ink);
 }
 
 .tabs [role="tab"]:focus-visible,
@@ -539,11 +536,6 @@ tabs [role="tab"]:focus-visible {
   outline: 2px solid var(--fk-focus);
   outline-offset: 2px;
   border-radius: var(--fk-radius-sm);
-}
-
-.dark .tabs [role="tab"][aria-selected="true"],
-.dark tabs [role="tab"][aria-selected="true"] {
-  color: #DDD6FE;
 }
 
 .step,
