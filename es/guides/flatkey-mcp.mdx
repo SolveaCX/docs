@@ -66,6 +66,38 @@ El servidor MCP de Flatkey ofrece a cualquier cliente MCP cinco herramientas par
   </Tab>
 </Tabs>
 
+## Conéctate por URL
+
+Para no instalar nada, conéctate al endpoint alojado. Ofrece las mismas cinco herramientas y recibe tu clave de API como token Bearer. Las entradas deben ser URL públicas, y los resultados se devuelven como URL.
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add --transport http flatkey https://router.flatkey.ai/mcp \
+      --header "Authorization: Bearer sk-fk-your-flatkey-key"
+    ```
+  </Tab>
+  <Tab title="Cursor">
+    ```json .cursor/mcp.json
+    {
+      "mcpServers": {
+        "flatkey": {
+          "url": "https://router.flatkey.ai/mcp",
+          "headers": { "Authorization": "Bearer sk-fk-your-flatkey-key" }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+| | Servidor local | Endpoint alojado |
+| --- | --- | --- |
+| Configuración | Node.js y una entrada de configuración | Una URL |
+| Archivos locales como referencia | Sí | No, solo URL públicas |
+| Guarda los resultados en disco | Sí | No, devuelve URL |
+| Imagen a video con modelos Veo | Sí | No |
+
 ## Crea tu primera imagen
 
 Pídele a tu asistente:

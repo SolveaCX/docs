@@ -66,6 +66,38 @@ Le serveur MCP Flatkey fournit à tout client MCP cinq outils de génération d'
   </Tab>
 </Tabs>
 
+## Se connecter par URL
+
+Pour ne rien installer, connectez-vous au point d'accès hébergé. Il propose les cinq mêmes outils et reçoit votre clé API comme jeton Bearer. Les entrées doivent être des URL publiques, et les résultats sont renvoyés sous forme d'URL.
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add --transport http flatkey https://router.flatkey.ai/mcp \
+      --header "Authorization: Bearer sk-fk-your-flatkey-key"
+    ```
+  </Tab>
+  <Tab title="Cursor">
+    ```json .cursor/mcp.json
+    {
+      "mcpServers": {
+        "flatkey": {
+          "url": "https://router.flatkey.ai/mcp",
+          "headers": { "Authorization": "Bearer sk-fk-your-flatkey-key" }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+| | Serveur local | Point d'accès hébergé |
+| --- | --- | --- |
+| Installation | Node.js et une entrée de configuration | Une URL |
+| Fichiers locaux comme références | Oui | Non, URL publiques uniquement |
+| Enregistre les résultats sur le disque | Oui | Non, renvoie des URL |
+| Image vers vidéo avec les modèles Veo | Oui | Non |
+
 ## Créer votre première image
 
 Demandez à votre assistant :
